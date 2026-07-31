@@ -114,7 +114,7 @@ Verifique as permissões do usuário e do sistema de arquivos antes de prossegui
 Após validar o gerenciador de arquivos, prossiga para:
 
 ```text
-10-install-fonts.md
+10-install-font-stack.md
 ```
 
 ---
