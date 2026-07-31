@@ -1,6 +1,6 @@
 ---
 
-title: Configurar usuários
+title: Configurar o initramfs
 version: 1.0
 status: Draft
 author: Rafael
@@ -14,20 +14,21 @@ related:
 
 ---
 
-# 14 — Configurar usuários
+# 15 — Configurar o initramfs
 
 ## Objetivo
 
-Configurar as identidades de acesso do sistema, incluindo o usuário administrativo inicial e suas permissões.
+Configurar e gerar a imagem de initramfs necessária para inicialização do sistema.
 
-Ao final deste playbook, será possível autenticar-se no sistema utilizando um usuário não privilegiado com acesso administrativo quando autorizado.
+Ao final deste playbook, o sistema estará preparado para iniciar utilizando a arquitetura de armazenamento definida pelo projeto.
 
 ---
 
 # Pré-requisitos
 
 * Ambiente `arch-chroot` ativo.
-* Rede configurada.
+* Sistema base instalado.
+* Usuários configurados.
 
 ---
 
@@ -35,47 +36,41 @@ Ao final deste playbook, será possível autenticar-se no sistema utilizando um 
 
 Ao concluir este playbook:
 
-* a senha do usuário `root` estará definida;
-* o usuário principal da workstation estará criado;
-* o usuário principal possuirá as permissões administrativas previstas pela arquitetura.
+* a configuração do initramfs refletirá a arquitetura do sistema;
+* a imagem de initramfs será gerada sem erros;
+* o sistema estará preparado para inicialização.
 
 ---
 
 # Procedimento
 
-## 1. Definir a senha do usuário root
+## 1. Revisar a configuração
 
-Configure uma senha forte para a conta `root`.
+Verifique a configuração do initramfs.
 
-Armazene-a de forma segura.
+Confirme que ela contempla os componentes necessários para:
 
----
-
-## 2. Criar o usuário principal
-
-Crie o usuário definido para a instalação.
-
-Os atributos da conta deverão seguir o perfil da workstation.
+* criptografia;
+* sistema de arquivos;
+* inicialização da workstation.
 
 ---
 
-## 3. Configurar grupos
+## 2. Atualizar a configuração
 
-Adicione o usuário aos grupos necessários para utilização normal do sistema.
-
-Evite conceder permissões além das necessárias.
+Caso necessário, ajuste a configuração para refletir a arquitetura adotada.
 
 ---
 
-## 4. Configurar acesso administrativo
+## 3. Gerar a imagem
 
-Permita que o usuário principal execute tarefas administrativas conforme a política definida pela arquitetura.
+Gere uma nova imagem de initramfs utilizando a ferramenta recomendada pelo Arch Linux.
 
 ---
 
-## 5. Revisar a configuração
+## 4. Confirmar a geração
 
-Confirme que as contas foram criadas corretamente e que as permissões correspondem ao esperado.
+Verifique se a geração foi concluída sem erros.
 
 ---
 
@@ -83,51 +78,51 @@ Confirme que as contas foram criadas corretamente e que as permissões correspon
 
 Confirme que:
 
-* a conta `root` possui senha definida;
-* o usuário principal existe;
-* os grupos atribuídos estão corretos;
-* o usuário possui acesso administrativo quando autorizado.
+* a imagem foi gerada com sucesso;
+* nenhuma mensagem de erro foi apresentada;
+* os componentes esperados estão contemplados na configuração.
 
 ---
 
 # Problemas comuns
 
-## Usuário não criado
+## Falha na geração
 
-Verifique se o nome da conta segue as regras do sistema e se não existe outro usuário com o mesmo identificador.
-
----
-
-## Permissões insuficientes
-
-Confirme que o usuário pertence aos grupos previstos pela arquitetura.
+Revise a configuração antes de repetir o processo.
 
 ---
 
-## Falha na elevação de privilégios
+## Componentes ausentes
 
-Revise a configuração do mecanismo de administração e confirme que o usuário possui autorização para utilizá-lo.
+Confirme que a configuração contempla a arquitetura de armazenamento utilizada.
+
+---
+
+## Arquivos não encontrados
+
+Verifique se todos os pacotes necessários foram instalados antes da geração da imagem.
 
 ---
 
 # Próximo playbook
 
-Após validar a configuração dos usuários, prossiga para:
+Após validar o initramfs, prossiga para:
 
-```text id="8xylkb"
-15-configure-initramfs.md
+```text id="siy0tm"
+16-install-bootloader.md
 ```
 
 ---
 
 # Referências
 
-* Arch Wiki — Users and groups
-* Arch Wiki — sudo
-* Arch Wiki — User management
+* Arch Wiki — mkinitcpio
+* Arch Wiki — Initramfs
+* Arch Wiki — dm-crypt
 
 ---
 
 # Lições aprendidas
 
-Registrar aqui alterações na política de usuários, permissões administrativas ou observações relevantes identificadas durante futuras instalações.
+Registrar aqui ajustes na configuração do initramfs, inclusão de novos componentes ou observações relevantes para futuras instalações.
+
