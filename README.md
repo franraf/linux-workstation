@@ -168,6 +168,20 @@ A versão `v0.1.0-foundation` representa a conclusão da fundação estrutural e
 
 Nenhum playbook deve ser considerado estável até ser validado em uma instalação real.
 
+## Conceitos arquiteturais
+
+O projeto utiliza alguns conceitos centrais:
+
+* **Architecture First:** decisões precedem implementações.
+* **Documentation as Source of Truth:** o repositório representa o estado esperado da workstation.
+* **Incremental Evolution:** mudanças são pequenas, verificáveis e reversíveis.
+* **Single Responsibility:** cada artefato possui uma responsabilidade clara.
+* **Capabilities over Implementations:** capacidades são permanentes; ferramentas podem ser substituídas.
+* **Modular Configuration:** configurações são separadas por responsabilidade.
+* **Validate Before Advancing:** cada fase termina com uma validação objetiva.
+
+Consulte [`docs/architecture.md`](docs/architecture.md) e os [Architecture Decision Records](docs/adr/) para detalhes.
+
 ## Como começar
 
 A documentação deverá ser seguida nesta ordem:

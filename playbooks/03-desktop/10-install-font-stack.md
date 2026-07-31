@@ -134,7 +134,7 @@ Revise a configuração de fontes da sessão gráfica e confirme que as aplicaç
 Após validar a stack tipográfica, prossiga para:
 
 ```text
-11-configure-session.md
+11-configure-desktop-session.md
 ```
 
 ---

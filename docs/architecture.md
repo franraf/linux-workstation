@@ -9,6 +9,8 @@ related:
 
 * ADR-0001
 * ADR-0002
+* ADR-0004
+* ADR-0005
 
 ---
 
@@ -95,6 +97,78 @@ Inclui:
 * Visual Studio Code;
 * chezmoi;
 * dotfiles.
+
+## Conceitos arquiteturais centrais
+
+O projeto é orientado por um conjunto de conceitos que guiam sua documentação, implementação e evolução.
+
+### Architecture First
+
+Decisões arquiteturais relevantes devem ser compreendidas e documentadas antes de sua implementação.
+
+A arquitetura define o estado desejado da workstation. Playbooks, scripts e configurações implementam esse estado.
+
+### Documentation as Source of Truth
+
+A documentação versionada representa o comportamento esperado da workstation.
+
+Configurações manuais que não estejam documentadas ou representadas no repositório são consideradas dívida técnica.
+
+### Incremental Evolution
+
+O projeto evolui por meio de mudanças pequenas, verificáveis e reversíveis.
+
+Novas capacidades são introduzidas progressivamente, evitando alterações extensas que dificultem revisão, validação ou recuperação.
+
+### Single Responsibility
+
+Cada playbook, script e módulo de configuração deve possuir uma responsabilidade claramente identificável.
+
+A divisão ocorre por responsabilidade técnica e capacidade entregue, não apenas por tamanho de arquivo ou quantidade de comandos.
+
+### Capabilities over Implementations
+
+O projeto documenta capacidades da workstation, enquanto ferramentas específicas são tratadas como implementações substituíveis.
+
+Exemplos:
+
+| Capacidade              | Implementação atual |
+| ----------------------- | ------------------- |
+| Compositor Wayland      | Hyprland            |
+| Barra de status         | Waybar              |
+| Bloqueio da sessão      | Hyprlock            |
+| Ciclo de vida da sessão | Hypridle            |
+| Lançador de aplicações  | Rofi                |
+| Central de notificações | SwayNC              |
+| Emulador de terminal    | Kitty               |
+| Gerenciador de arquivos | Thunar              |
+
+Uma implementação pode ser substituída sem alterar a responsabilidade arquitetural da capacidade.
+
+### Modular Configuration
+
+Configurações devem ser organizadas por capacidade ou responsabilidade.
+
+Arquivos principais devem atuar como pontos de entrada e delegar comportamentos específicos para módulos menores sempre que a ferramenta oferecer suporte adequado.
+
+### Validate Before Advancing
+
+Cada fase deve terminar com uma validação objetiva antes do início da fase seguinte.
+
+O projeto segue o ciclo:
+
+```text
+Construir
+    ↓
+Configurar
+    ↓
+Validar
+    ↓
+Avançar
+```
+
+Uma fase não é considerada concluída apenas porque seus comandos foram executados.
+
 
 ## Perfil inicial de hardware
 
