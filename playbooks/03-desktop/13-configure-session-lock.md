@@ -138,7 +138,7 @@ Revise os registros do sistema e confirme que a sessão permanece íntegra duran
 Após validar o bloqueio da sessão, prossiga para:
 
 ```text
-14-configure-idle-manager.md
+14-configure-session-lifecycle.md
 ```
 
 ---

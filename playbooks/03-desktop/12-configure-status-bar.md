@@ -137,7 +137,7 @@ Valide a estrutura dos arquivos antes de reiniciar a sessão.
 Após validar a barra de status, prossiga para:
 
 ```text
-13-configure-screen-locker.md
+13-configure-session-lock.md
 ```
 
 ---
