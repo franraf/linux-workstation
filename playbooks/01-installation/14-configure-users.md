@@ -1,7 +1,7 @@
 ---
 
 title: Configurar usuários
-version: 1.0
+version: 1.1
 status: Draft
 author: Rafael
 last_review: 2026-07-31
@@ -37,7 +37,8 @@ Ao concluir este playbook:
 
 * a senha do usuário `root` estará definida;
 * o usuário principal da workstation estará criado;
-* o usuário principal possuirá as permissões administrativas previstas pela arquitetura.
+* o mecanismo de elevação de privilégios estará configurado;
+* o usuário principal possuirá privilégios administrativos conforme a arquitetura.
 
 ---
 
@@ -67,9 +68,11 @@ Evite conceder permissões além das necessárias.
 
 ---
 
-## 4. Configurar acesso administrativo
+## 4. Configurar privilégios administrativos
 
-Permita que o usuário principal execute tarefas administrativas conforme a política definida pela arquitetura.
+Instale e configure o mecanismo de elevação de privilégios adotado pelo projeto.
+
+Conceda acesso administrativo apenas ao usuário ou grupo definido pela arquitetura.
 
 ---
 
@@ -85,8 +88,8 @@ Confirme que:
 
 * a conta `root` possui senha definida;
 * o usuário principal existe;
-* os grupos atribuídos estão corretos;
-* o usuário possui acesso administrativo quando autorizado.
+* o usuário possui os grupos corretos;
+* a elevação de privilégios funciona corretamente.
 
 ---
 
