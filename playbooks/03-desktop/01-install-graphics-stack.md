@@ -171,7 +171,7 @@ Confirme que a camada de compatibilidade prevista pelo projeto está instalada e
 Após validar a stack gráfica, prossiga para:
 
 ```text
-02-install-hyprland.md
+02-install-compositor.md
 ```
 
 ---

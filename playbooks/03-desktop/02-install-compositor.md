@@ -1,6 +1,6 @@
 ---
 
-title: Instalar Hyprland
+title: Instalar Compositor
 version: 1.0
 status: Draft
 author: Rafael
@@ -14,7 +14,7 @@ related:
 
 ---
 
-# 02 — Instalar Hyprland
+# 02 — Instalar Compositor
 
 ## Objetivo
 
