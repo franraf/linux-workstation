@@ -1,6 +1,6 @@
 ---
 
-title: Instalar Hypridle
+title: Instalar Idle Manager
 version: 1.0
 status: Draft
 author: Rafael
@@ -14,7 +14,7 @@ related:
 
 ---
 
-# 05 — Instalar Hypridle
+# 05 — Instalar Idle Manager
 
 ## Objetivo
 
@@ -107,7 +107,7 @@ Revise a instalação antes de prosseguir.
 Após validar a instalação do Hypridle, prossiga para:
 
 ```text
-06-install-rofi.md
+06-install-application-launcher.md
 ```
 
 ---

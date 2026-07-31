@@ -1,6 +1,6 @@
 ---
 
-title: Instalar Hyprlock
+title: Instalar Screen Locker
 version: 1.0
 status: Draft
 author: Rafael
@@ -14,7 +14,7 @@ related:
 
 ---
 
-# 04 — Instalar Hyprlock
+# 04 — Instalar Screen Locker
 
 ## Objetivo
 
@@ -107,7 +107,7 @@ Analise os registros da sessão antes de prosseguir.
 Após validar a instalação do Hyprlock, prossiga para:
 
 ```text
-05-install-hypridle.md
+05-install-idle-manager.md
 ```
 
 ---

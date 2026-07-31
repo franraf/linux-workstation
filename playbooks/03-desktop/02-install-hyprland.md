@@ -119,7 +119,7 @@ Revise a configuração da GPU e confirme que os drivers correspondem ao hardwar
 Após validar a instalação do Hyprland, prossiga para:
 
 ```text
-03-configure-hyprland.md
+03-install-status-bar.md
 ```
 
 ---

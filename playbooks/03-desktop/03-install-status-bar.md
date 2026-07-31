@@ -1,6 +1,6 @@
 ---
 
-title: Instalar Waybar
+title: Instalar Status Bar
 version: 1.0
 status: Draft
 author: Rafael
@@ -14,7 +14,7 @@ related:
 
 ---
 
-# 03 — Instalar Waybar
+# 03 — Instalar Status Bar
 
 ## Objetivo
 
@@ -106,7 +106,7 @@ Revise os registros da sessão antes de prosseguir.
 Após validar a instalação do Waybar, prossiga para:
 
 ```text
-04-install-hyprlock.md
+04-install-screen-locker.md
 ```
 
 ---
