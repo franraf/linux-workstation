@@ -118,7 +118,7 @@ Analise os registros da sessão antes de prosseguir.
 Após validar a central de notificações, prossiga para:
 
 ```text
-08-install-terminal.md
+08-install-terminal-emulator.md
 ```
 
 ---
