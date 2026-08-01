@@ -91,55 +91,56 @@ steps:
   08-mount-filesystems:
     mode: script
     destructive: false
-    playbook: ../../../playbooks/01-installation/07-mount-filesystems.md
+    playbook: ../../../playbooks/01-installation/08-mount-filesystems.md
     entrypoint: 07-mount-filesystems/run.sh
 
   09-install-base-system:
     mode: script
     destructive: false
-    playbook: ../../../playbooks/01-installation/08-install-base-system.md
+    playbook: ../../../playbooks/01-installation/09-install-base-system.md
     entrypoint: 08-install-base-system/run.sh
 
   10-generate-fstab:
     mode: script
     destructive: false
-    playbook: ../../../playbooks/01-installation/09-generate-fstab.md
+    playbook: ../../../playbooks/01-installation/10-generate-fstab.md
     entrypoint: 09-generate-fstab/run.sh
 
   11-enter-chroot:
-    mode: orchestrated
+    mode: transition
     destructive: false
-    playbook: ../../../playbooks/01-installation/10-enter-chroot.md
+    playbook: ../../../playbooks/01-installation/11-enter-chroot.md
+    entrypoint: 11-enter-chroot/run.sh
     reason: >
-      Os passos seguintes serão executados dentro do sistema instalado por
-      meio do orquestrador.
+      Este passo realiza a transição entre o ambiente live e o sistema
+      instalado. Os passos seguintes são executados dentro do chroot.
 
   12-configure-time:
     mode: script
     destructive: false
     context: chroot
-    playbook: ../../../playbooks/01-installation/11-configure-time.md
+    playbook: ../../../playbooks/01-installation/12-configure-time.md
     entrypoint: 11-configure-time/run.sh
 
   13-configure-localization:
     mode: script
     destructive: false
     context: chroot
-    playbook: ../../../playbooks/01-installation/12-configure-localization.md
+    playbook: ../../../playbooks/01-installation/13-configure-localization.md
     entrypoint: 12-configure-localization/run.sh
 
   14-configure-network:
     mode: script
     destructive: false
     context: chroot
-    playbook: ../../../playbooks/01-installation/13-configure-network.md
+    playbook: ../../../playbooks/01-installation/14-configure-network.md
     entrypoint: 13-configure-network/run.sh
 
   15-configure-users:
     mode: interactive-script
     destructive: false
     context: chroot
-    playbook: ../../../playbooks/01-installation/14-configure-users.md
+    playbook: ../../../playbooks/01-installation/15-configure-users.md
     entrypoint: 14-configure-users/run.sh
     reason: >
       Senhas e outras credenciais deverão ser fornecidas interativamente e
@@ -149,20 +150,20 @@ steps:
     mode: script
     destructive: false
     context: chroot
-    playbook: ../../../playbooks/01-installation/15-configure-initramfs.md
+    playbook: ../../../playbooks/01-installation/16-configure-initramfs.md
     entrypoint: 15-configure-initramfs/run.sh
 
   17-install-bootloader:
     mode: script
     destructive: false
     context: chroot
-    playbook: ../../../playbooks/01-installation/16-install-bootloader.md
+    playbook: ../../../playbooks/01-installation/17-install-bootloader.md
     entrypoint: 16-install-bootloader/run.sh
 
   18-first-boot:
     mode: manual-validation
     destructive: false
-    playbook: ../../../playbooks/01-installation/17-first-boot.md
+    playbook: ../../../playbooks/01-installation/18-first-boot.md
     reason: >
       A reinicialização, remoção da mídia e autenticação inicial exigem
       participação do usuário.
