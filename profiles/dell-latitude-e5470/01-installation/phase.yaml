@@ -92,19 +92,19 @@ steps:
     mode: script
     destructive: false
     playbook: ../../../playbooks/01-installation/08-mount-filesystems.md
-    entrypoint: 07-mount-filesystems/run.sh
+    entrypoint: 08-mount-filesystems/run.sh
 
   09-install-base-system:
     mode: script
     destructive: false
     playbook: ../../../playbooks/01-installation/09-install-base-system.md
-    entrypoint: 08-install-base-system/run.sh
+    entrypoint: 09-install-base-system/run.sh
 
   10-generate-fstab:
     mode: script
     destructive: false
     playbook: ../../../playbooks/01-installation/10-generate-fstab.md
-    entrypoint: 09-generate-fstab/run.sh
+    entrypoint: 10-generate-fstab/run.sh
 
   11-enter-chroot:
     mode: transition
@@ -120,28 +120,28 @@ steps:
     destructive: false
     context: chroot
     playbook: ../../../playbooks/01-installation/12-configure-time.md
-    entrypoint: 11-configure-time/run.sh
+    entrypoint: 12-configure-time/run.sh
 
   13-configure-localization:
     mode: script
     destructive: false
     context: chroot
     playbook: ../../../playbooks/01-installation/13-configure-localization.md
-    entrypoint: 12-configure-localization/run.sh
+    entrypoint: 13-configure-localization/run.sh
 
   14-configure-network:
     mode: script
     destructive: false
     context: chroot
     playbook: ../../../playbooks/01-installation/14-configure-network.md
-    entrypoint: 13-configure-network/run.sh
+    entrypoint: 14-configure-network/run.sh
 
   15-configure-users:
     mode: interactive-script
     destructive: false
     context: chroot
     playbook: ../../../playbooks/01-installation/15-configure-users.md
-    entrypoint: 14-configure-users/run.sh
+    entrypoint: 15-configure-users/run.sh
     reason: >
       Senhas e outras credenciais deverão ser fornecidas interativamente e
       nunca armazenadas no perfil.
@@ -151,14 +151,14 @@ steps:
     destructive: false
     context: chroot
     playbook: ../../../playbooks/01-installation/16-configure-initramfs.md
-    entrypoint: 15-configure-initramfs/run.sh
+    entrypoint: 16-configure-initramfs/run.sh
 
   17-install-bootloader:
     mode: script
     destructive: false
     context: chroot
     playbook: ../../../playbooks/01-installation/17-install-bootloader.md
-    entrypoint: 16-install-bootloader/run.sh
+    entrypoint: 17-install-bootloader/run.sh
 
   18-first-boot:
     mode: manual-validation
