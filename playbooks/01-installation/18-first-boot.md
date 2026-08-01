@@ -1,149 +1,287 @@
-
 ---
 
-title: Primeiro boot
+title: First Boot Validation
 version: 1.0
-status: Draft
+status: Stable
 author: Rafael
-last_review: 2026-07-31
+last_review: 2026-08-01
+phase: Installation
+playbook: 18
 related:
 
+* phase.yaml
 * architecture.md
-* ADR-0002
-* ADR-0003
-* ADR-0004
 
 ---
 
-# 17 — Primeiro boot
+# First Boot Validation
 
 ## Objetivo
 
-Inicializar o sistema recém-instalado e validar que a arquitetura foi implementada corretamente.
+Validar que a instalação foi concluída com sucesso e que o sistema está pronto para iniciar a próxima milestone (**Base System**).
 
-Ao final deste playbook, a workstation deverá iniciar utilizando o sistema instalado no disco, encerrando a fase de instalação.
+Este playbook **não modifica o sistema**.
+
+Seu objetivo é apenas confirmar que todos os componentes instalados nas etapas anteriores estão funcionando corretamente.
 
 ---
 
 # Pré-requisitos
 
-* Bootloader instalado.
-* Ambiente `arch-chroot` encerrado.
-* Todos os sistemas de arquivos desmontados corretamente.
-* Mídia de instalação removida.
+A instalação deve ter sido concluída até o playbook anterior:
+
+```text
+17-install-bootloader
+```
+
+O sistema deve ter sido reiniciado.
+
+O login deve ser realizado utilizando o usuário criado durante a instalação.
 
 ---
 
-# Resultado esperado
+# Checklist
 
-Ao concluir este playbook:
+## Bootloader
 
-* o sistema inicializará a partir do disco interno;
-* o volume criptografado será desbloqueado durante o processo de boot;
-* o sistema chegará à tela de autenticação sem erros.
+Verificar:
 
----
+```bash
+bootctl status
+```
 
-# Procedimento
+Resultado esperado:
 
-## 1. Encerrar o ambiente de instalação
-
-Saia do ambiente `chroot`.
-
-Confirme que não existem operações pendentes.
+* systemd-boot instalado
+* Boot Loader Specification reconhecida
+* entrada padrão localizada
 
 ---
 
-## 2. Desmontar os sistemas de arquivos
+## Sistema de arquivos raiz
 
-Desmonte todos os sistemas de arquivos montados durante a instalação.
+Verificar:
 
-Feche o volume criptografado conforme o procedimento recomendado.
+```bash
+findmnt /
+```
 
----
+Resultado esperado:
 
-## 3. Reiniciar o computador
-
-Reinicie o sistema.
-
-Remova a mídia de instalação quando apropriado.
-
----
-
-## 4. Acompanhar a inicialização
-
-Observe o processo de boot.
-
-Confirme que:
-
-* o firmware localiza o bootloader;
-* o bootloader inicia corretamente;
-* o volume criptografado é solicitado;
-* o kernel é carregado;
-* o sistema conclui a inicialização.
+* Btrfs
+* subvolume `@`
 
 ---
 
-## 5. Autenticar-se
+## EFI
 
-Efetue login utilizando o usuário criado durante a instalação.
+Verificar:
 
----
+```bash
+findmnt /boot
+```
 
-# Verificação
+Resultado esperado:
 
-Confirme que:
-
-* o sistema inicializou pelo disco interno;
-* o login foi realizado com sucesso;
-* data e hora estão corretas;
-* hostname corresponde ao esperado;
-* a conectividade de rede está funcional;
-* os sistemas de arquivos foram montados conforme o `fstab`;
-* não existem mensagens críticas durante a inicialização.
+* ESP montada
+* sistema de arquivos FAT32
 
 ---
 
-# Problemas comuns
+## LUKS
 
-## O bootloader não inicia
+Verificar:
 
-Verifique a configuração UEFI e confirme que a entrada de inicialização existe.
+```bash
+lsblk -f
+```
 
----
+Resultado esperado:
 
-## O volume criptografado não pode ser desbloqueado
-
-Revise a configuração do initramfs e do bootloader.
-
----
-
-## O sistema entra em modo de emergência
-
-Verifique o conteúdo do `fstab` e confirme que todos os sistemas de arquivos podem ser montados.
+* partição criptografada
+* mapper `cryptroot`
+* Btrfs montado corretamente
 
 ---
 
-## Falha na autenticação
+## Subvolumes
 
-Confirme a criação do usuário e a configuração das credenciais.
+Verificar:
+
+```bash
+findmnt
+```
+
+Confirmar a presença dos seguintes pontos de montagem:
+
+* /
+* /home
+* /var
+* /var/log
+* /var/cache
+* /var/cache/pacman/pkg
+* /var/lib/docker
+* /.snapshots
 
 ---
 
-# Próximos passos
+## Timezone
 
-Com a instalação concluída, prossiga para os playbooks da fase **02-system**, iniciando pela configuração dos componentes fundamentais da workstation.
+Verificar:
+
+```bash
+timedatectl
+```
+
+Resultado esperado:
+
+```text
+Time zone: America/Sao_Paulo
+```
 
 ---
 
-# Referências
+## Locale
 
-* Arch Wiki — Installation Guide
-* Arch Wiki — systemd
-* Arch Wiki — Boot process
+Verificar:
+
+```bash
+locale
+```
+
+Resultado esperado:
+
+```text
+LANG=pt_BR.UTF-8
+```
 
 ---
 
-# Lições aprendidas
+## Usuário
 
-Registrar aqui qualquer ajuste realizado após o primeiro boot, problemas identificados durante a inicialização ou melhorias incorporadas ao processo de instalação.
+Verificar:
+
+```bash
+id
+```
+
+Confirmar que o usuário pertence ao grupo:
+
+```text
+wheel
+```
+
+---
+
+## sudo
+
+Verificar:
+
+```bash
+sudo -v
+```
+
+Resultado esperado:
+
+Nenhum erro.
+
+---
+
+## NetworkManager
+
+Verificar:
+
+```bash
+systemctl status NetworkManager
+```
+
+Resultado esperado:
+
+```text
+active (running)
+```
+
+---
+
+## Kernel
+
+Verificar:
+
+```bash
+uname -r
+```
+
+Confirmar que o kernel instalado é carregado corretamente.
+
+---
+
+## Microcode
+
+Verificar:
+
+```bash
+journalctl -b | grep microcode
+```
+
+Confirmar que o microcode Intel foi carregado durante o boot.
+
+---
+
+## Serviços
+
+Verificar:
+
+```bash
+systemctl --failed
+```
+
+Resultado esperado:
+
+```text
+0 loaded units listed.
+```
+
+---
+
+## Atualização
+
+Verificar:
+
+```bash
+sudo pacman -Syu
+```
+
+Resultado esperado:
+
+Atualização executada sem erros.
+
+---
+
+# Critério de conclusão
+
+A milestone é considerada concluída quando todas as verificações acima forem aprovadas.
+
+Ao final desta etapa o sistema deverá possuir:
+
+* Boot UEFI funcional
+* systemd-boot configurado
+* raiz criptografada com LUKS2
+* Btrfs com subvolumes
+* timezone configurado
+* locale configurado
+* usuário administrativo
+* sudo funcional
+* NetworkManager habilitado
+* sistema inicializando corretamente
+
+---
+
+# Próxima fase
+
+Após a validação do primeiro boot, o projeto segue para:
+
+```text
+Milestone 2 — Base System
+```
+
+Nenhuma configuração adicional pertencente ao ambiente de desenvolvimento, desktop ou aplicações deve ser realizada antes do início da próxima milestone.
