@@ -127,7 +127,7 @@ Verifique se não existem arquivos abertos ou processos utilizando o ponto de mo
 Após validar a estrutura dos subvolumes, prossiga para:
 
 ```text
-07-mount-filesystems.md
+07-format-efi.md
 ```
 
 ---

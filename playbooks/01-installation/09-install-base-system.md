@@ -113,7 +113,7 @@ Verifique o particionamento e o espaço disponível no sistema de arquivos.
 Após validar a instalação do sistema base, prossiga para:
 
 ```text
-09-configure-system.md
+10-generate-fstab.md
 ```
 
 ---

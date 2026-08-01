@@ -93,7 +93,7 @@ Antes de executar qualquer configuração, confirme que o ambiente `chroot` est�
 Após confirmar o acesso ao sistema instalado, prossiga para:
 
 ```text
-11-configure-time.md
+12-configure-time.md
 ```
 
 ---

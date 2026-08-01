@@ -95,7 +95,7 @@ Confirme que o relógio de hardware foi configurado conforme a recomendação do
 Após validar a configuração de data e hora, prossiga para:
 
 ```text id="3s3m4n"
-12-configure-localization.md
+13-configure-localization.md
 ```
 
 ---

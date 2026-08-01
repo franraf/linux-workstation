@@ -102,7 +102,7 @@ Revise o arquivo antes de prosseguir para evitar problemas durante a inicializa√
 Ap√≥s validar o `fstab`, prossiga para:
 
 ```text id="qwf99e"
-10-enter-chroot.md
+11-enter-chroot.md
 ```
 
 ---

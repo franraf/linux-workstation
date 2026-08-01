@@ -22,17 +22,18 @@ execution:
     - 04-create-luks
     - 05-create-btrfs
     - 06-create-subvolumes
-    - 07-mount-filesystems
-    - 08-install-base-system
-    - 09-generate-fstab
-    - 10-enter-chroot
-    - 11-configure-time
-    - 12-configure-localization
-    - 13-configure-network
-    - 14-configure-users
-    - 15-configure-initramfs
-    - 16-install-bootloader
-    - 17-first-boot
+    - 07-format-efi
+    - 08-mount-filesystems
+    - 09-install-base-system
+    - 10-generate-fstab
+    - 11-enter-chroot
+    - 12-configure-time
+    - 13-configure-localization
+    - 14-configure-network
+    - 15-configure-users
+    - 16-configure-initramfs
+    - 17-install-bootloader
+    - 18-first-boot
 
   stop_on_error: true
   validate_after_each_step: true
@@ -80,25 +81,32 @@ steps:
     playbook: ../../../playbooks/01-installation/06-create-subvolumes.md
     entrypoint: 06-create-subvolumes/run.sh
 
-  07-mount-filesystems:
+  07-format-efi:
+    mode: script
+    destructive: true
+    confirmation: ERASE
+    playbook: ../../../playbooks/01-installation/07-format-efi.md
+    entrypoint: 07-format-efi/run.sh
+  
+  08-mount-filesystems:
     mode: script
     destructive: false
     playbook: ../../../playbooks/01-installation/07-mount-filesystems.md
     entrypoint: 07-mount-filesystems/run.sh
 
-  08-install-base-system:
+  09-install-base-system:
     mode: script
     destructive: false
     playbook: ../../../playbooks/01-installation/08-install-base-system.md
     entrypoint: 08-install-base-system/run.sh
 
-  09-generate-fstab:
+  10-generate-fstab:
     mode: script
     destructive: false
     playbook: ../../../playbooks/01-installation/09-generate-fstab.md
     entrypoint: 09-generate-fstab/run.sh
 
-  10-enter-chroot:
+  11-enter-chroot:
     mode: orchestrated
     destructive: false
     playbook: ../../../playbooks/01-installation/10-enter-chroot.md
@@ -106,28 +114,28 @@ steps:
       Os passos seguintes serão executados dentro do sistema instalado por
       meio do orquestrador.
 
-  11-configure-time:
+  12-configure-time:
     mode: script
     destructive: false
     context: chroot
     playbook: ../../../playbooks/01-installation/11-configure-time.md
     entrypoint: 11-configure-time/run.sh
 
-  12-configure-localization:
+  13-configure-localization:
     mode: script
     destructive: false
     context: chroot
     playbook: ../../../playbooks/01-installation/12-configure-localization.md
     entrypoint: 12-configure-localization/run.sh
 
-  13-configure-network:
+  14-configure-network:
     mode: script
     destructive: false
     context: chroot
     playbook: ../../../playbooks/01-installation/13-configure-network.md
     entrypoint: 13-configure-network/run.sh
 
-  14-configure-users:
+  15-configure-users:
     mode: interactive-script
     destructive: false
     context: chroot
@@ -137,21 +145,21 @@ steps:
       Senhas e outras credenciais deverão ser fornecidas interativamente e
       nunca armazenadas no perfil.
 
-  15-configure-initramfs:
+  16-configure-initramfs:
     mode: script
     destructive: false
     context: chroot
     playbook: ../../../playbooks/01-installation/15-configure-initramfs.md
     entrypoint: 15-configure-initramfs/run.sh
 
-  16-install-bootloader:
+  17-install-bootloader:
     mode: script
     destructive: false
     context: chroot
     playbook: ../../../playbooks/01-installation/16-install-bootloader.md
     entrypoint: 16-install-bootloader/run.sh
 
-  17-first-boot:
+  18-first-boot:
     mode: manual-validation
     destructive: false
     playbook: ../../../playbooks/01-installation/17-first-boot.md
@@ -160,7 +168,7 @@ steps:
       participação do usuário.
 
 validation:
-  final_step: 17-first-boot
+  final_step: 18-first-boot
   required_before_next_phase: true
 
 metadata:

@@ -109,7 +109,7 @@ Verifique se todos os pacotes necessários foram instalados antes da geração d
 Após validar o initramfs, prossiga para:
 
 ```text id="siy0tm"
-16-install-bootloader.md
+17-install-bootloader.md
 ```
 
 ---

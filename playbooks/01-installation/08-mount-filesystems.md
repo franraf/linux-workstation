@@ -124,7 +124,7 @@ Confirme se a ESP foi selecionada corretamente e se está montada no ponto previ
 Após validar todas as montagens, prossiga para:
 
 ```text
-08-install-base-system.md
+09-install-base-system.md
 ```
 
 ---

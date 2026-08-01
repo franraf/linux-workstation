@@ -118,7 +118,7 @@ Revise a configuração do mecanismo de administração e confirme que o usuári
 Após validar a configuração dos usuários, prossiga para:
 
 ```text id="8xylkb"
-15-configure-initramfs.md
+16-configure-initramfs.md
 ```
 
 ---

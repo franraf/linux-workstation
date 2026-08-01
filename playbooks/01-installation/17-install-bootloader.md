@@ -118,7 +118,7 @@ Revise os parâmetros utilizados durante a geração da configuração.
 Após validar a instalação do bootloader, prossiga para:
 
 ```text id="0m0g8u"
-17-first-boot.md
+18-first-boot.md
 ```
 
 ---

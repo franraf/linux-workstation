@@ -112,7 +112,7 @@ Revise a configuração do locale e do teclado do console.
 Após validar a configuração de localização, prossiga para:
 
 ```text
-13-configure-network.md
+14-configure-network.md
 ```
 
 ---
