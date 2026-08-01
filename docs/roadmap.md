@@ -1,8 +1,9 @@
 
+
 ---
 
 title: Roadmap
-version: 1.0
+version: 2.0
 status: Stable
 author: Rafael
 last_review: 2026-07-30
@@ -30,7 +31,7 @@ Itens listados aqui representam intenções, não compromissos.
 ## Versão atual
 
 ```text
-v0.1.x
+v0.2.0
 ```
 
 Situação:
@@ -40,12 +41,18 @@ Situação:
 * ADRs iniciais aprovados.
 * Estrutura do repositório criada.
 * Documentação principal em desenvolvimento.
+* Foundation concluída.
+* Installation concluída.
+* System concluído.
+* Desktop concluído.
+* Development concluído.
+* Documentação alinhada à arquitetura.
 
-Ainda não existe uma instalação completa da workstation.
+A workstation já está apta para desenvolvimento de software utilizando ambientes reproduzíveis baseados em contêineres.
 
 ---
 
-# Milestone 1 — Base Arch Installation
+# Milestone 1 — Base Arch Installation ✅
 
 Objetivo:
 
@@ -79,7 +86,7 @@ O sistema inicializa corretamente até um terminal de login.
 
 ---
 
-# Milestone 2 — Base System
+# Milestone 2 — Base System ✅
 
 Objetivo:
 
@@ -103,7 +110,7 @@ Sistema totalmente operacional sem interface gráfica.
 
 ---
 
-# Milestone 3 — Desktop Environment
+# Milestone 3 — Desktop Environment ✅
 
 Objetivo:
 
@@ -128,7 +135,7 @@ Login gráfico funcional e ambiente utilizável.
 
 ---
 
-# Milestone 4 — Development Environment
+# Milestone 4 — Development Environment ✅
 
 Objetivo:
 
@@ -154,56 +161,67 @@ Projetos podem ser desenvolvidos utilizando containers sem instalar SDKs diretam
 
 Objetivo:
 
-Automatizar procedimentos já documentados e validados.
+Automatizar os procedimentos documentados e validados, permitindo reconstruir a workstation diretamente a partir do repositório.
 
 Escopo:
 
-* Scripts de instalação
-* Scripts de manutenção
-* Bootstrap
-* Verificações automáticas
-* Testes
+* scripts de instalação;
+* bootstrap da workstation;
+* seleção de perfil;
+* listas declarativas de pacotes;
+* aplicação das configurações do sistema;
+* integração com o repositório de dotfiles;
+* validações automáticas;
+* testes de idempotência;
+* confirmações fortes para operações destrutivas.
 
 Critério de conclusão:
 
-Uma nova instalação pode ser reproduzida com mínima intervenção manual.
+Uma nova instalação pode ser realizada a partir da ISO oficial do Arch Linux, utilizando o repositório e exigindo apenas as intervenções indispensáveis, como seleção do disco, credenciais e confirmação de ações destrutivas.
 
 ---
 
-# Milestone 6 — Hardening
+# Milestone 6 — Operations
 
 Objetivo:
 
-Aumentar segurança e confiabilidade.
+Operar, manter e recuperar a workstation durante todo o seu ciclo de vida.
 
-Possíveis iniciativas:
+Escopo:
 
-* Secure Boot
-* TPM2
-* Assinatura de boot
-* Auditoria de serviços
-* Firewall
-* Políticas de segurança
-* Backup automatizado
+* Backup
+* System Maintenance
+* Package Management
+* System Upgrades
+* Health Check
+* Recovery
+* Disaster Recovery
+* Operations Validation
 
-Esses itens dependerão de ADRs específicos.
+Critério de conclusão:
+
+A workstation pode ser mantida e recuperada de forma reproduzível durante todo seu ciclo de vida.
 
 ---
 
-# Milestone 7 — Multi-profile Support
+# Milestone 7 — Security
 
 Objetivo:
 
-Suportar múltiplos perfis de hardware.
+Aumentar a segurança e confiabilidade.
 
-Possibilidades:
+Escopo:
 
-* Desktop
-* Notebook AMD
-* Notebook Intel
-* Máquinas virtuais
+* Secrets Management
+* GPG
+* SSH Hardening
+* YubiKey (optional)
+* Disk Encryption Review
+* Security Validation
 
-Cada perfil possuirá documentação própria.
+Critério de conclusão:
+
+A workstation segue as práticas de segurança adotadas pelo projeto.
 
 ---
 
@@ -212,10 +230,8 @@ Cada perfil possuirá documentação própria.
 Ideias aprovadas, mas sem prioridade definida.
 
 * Suporte ao AUR
-* Pacotes personalizados
 * Benchmark da workstation
 * Instalação sem interação
-* Templates para novos perfis
 * Integração contínua mais completa
 * Verificação automática de documentação
 * Geração automática de índice da documentação
@@ -254,6 +270,9 @@ A primeira geração do projeto não pretende oferecer:
 * instalação universal para qualquer hardware;
 * configuração automática de ambientes de desenvolvimento específicos;
 * personalização estética avançada.
+* aplicações de uso geral (office, media, gaming etc.);
+* SDKs e runtimes específicos de projetos instalados diretamente no host;
+* ambientes de desenvolvimento específicos de linguagens;
 
 ---
 
