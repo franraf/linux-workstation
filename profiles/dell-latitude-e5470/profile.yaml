@@ -1,0 +1,312 @@
+```yaml
+---
+schema_version: "1.0"
+
+profile:
+  id: dell-latitude-e5470
+  name: Dell Latitude E5470
+  description: >
+    Perfil principal da Linux Workstation para o notebook Dell Latitude E5470.
+  status: draft
+  architecture: x86_64
+  maintained_by: Rafael
+
+hardware:
+  manufacturer: Dell
+  model: Latitude E5470
+
+  firmware:
+    type: uefi
+    legacy_boot: false
+    secure_boot: false
+
+  cpu:
+    vendor: intel
+    architecture: x86_64
+    microcode_package: intel-ucode
+
+  graphics:
+    primary:
+      vendor: intel
+      role: integrated
+      driver: i915
+      usage: default
+
+    secondary:
+      vendor: amd
+      role: dedicated
+      model: Radeon R7 M360
+      driver: amdgpu
+      usage: on-demand
+      required: false
+
+  network:
+    manager: networkmanager
+
+    ethernet:
+      enabled: true
+
+    wifi:
+      enabled: true
+      vendor: qualcomm-atheros
+
+    bluetooth:
+      enabled: true
+      stack: bluez
+
+  storage:
+    target_disk:
+      selection: interactive
+      allow_automatic_selection: false
+
+    table: gpt
+
+    partitions:
+      efi:
+        size: 1GiB
+        filesystem: fat32
+        mountpoint: /boot
+        type: esp
+
+      system:
+        size: remaining
+        encryption: luks2
+        mapper_name: cryptroot
+        filesystem: btrfs
+
+    destructive_confirmation:
+      required: true
+      phrase: ERASE
+
+storage:
+  encryption:
+    enabled: true
+    implementation: luks2
+    unlock:
+      method: passphrase
+      tpm2: false
+
+  filesystem:
+    type: btrfs
+
+    mount_options:
+      - noatime
+      - compress=zstd:3
+
+    subvolumes:
+      - name: "@"
+        mountpoint: /
+        snapshots: true
+
+      - name: "@home"
+        mountpoint: /home
+        snapshots: false
+
+      - name: "@var"
+        mountpoint: /var
+        snapshots: false
+
+      - name: "@var_log"
+        mountpoint: /var/log
+        snapshots: false
+
+      - name: "@var_cache"
+        mountpoint: /var/cache
+        snapshots: false
+
+      - name: "@pkg"
+        mountpoint: /var/cache/pacman/pkg
+        snapshots: false
+
+      - name: "@docker"
+        mountpoint: /var/lib/docker
+        snapshots: false
+
+      - name: "@snapshots"
+        mountpoint: /.snapshots
+        snapshots: false
+
+boot:
+  bootloader: systemd-boot
+  kernel: linux
+  initramfs: mkinitcpio
+
+  encrypted_root: true
+
+  kernel_parameters:
+    - rw
+
+system:
+  distribution: archlinux
+  hostname: linux-workstation
+
+  timezone: America/Sao_Paulo
+
+  locale:
+    primary: pt_BR.UTF-8
+    fallback: en_US.UTF-8
+
+  console:
+    keymap: br-abnt2
+
+  package_manager:
+    name: pacman
+    official_repositories_only: true
+    aur_enabled: false
+    parallel_downloads: 5
+
+  services:
+    network: NetworkManager
+    time_sync: systemd-timesyncd
+    logging: systemd-journald
+    bluetooth: bluetooth
+    ssh: sshd
+    trim: fstrim.timer
+
+  memory:
+    zram:
+      enabled: true
+      implementation: systemd-zram-generator
+
+  snapshots:
+    enabled: true
+    implementation: snapper
+    root_subvolume: "@"
+
+desktop:
+  protocol: wayland
+  compositor: hyprland
+
+  session:
+    display_manager: null
+    start_method: tty
+
+  capabilities:
+    status_bar:
+      implementation: waybar
+
+    screen_locker:
+      implementation: hyprlock
+
+    session_lifecycle:
+      implementation: hypridle
+
+    application_launcher:
+      implementation: rofi
+
+    notification_center:
+      implementation: swaync
+
+    terminal_emulator:
+      implementation: kitty
+
+    file_manager:
+      implementation: thunar
+
+  graphics:
+    default_gpu: integrated
+    dedicated_gpu_mode: on-demand
+
+development:
+  version_control:
+    implementation: git
+    remote_provider: github
+    authentication: ssh
+
+  shell:
+    implementation: zsh
+    framework: oh-my-zsh
+    prompt: starship
+    configuration_directory: ~/.config/zsh
+    module_directory: ~/.config/zsh/modules
+
+  editor:
+    implementation: visual-studio-code
+    configuration_source: dotfiles/vscode
+
+  containers:
+    implementation: docker
+    compose: true
+    buildx: true
+    dev_containers: true
+    data_subvolume: "@docker"
+
+  host_policy:
+    install_project_runtimes: false
+    install_project_sdks: false
+    development_environment: dev-containers
+
+  excluded_host_tools:
+    - dotnet
+    - nodejs
+    - terraform
+    - kubectl
+    - helm
+    - aws-cli
+    - project-specific-python-runtimes
+
+dotfiles:
+  enabled: true
+  manager: chezmoi
+
+  repository:
+    provider: github
+    url: null
+    branch: main
+
+  sync:
+    automatic_apply: false
+    automatic_commit: false
+    automatic_push: false
+
+automation:
+  enabled: false
+
+  phases:
+    - 01-installation
+    - 02-system
+    - 03-desktop
+    - 04-development
+    - 05-operations
+    - 06-security
+
+  execution:
+    require_root: true
+    fail_fast: true
+    validate_before_execution: true
+    validate_after_each_phase: true
+    allow_destructive_actions: false
+
+security:
+  secrets_in_repository: false
+  root_ssh_login: false
+  ssh_password_authentication: false
+
+  secure_boot:
+    enabled: false
+    planned: true
+
+  tpm2:
+    enabled: false
+    planned: true
+
+validation:
+  required_before_next_phase: true
+
+  phases:
+    01-installation: 17-first-boot
+    02-system: 12-system-validation
+    03-desktop: 20-desktop-validation
+    04-development: 07-development-validation
+
+metadata:
+  created_at: 2026-07-31
+  last_review: 2026-07-31
+
+  related:
+    - docs/architecture.md
+    - docs/roadmap.md
+    - docs/standards.md
+    - docs/adr/0004-playbook-granularity.md
+    - docs/adr/0005-modularize-configuration-by-capability.md
+```
