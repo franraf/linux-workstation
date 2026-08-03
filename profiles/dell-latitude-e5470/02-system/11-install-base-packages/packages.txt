@@ -1,0 +1,22 @@
+
+```text
+# Network and transfer
+curl
+wget
+rsync
+
+# Archives
+zip
+unzip
+
+# Shell usability
+bash-completion
+
+# System inspection
+htop
+lsof
+tree
+
+# Hardware inspection
+lm_sensors
+```
