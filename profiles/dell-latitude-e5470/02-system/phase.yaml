@@ -1,0 +1,115 @@
+```yaml
+---
+schema_version: "1.0"
+
+phase:
+  id: 02-system
+  name: System
+  description: >
+    Configuração do sistema base da Linux Workstation para o perfil
+    Dell Latitude E5470.
+  status: draft
+
+profile:
+  id: dell-latitude-e5470
+  manifest: ../profile.yaml
+
+execution:
+  order:
+    - 01-update-system
+    - 02-configure-pacman
+    - 03-install-microcode
+    - 04-configure-systemd
+    - 05-configure-time-sync
+    - 06-configure-journald
+    - 07-configure-zram
+    - 08-configure-trim
+    - 09-configure-system-services
+    - 10-configure-ssh
+    - 11-install-base-packages
+    - 12-system-validation
+
+  stop_on_error: true
+  validate_after_each_step: true
+
+steps:
+  01-update-system:
+    mode: script
+    destructive: false
+    playbook: ../../../playbooks/02-system/01-update-system.md
+    entrypoint: 01-update-system/run.sh
+
+  02-configure-pacman:
+    mode: script
+    destructive: false
+    playbook: ../../../playbooks/02-system/02-configure-pacman.md
+    entrypoint: 02-configure-pacman/run.sh
+
+  03-install-microcode:
+    mode: script
+    destructive: false
+    playbook: ../../../playbooks/02-system/03-install-microcode.md
+    entrypoint: 03-install-microcode/run.sh
+
+  04-configure-systemd:
+    mode: script
+    destructive: false
+    playbook: ../../../playbooks/02-system/04-configure-systemd.md
+    entrypoint: 04-configure-systemd/run.sh
+
+  05-configure-time-sync:
+    mode: script
+    destructive: false
+    playbook: ../../../playbooks/02-system/05-configure-time-sync.md
+    entrypoint: 05-configure-time-sync/run.sh
+
+  06-configure-journald:
+    mode: script
+    destructive: false
+    playbook: ../../../playbooks/02-system/06-configure-journald.md
+    entrypoint: 06-configure-journald/run.sh
+
+  07-configure-zram:
+    mode: script
+    destructive: false
+    playbook: ../../../playbooks/02-system/07-configure-zram.md
+    entrypoint: 07-configure-zram/run.sh
+
+  08-configure-trim:
+    mode: script
+    destructive: false
+    playbook: ../../../playbooks/02-system/08-configure-trim.md
+    entrypoint: 08-configure-trim/run.sh
+
+  09-configure-system-services:
+    mode: script
+    destructive: false
+    playbook: ../../../playbooks/02-system/09-configure-system-services.md
+    entrypoint: 09-configure-system-services/run.sh
+
+  10-configure-ssh:
+    mode: script
+    destructive: false
+    playbook: ../../../playbooks/02-system/10-configure-ssh.md
+    entrypoint: 10-configure-ssh/run.sh
+
+  11-install-base-packages:
+    mode: script
+    destructive: false
+    playbook: ../../../playbooks/02-system/11-install-base-packages.md
+    entrypoint: 11-install-base-packages/run.sh
+
+  12-system-validation:
+    mode: validation
+    destructive: false
+    playbook: ../../../playbooks/02-system/12-system-validation.md
+    entrypoint: 12-system-validation/run.sh
+
+validation:
+  final_step: 12-system-validation
+  required_before_next_phase: true
+
+metadata:
+  created_at: 2026-08-01
+  last_review: 2026-08-01
+```
