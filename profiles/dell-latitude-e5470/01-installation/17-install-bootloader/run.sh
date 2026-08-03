@@ -419,6 +419,7 @@ Kernel command line
 -------------------
 
 rd.luks.name=${LUKS_UUID}=cryptroot
+rd.luks.options=${LUKS_UUID}=discard
 root=UUID=${ROOT_UUID}
 rootfstype=btrfs
 rootflags=subvol=@
