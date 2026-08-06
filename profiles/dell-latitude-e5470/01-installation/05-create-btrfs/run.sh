@@ -1,4 +1,3 @@
-```bash
 #!/usr/bin/env bash
 
 set -Eeuo pipefail
@@ -8,6 +7,7 @@ readonly DEFAULT_DEVICE="/dev/mapper/cryptroot"
 readonly DEFAULT_LABEL="linux-workstation"
 
 TARGET_DEVICE="$DEFAULT_DEVICE"
+MAPPER_NAME=""
 FILESYSTEM_LABEL="$DEFAULT_LABEL"
 
 log() {
@@ -120,10 +120,10 @@ parse_arguments() {
 }
 
 canonicalize_device() {
-  TARGET_DEVICE="$(readlink -f "$TARGET_DEVICE")"
-
   [[ -b "$TARGET_DEVICE" ]] ||
     die "Target is not a block device: $TARGET_DEVICE"
+
+  MAPPER_NAME="$(basename "$TARGET_DEVICE")"
 
   [[ "$(blockdev --getro "$TARGET_DEVICE")" == "0" ]] ||
     die "Target device is read-only: $TARGET_DEVICE"
@@ -157,12 +157,26 @@ validate_device_type() {
 }
 
 validate_expected_mapper() {
-  local mapper_name
-
-  mapper_name="$(basename "$TARGET_DEVICE")"
-
-  cryptsetup status "$mapper_name" >/dev/null 2>&1 ||
+  cryptsetup status "$MAPPER_NAME" >/dev/null 2>&1 ||
     die "Target is not an active cryptsetup mapping: $TARGET_DEVICE"
+
+	
+  local backing_device
+
+  backing_device="$(
+    cryptsetup status "$MAPPER_NAME" |
+      awk '$1 == "device:" { print $2; exit  }'
+  )"
+
+  [[ -n "$backing_device" ]] ||
+    die "Unable to determine backing device for $TARGET_DEVICE"
+
+  [[ -b "$backing_device" ]] ||
+    die "Backing device is not a block device: $backing_device"
+
+  log "Active LUKS mapping validated."
+  log "Mapping $TARGET_DEVICE"
+  log "Backing device: $backing_device"
 }
 
 validate_not_mounted() {
@@ -372,4 +386,3 @@ main() {
 }
 
 main "$@"
-```

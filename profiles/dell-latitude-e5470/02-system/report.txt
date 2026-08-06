@@ -1,0 +1,158 @@
+
+== Required commands ==
+
+[PASS] Command available: awk
+[PASS] Command available: bootctl
+[PASS] Command available: findmnt
+[PASS] Command available: fstrim
+[PASS] Command available: grep
+[PASS] Command available: journalctl
+[PASS] Command available: locale
+[PASS] Command available: lsblk
+[PASS] Command available: pacman
+[PASS] Command available: sshd
+[PASS] Command available: swapon
+[PASS] Command available: systemctl
+[PASS] Command available: timedatectl
+[PASS] Command available: uname
+[PASS] Command available: zramctl
+[PASS] Command available: sed
+[PASS] Command available: xargs
+[PASS] Command available: systemd-analyze
+
+== Execution context ==
+
+[PASS] Operating system is Arch Linux
+[PASS] systemd is running
+[PASS] /etc/fstab exists and is not empty
+
+== System update ==
+
+[PASS] Pacman database is consistent
+[PASS] No pending package upgrade detected
+
+== Pacman ==
+
+[PASS] Pacman option matched: ^Color[[:space:]]*$
+[PASS] Pacman option matched: ^VerbosePkgLists[[:space:]]*$
+[PASS] Pacman option matched: ^CheckSpace[[:space:]]*$
+[PASS] Pacman option matched: ^ParallelDownloads[[:space:]]*=[[:space:]]*5[[:space:]]*$
+
+== Microcode ==
+
+[PASS] intel-ucode is installed
+[PASS] Intel microcode image exists
+
+== systemd ==
+
+[PASS] systemd manager configuration is parseable
+
+== Time synchronization ==
+
+[PASS] systemd-timesyncd is enabled
+[PASS] systemd-timesyncd is active
+[PASS] Network time synchronization is enabled
+[PASS] System clock is synchronized
+
+== Journald ==
+
+[PASS] Journald profile configuration exists
+[PASS] Persistent journal directory exists
+[PASS] Journal verification succeeded
+
+== ZRAM ==
+
+[PASS] zram-generator is installed
+[PASS] ZRAM profile configuration exists
+[PASS] /dev/zram0 exists
+[PASS] /dev/zram0 is active as swap
+[PASS] ZRAM device can be inspected
+
+== TRIM ==
+
+[PASS] fstrim.timer is enabled
+[PASS] fstrim.timer is active
+[PASS] Discard is available through the root block device
+
+== Base services ==
+
+[PASS] NetworkManager.service is enabled
+[PASS] bluetooth.service is enabled
+[PASS] sshd.service is enabled
+[PASS] systemd-timesyncd.service is enabled
+[PASS] fstrim.timer is enabled
+[PASS] NetworkManager.service is active
+[PASS] sshd.service is active
+[PASS] systemd-timesyncd.service is active
+[PASS] fstrim.timer is active
+[PASS] bluetooth.service is active
+
+== OpenSSH ==
+
+[PASS] SSH profile configuration exists
+[PASS] sshd configuration syntax is valid
+[PASS] SSH effective setting: permitrootlogin no
+[PASS] SSH effective setting: pubkeyauthentication yes
+[PASS] SSH effective setting: passwordauthentication yes
+[PASS] SSH effective setting: permitemptypasswords no
+[PASS] SSH effective setting: kbdinteractiveauthentication no
+[PASS] SSH effective setting: x11forwarding no
+
+== Packages ==
+
+[PASS] Installed package: base
+[PASS] Installed package: linux
+[PASS] Installed package: linux-firmware
+[PASS] Installed package: intel-ucode
+[PASS] Installed package: btrfs-progs
+[PASS] Installed package: cryptsetup
+[PASS] Installed package: networkmanager
+[PASS] Installed package: bluez
+[PASS] Installed package: bluez-utils
+[PASS] Installed package: openssh
+[PASS] Installed package: zram-generator
+[PASS] Installed package: sudo
+[PASS] Installed package: curl
+[PASS] Installed package: wget
+[PASS] Installed package: rsync
+[PASS] Installed package: zip
+[PASS] Installed package: unzip
+[PASS] Installed package: bash-completion
+[PASS] Installed package: htop
+[PASS] Installed package: lsof
+[PASS] Installed package: tree
+[PASS] Installed package: lm_sensors
+
+== Filesystem ==
+
+[PASS] / uses btrfs
+[PASS] /boot uses vfat
+[PASS] /home uses btrfs
+[PASS] /var uses btrfs
+[PASS] /var/log uses btrfs
+[PASS] /var/cache uses btrfs
+[PASS] /var/cache/pacman/pkg uses btrfs
+[PASS] /var/lib/docker uses btrfs
+[PASS] /.snapshots uses btrfs
+
+== Boot ==
+
+[PASS] systemd-boot is installed
+[PASS] LUKS discard option is present in boot entries
+
+== Failed units ==
+
+[PASS] No failed systemd units
+
+========================================
+System validation summary
+========================================
+
+Passed:   97
+Warnings: 1
+Failed:   0
+
+System phase validation completed successfully.
+
+Next phase:
+  03-desktop

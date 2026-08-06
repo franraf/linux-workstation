@@ -1,4 +1,3 @@
-```bash
 #!/usr/bin/env bash
 
 set -Eeuo pipefail
@@ -167,13 +166,13 @@ validate_kernel_preset() {
 }
 
 validate_hooks_available() {
-  local available_hooks
   local hook
-
-  available_hooks="$(mkinitcpio -L)"
+  local hook_path
 
   for hook in "${EXPECTED_HOOKS[@]}"; do
-    grep -Fxq "$hook" <<<"$available_hooks" ||
+    hook_path="/usr/lib/initcpio/install/${hook}"
+
+    [[ -f "$hook_path" ]] ||
       die "Required mkinitcpio hook is unavailable: $hook"
   done
 }
@@ -365,11 +364,11 @@ validate_initramfs_contents() {
   image="$(locate_initramfs_image)"
   contents="$(lsinitcpio "$image")"
 
-  grep -Eq '(^|/)cryptsetup$' <<<"$contents" ||
-    die "cryptsetup was not included in the initramfs."
-
   grep -Eq '(^|/)systemd-cryptsetup$' <<<"$contents" ||
     die "systemd-cryptsetup was not included in the initramfs."
+
+  grep -Eq '(^|/)systemd-cryptsetup-generator$' <<<"$contents" ||
+    die "systemd-cryptsetup-generator was not included in the initramfs."
 
   grep -Eq '(^|/)i915\.ko(\.(xz|zst|gz))?$' <<<"$contents" ||
     die "The i915 module was not included in the initramfs."
@@ -424,4 +423,3 @@ main() {
 }
 
 main "$@"
-```

@@ -238,7 +238,7 @@ mount_top_level() {
 
 list_existing_subvolumes() {
   btrfs subvolume list \
-    --only-in-path \
+    -o \
     "$TEMP_MOUNTPOINT" 2>/dev/null |
     awk '{print $NF}' |
     sort
@@ -319,7 +319,7 @@ validate_subvolumes() {
 
   actual_count="$(
     btrfs subvolume list \
-      --only-in-path \
+      -o \
       "$TEMP_MOUNTPOINT" |
       wc -l
   )"

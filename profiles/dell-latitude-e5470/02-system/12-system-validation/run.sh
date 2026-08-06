@@ -1,5 +1,3 @@
-
-```bash
 #!/usr/bin/env bash
 
 set -Eeuo pipefail
@@ -215,8 +213,7 @@ validate_microcode() {
     fail "/boot/intel-ucode.img is missing"
   fi
 
-  if journalctl -b --no-pager 2>/dev/null |
-     grep -qi microcode; then
+  if journalctl -b -k 2>/dev/null | grep -Ei 'microcode:.*(Current revision|updated|revision)'; then
     pass "Boot journal contains microcode information"
   else
     warn "No microcode message found in current boot journal"
@@ -439,9 +436,26 @@ validate_ssh() {
   )
 
   local setting
+  local option
+  local expected_value
 
   for setting in "${expected[@]}"; do
-    if grep -Fxq "$setting" <<<"$effective_config"; then
+    option="${setting%% *}"
+    expected_value="${setting#* }"
+
+    if awk \
+      -v option="$option" \
+      -v expected_value="$expected_value" '
+        tolower($1) == tolower(option) &&
+	tolower($2) == tolower(expected_value) {
+	  found = 1
+	  exit
+        }
+
+        END {
+	  exit(found ? 0 : 1)
+	}
+      ' <<<"$effective_config"; then
       pass "SSH effective setting: $setting"
     else
       fail "SSH effective setting missing: $setting"
@@ -588,4 +602,3 @@ main() {
 }
 
 main "$@"
-```

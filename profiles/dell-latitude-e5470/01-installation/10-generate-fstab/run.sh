@@ -1,4 +1,3 @@
-```bash
 #!/usr/bin/env bash
 
 set -Eeuo pipefail
@@ -195,9 +194,11 @@ validate_mount_tree() {
 
 validate_mount_sources() {
   local root_source
+  local root_device
   local mountpoint
   local absolute_mountpoint
   local source
+  local source_device
 
   root_source="$(
     findmnt \
@@ -206,6 +207,11 @@ validate_mount_sources() {
       --target "$TARGET_ROOT" |
       xargs
   )"
+
+  root_device="${root_source%%\[*}"
+
+  [[ -b "$root_device" ]] ||
+    die "Unable to determine the root block device: $root_device"
 
   for mountpoint in \
     "/home" \
@@ -226,7 +232,9 @@ validate_mount_sources() {
         xargs
     )"
 
-    [[ "$source" == "$root_source" ]] ||
+    source_device="${source%%\[*}"
+
+    [[ "$source_device" == "$root_device" ]] ||
       die "Unexpected source mounted at $absolute_mountpoint."
   done
 }
@@ -428,14 +436,14 @@ validate_btrfs_entries() {
 
 validate_subvolume_entries() {
   local expected_entries=(
-    "/:subvol=@"
-    "/home:subvol=@home"
-    "/var:subvol=@var"
-    "/var/log:subvol=@var_log"
-    "/var/cache:subvol=@var_cache"
-    "/var/cache/pacman/pkg:subvol=@pkg"
-    "/var/lib/docker:subvol=@docker"
-    "/.snapshots:subvol=@snapshots"
+    "/:subvol=/@"
+    "/home:subvol=/@home"
+    "/var:subvol=/@var"
+    "/var/log:subvol=/@var_log"
+    "/var/cache:subvol=/@var_cache"
+    "/var/cache/pacman/pkg:subvol=/@pkg"
+    "/var/lib/docker:subvol=/@docker"
+    "/.snapshots:subvol=/@snapshots"
   )
 
   local mapping
@@ -454,10 +462,10 @@ validate_subvolume_entries() {
         }
 
         $2 == target {
-          if (
-            "," $4 "," !~
-            "," expected ","
-          ) {
+	  options = "," $4 ","
+	  expected_value = "," expected ","
+
+	  if (index(options,expected_value) == 0) {
             exit 1
           }
 
@@ -541,4 +549,3 @@ main() {
 }
 
 main "$@"
-```

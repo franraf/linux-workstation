@@ -1,4 +1,3 @@
-```bash
 #!/usr/bin/env bash
 
 set -Eeuo pipefail
@@ -83,6 +82,7 @@ require_commands() {
     systemctl
     find
     sed
+    ssh-keygen
   )
 
   local command_name
@@ -254,6 +254,27 @@ validate_configuration_file() {
     die "X11Forwarding policy is incorrect."
 }
 
+ensure_host_keys() {
+  local existing_keys
+
+  existing_keys="$(
+    find /etc/ssh \
+      -maxdepth 1 \
+      -type f \
+      -name 'ssh_host_*_key' \
+      -print
+  )"
+
+  if [[ -n "$existing_keys" ]]; then
+    log "OPENSSH host keys already exist."
+    return
+  fi
+
+  log "Generating OpenSSH host keys."
+
+  ssh-keygen -A
+}
+
 validate_sshd_syntax() {
   log "Validating sshd configuration syntax."
 
@@ -266,23 +287,32 @@ validate_effective_configuration() {
 
   effective_config="$(sshd -T)"
 
-  grep -Fxq 'permitrootlogin no' <<<"$effective_config" ||
-    die "PermitRootLogin=no is not effective."
+  validate_sshd_option() {
+    local option="$1"
+    local expected="$2"
 
-  grep -Fxq 'pubkeyauthentication yes' <<<"$effective_config" ||
-    die "PubkeyAuthentication=yes is not effective."
+    awk \
+      -v option="$option" \
+      -v expected="$expected" '
+        tolower($1) == tolower(option) &&
+	tolower($2) == tolower(expected) {
+          found = 1
+	  exit
+	}
 
-  grep -Fxq 'passwordauthentication yes' <<<"$effective_config" ||
-    die "PasswordAuthentication=yes is not effective."
+        END {
+	  exit(found ? 0 : 1)
+        }
+      ' <<<"$effective_config" ||
+      die "${option}=${expected} is not effective."
+  }
 
-  grep -Fxq 'permitemptypasswords no' <<<"$effective_config" ||
-    die "PermitEmptyPasswords=no is not effective."
-
-  grep -Fxq 'kbdinteractiveauthentication no' <<<"$effective_config" ||
-    die "KbdInteractiveAuthentication=no is not effective."
-
-  grep -Fxq 'x11forwarding no' <<<"$effective_config" ||
-    die "X11Forwarding=no is not effective."
+  validate_sshd_option "PermitRootLogin" "no"
+  validate_sshd_option "PubkeyAuthentication" "yes"
+  validate_sshd_option "PasswordAuthentication" "yes"
+  validate_sshd_option "PermitEmptyPasswords" "no"
+  validate_sshd_option "KbdInteractiveAuthentication" "no"
+  validate_sshd_option "X11Forwarding" "no"
 }
 
 enable_service() {
@@ -336,8 +366,8 @@ show_result() {
   printf '\nEffective policy:\n'
 
   sshd -T |
-    grep -E \
-      '^(permitrootlogin|pubkeyauthentication|passwordauthentication|permitemptypasswords|kbdinteractiveauthentication|x11forwarding) ' |
+    grep -Ei \
+      '^(permitrootlogin|pubkeyauthentication|passwordauthentication|permitemptypasswords|kbdinteractiveauthentication|x11forwarding)[[:space:]]' |
     sed 's/^/  /'
 
   printf '\nNext step:\n'
@@ -356,6 +386,7 @@ main() {
   validate_package
   write_configuration
   validate_configuration_file
+  ensure_host_keys
   validate_sshd_syntax
   validate_effective_configuration
   enable_service
@@ -366,4 +397,3 @@ main() {
 }
 
 main "$@"
-```

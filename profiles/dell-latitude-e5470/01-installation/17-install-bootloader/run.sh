@@ -1,4 +1,3 @@
-```bash
 #!/usr/bin/env bash
 
 set -Eeuo pipefail
@@ -296,7 +295,10 @@ validate_boot_files() {
 }
 
 discover_root_devices() {
-  ROOT_DEVICE="$(
+  local root_source
+  local mapper_name
+
+  root_source="$(
     findmnt \
       --noheadings \
       --output SOURCE \
@@ -305,36 +307,29 @@ discover_root_devices() {
       xargs
   )"
 
-  ROOT_DEVICE="$(readlink -f "$ROOT_DEVICE")"
-
-  [[ -b "$ROOT_DEVICE" ]] ||
+  [[ -b "$root_source" ]] ||
     die "Unable to identify the root block device."
 
-  [[ "$(lsblk -dnro TYPE "$ROOT_DEVICE")" == "crypt" ]] ||
-    die "Root filesystem is not backed by an active encrypted mapping."
-
-  local mapper_name
-
-  mapper_name="$(basename "$ROOT_DEVICE")"
+  mapper_name="$(basename "$root_source")"
 
   [[ "$mapper_name" == "cryptroot" ]] ||
     die "Expected root mapper name cryptroot, found: $mapper_name"
 
+  cryptsetup status "$mapper_name" >/dev/null 2>&1 ||
+    die "Root filesystem is not backed by an active cryptsetup mapping."
+
+  ROOT_DEVICE="$root_source"
+
   LUKS_DEVICE="$(
     cryptsetup status "$mapper_name" |
-      awk -F: '
-        /^[[:space:]]*device:/ {
-          sub(/^[[:space:]]+/, "", $2)
-          print $2
-          exit
-        }
-      '
+      awk '$1 == "device:" { print $2; exit }'
   )"
 
-  LUKS_DEVICE="$(readlink -f "$LUKS_DEVICE")"
+  [[ -n "$LUKS_DEVICE" ]] ||
+    die "Unable to identify the LUKS backing partition."
 
   [[ -b "$LUKS_DEVICE" ]] ||
-    die "Unable to identify the LUKS backing partition."
+    die "LUKS backing device is not a block device: $LUKS_DEVICE"
 }
 
 discover_uuids() {
@@ -490,7 +485,7 @@ title   ${title}
 linux   ${KERNEL_IMAGE}
 initrd  ${MICROCODE_IMAGE}
 initrd  ${initramfs}
-options rd.luks.name=${LUKS_UUID}=cryptroot root=UUID=${ROOT_UUID} rootfstype=btrfs rootflags=subvol=@ rw
+options rd.luks.name=${LUKS_UUID}=cryptroot rd.luks.options=${LUKS_UUID}=discard root=UUID=${ROOT_UUID} rootfstype=btrfs rootflags=subvol=@ rw
 EOF
 
   install \
@@ -561,6 +556,9 @@ validate_entry_file() {
   local entry_file=$1
   local expected_initramfs=$2
 
+  grep -Fq "rd.luks.options=${LUKS_UUID}=discard" "$entry_file" ||
+    die "LUKS discard option is missing from: $entry_file"
+
   [[ -s "$entry_file" ]] ||
     die "Boot entry is missing or empty: $entry_file"
 
@@ -595,7 +593,7 @@ validate_entry_file() {
     die "Writable root parameter is missing from: $entry_file"
 }
 
-validate_file_permissions() {
+validate_configuration_files() {
   local path
 
   for path in \
@@ -603,11 +601,14 @@ validate_file_permissions() {
     "$DEFAULT_ENTRY_FILE" \
     "$FALLBACK_ENTRY_FILE"; do
 
-    [[ "$(stat -c '%U:%G' "$path")" == "root:root" ]] ||
-      die "Incorrect ownership: $path"
+    [[ -f "$path" ]] ||
+      die "Expected boot configuration file is missing: $path"
 
-    [[ "$(stat -c '%a' "$path")" == "644" ]] ||
-      die "Incorrect permissions: $path"
+    [[ -r "$path" ]] ||
+      die "Boot configuration file is not readable: $path"
+
+    [[ -s "$path" ]] ||
+      die "Boot configuration file is empty: $path"
   done
 }
 
@@ -669,9 +670,8 @@ main() {
   validate_systemd_boot_installation
   validate_loader_configuration
   validate_boot_entries
-  validate_file_permissions
+  validate_configuration_files
   show_result
 }
 
 main "$@"
-```

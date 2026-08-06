@@ -1,4 +1,3 @@
-```bash
 #!/usr/bin/env bash
 
 set -Eeuo pipefail
@@ -142,6 +141,7 @@ validate_not_in_use() {
   while read -r device; do
     mountpoints="$(
       lsblk \
+	--list \
         --noheadings \
         --output MOUNTPOINTS \
         "$device" |
@@ -150,7 +150,7 @@ validate_not_in_use() {
 
     [[ -z "$mountpoints" ]] ||
       die "Device is mounted and cannot be erased: $device"
-  done < <(lsblk --noheadings --paths --output NAME "$TARGET_DISK")
+  done < <(lsblk --noheadings --list --paths --output NAME "$TARGET_DISK")
 
   swap_devices="$(swapon --noheadings --raw --show=NAME 2>/dev/null || true)"
 
@@ -160,7 +160,7 @@ validate_not_in_use() {
     if grep -Fxq "$device" <<<"$swap_devices"; then
       die "Device is active as swap and cannot be erased: $device"
     fi
-  done < <(lsblk --noheadings --paths --output NAME "$TARGET_DISK")
+  done < <(lsblk --noheadings --list --paths --output NAME "$TARGET_DISK")
 }
 
 validate_not_running_system_disk() {
@@ -174,6 +174,7 @@ validate_not_running_system_disk() {
   root_parent="$(
     lsblk \
       --noheadings \
+      --list \
       --nodeps \
       --output PKNAME \
       "$root_source" 2>/dev/null |
@@ -249,6 +250,7 @@ wipe_existing_signatures() {
   mapfile -t devices < <(
     lsblk \
       --noheadings \
+      --list \
       --paths \
       --output NAME \
       "$TARGET_DISK" |
@@ -291,6 +293,7 @@ validate_partition_table() {
 
   partition_count="$(
     lsblk \
+      --list \
       --noheadings \
       --output TYPE \
       "$TARGET_DISK" |
@@ -302,6 +305,7 @@ validate_partition_table() {
 
   efi_count="$(
     lsblk \
+      --list \
       --noheadings \
       --output PARTTYPE \
       "$TARGET_DISK" |
@@ -311,6 +315,7 @@ validate_partition_table() {
 
   luks_count="$(
     lsblk \
+      --list \
       --noheadings \
       --output PARTTYPE \
       "$TARGET_DISK" |
@@ -356,4 +361,3 @@ main() {
 }
 
 main "$@"
-```

@@ -1,4 +1,3 @@
-```bash
 #!/usr/bin/env bash
 
 set -Eeuo pipefail
@@ -387,4 +386,3 @@ main() {
 }
 
 main "$@"
-```

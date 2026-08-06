@@ -1,4 +1,3 @@
-```bash
 #!/usr/bin/env bash
 
 set -Eeuo pipefail
@@ -241,11 +240,18 @@ activate_zram() {
   log "Starting ZRAM device."
 
   systemctl restart "$ZRAM_UNIT"
+
+  log "Activating ZRAM swap"
+
+  systemctl start "$ZRAM_SWAP_UNIT"
 }
 
-validate_setup_unit() {
+validate_setup_units() {
   systemctl is-active --quiet "$ZRAM_UNIT" ||
     die "${ZRAM_UNIT} is not active."
+
+  systemctl is-active --quiet "$ZRAM_SWAP_UNIT" ||
+    die "${ZRAM_SWAP_UNIT} is not active."
 }
 
 validate_device() {
@@ -347,11 +353,10 @@ main() {
   validate_configuration_file
   reload_systemd
   activate_zram
-  validate_setup_unit
+  validate_setup_units
   validate_device
   validate_swap
   show_result
 }
 
 main "$@"
-```

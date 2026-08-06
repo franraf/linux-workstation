@@ -1,5 +1,3 @@
-
-```bash
 #!/usr/bin/env bash
 
 set -Eeuo pipefail
@@ -58,7 +56,6 @@ require_root() {
 require_commands() {
   local commands=(
     grep
-    lscpu
     pacman
     stat
     awk
@@ -102,15 +99,17 @@ validate_cpu_vendor() {
   local vendor
 
   vendor="$(
-    lscpu |
-      awk -F: '
-        /^Vendor ID:/ {
-          gsub(/^[[:space:]]+/, "", $2)
-          print $2
-          exit
-        }
-      '
+    awk -F: '
+      $1 ~ /^[[:space:]]*vendor_id[[:space:]]*$/ {
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2)
+        print $2
+        exit
+      }
+    ' /proc/cpuinfo
   )"
+
+  [[ -n "$vendor" ]] ||
+    die "Unable to determine CPU vendor."
 
   [[ "$vendor" == "GenuineIntel" ]] ||
     die "Expected an Intel CPU, found vendor: ${vendor:-unknown}"
@@ -213,4 +212,3 @@ main() {
 }
 
 main "$@"
-```
