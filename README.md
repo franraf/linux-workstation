@@ -1,127 +1,112 @@
 # Linux Workstation
 
-Uma plataforma pessoal para construção, manutenção e reprodução de uma workstation Linux moderna baseada em Arch Linux.
+Uma plataforma pessoal para construir, manter e reproduzir uma workstation Linux moderna baseada em Arch Linux.
 
-Este projeto trata a infraestrutura de uma máquina pessoal com princípios normalmente aplicados a projetos profissionais de software e infraestrutura: decisões documentadas, mudanças versionadas, automação testável e procedimentos reproduzíveis.
+O projeto aplica à máquina pessoal princípios de engenharia normalmente usados em software e infraestrutura: decisões arquiteturais documentadas, fontes versionadas, automação reproduzível, validação objetiva e evolução incremental.
 
 O primeiro perfil de hardware suportado é o **Dell Latitude E5470**.
 
 ## Objetivo
 
-Construir um ambiente Linux que seja:
+Construir um ambiente Linux que seja reproduzível, documentado, seguro, modular, compreensível e simples de manter, com desenvolvimento baseado principalmente em containers.
 
-* reproduzível;
-* documentado;
-* seguro;
-* simples de manter;
-* modular;
-* compreensível antes de ser automatizado;
-* preparado para desenvolvimento com containers.
-
-O repositório é a fonte da verdade. Toda configuração relevante da workstation deve estar documentada ou representada por arquivos versionados.
+O repositório representa o estado esperado da workstation. Configuração relevante não deve depender de ajustes manuais desconhecidos pelo projeto.
 
 ## Princípios
 
-1. Documentação antes da implementação.
+1. Decisões antes da implementação.
 2. Automação depois do entendimento.
 3. Mudanças pequenas, testáveis e reversíveis.
-4. Preferência por ferramentas oficiais e consolidadas.
-5. Decisões arquiteturais registradas em ADRs.
+4. Preferência por fontes oficiais e consolidadas.
+5. Exceções externas exigem justificativa documentada.
 6. Scripts idempotentes sempre que possível.
-7. Comandos destrutivos exigem validação explícita.
-8. Toda implementação importante deve possuir uma forma de verificação.
-9. Problemas encontrados devem gerar documentação ou melhorias.
-10. Novas ideias entram no roadmap e não interrompem a implementação sem justificativa técnica.
+7. Operações destrutivas exigem confirmação explícita.
+8. Toda capacidade importante deve possuir validação.
+9. Problemas encontrados devem melhorar documentação, scripts ou testes.
+10. O roadmap registra ideias futuras sem interromper a fase atual.
 
-## Arquitetura inicial
+## Arquitetura atual
 
-A primeira implementação utiliza:
+A implementação principal utiliza:
 
-* Arch Linux;
-* UEFI;
-* GPT;
-* systemd-boot;
-* LUKS2;
-* Btrfs;
+* Arch Linux, UEFI e GPT;
+* LUKS2 e Btrfs;
+* systemd-boot e mkinitcpio;
 * Snapper;
-* Hyprland;
-* PipeWire;
-* NetworkManager;
-* Docker;
-* Docker Compose;
-* Dev Containers;
-* Zsh;
-* Oh My Zsh;
-* Starship;
-* chezmoi.
+* NetworkManager, PipeWire e BlueZ;
+* Hyprland, Waybar, Hyprlock, Hypridle, Rofi, SwayNC, Kitty e Thunar;
+* greetd + tuigreet para autenticação da sessão;
+* Git, Zsh, Oh My Zsh e Starship;
+* Visual Studio Code oficial da Microsoft;
+* Docker Engine, Compose, Buildx e Dev Containers;
+* ferramentas CLI globais de produtividade;
+* Codex CLI como ferramenta global de IA.
 
-O sistema utilizará a GPU Intel integrada como padrão. A GPU AMD dedicada permanecerá disponível para uso sob demanda.
+A GPU Intel integrada é o padrão. A GPU AMD dedicada permanece disponível para uso sob demanda.
 
 ## Organização
 
 ```text
 linux-workstation/
 ├── .github/
-│   └── workflows/
 ├── docs/
 │   ├── adr/
 │   ├── architecture.md
-│   ├── changelog.md
-│   ├── glossary.md
-│   ├── maintenance.md
-│   ├── recovery.md
 │   ├── roadmap.md
-│   ├── standards.md
-│   └── troubleshooting.md
+│   └── standards.md
+├── dotfiles/
 ├── examples/
 ├── packages/
 ├── playbooks/
 ├── profiles/
 │   └── dell-latitude-e5470/
 ├── scripts/
+│   └── lib/
 ├── system/
 ├── tests/
 ├── .gitignore
-├── LICENSE
+├── LICENCE
 ├── Makefile
 └── README.md
 ```
 
 ### `docs/adr/`
 
-Registra decisões arquiteturais, seus contextos, alternativas e consequências.
+Registra decisões arquiteturais, contexto, alternativas e consequências.
 
 ### `playbooks/`
 
-Contém procedimentos reproduzíveis para instalação, configuração, recuperação e manutenção.
+Descreve os procedimentos e a intenção operacional de cada etapa.
 
 ### `packages/`
 
-Mantém listas declarativas de pacotes utilizados no sistema.
-
-### `profiles/`
-
-Contém configurações e particularidades de cada perfil de hardware.
-
-### `scripts/`
-
-Contém automações idempotentes ou semiautomatizadas.
+Contém as fontes declarativas de pacotes, organizadas por capacidade ou fase.
 
 ### `system/`
 
-Armazena configurações do sistema operacional e serviços.
+Contém configurações canônicas reproduzíveis da workstation e de ferramentas instaladas no host.
+
+### `dotfiles/`
+
+Contém configurações de usuário que fazem parte desta workstation e podem ser distribuídas para o home pelo respectivo script.
+
+### `profiles/`
+
+Contém manifests e orquestradores específicos de hardware. Os `run.sh` devem consumir fontes compartilhadas em vez de duplicá-las localmente.
+
+### `scripts/lib/`
+
+Contém funções Bash reutilizáveis para requisitos, pacotes, configuração de usuário, armazenamento e configuração do sistema.
 
 ### `tests/`
 
-Contém verificações para validar o estado da workstation.
+Contém gates estáticos e verificações de runtime. Uma fase só deve ser considerada concluída após sua validação aplicável.
 
 ### `examples/`
 
-Reúne exemplos reutilizáveis de configurações, containers e ferramentas.
+Reserva exemplos reutilizáveis que não sejam fontes canônicas de configuração.
 
 ## Perfil inicial
-
-O primeiro perfil suportado é:
 
 ```text
 profiles/dell-latitude-e5470/
@@ -136,86 +121,55 @@ Hardware principal:
 * AMD Radeon R7 M360;
 * Wi-Fi Qualcomm Atheros.
 
-Não haverá dual boot.
+Não há dual boot.
 
 ## Estratégia de desenvolvimento
 
-As ferramentas fundamentais permanecerão instaladas no host:
+O host contém apenas ferramentas globais da workstation. Runtimes e SDKs específicos de projetos permanecem preferencialmente em Dev Containers.
 
-* Git;
-* Docker;
-* Docker Compose;
-* Visual Studio Code;
-* OpenSSH.
+Ferramentas como `.NET`, Node.js, Terraform, kubectl, Helm, AWS CLI e runtimes Python de projeto não fazem parte da baseline do host.
 
-SDKs, CLIs e runtimes de desenvolvimento deverão permanecer preferencialmente em Dev Containers.
+O uso de pacotes oficiais do Arch continua sendo o padrão. Distribuições upstream são exceções explícitas e documentadas, como o Visual Studio Code oficial da Microsoft.
 
-Isso inclui, entre outros:
+## Fases
 
-* .NET;
-* Node.js;
-* Terraform;
-* kubectl;
-* Helm;
-* AWS CLI;
-* runtimes Python utilizados pelos projetos.
+O perfil atual está dividido em:
 
-## Status
+```text
+01-installation
+02-system
+03-desktop
+04-development
+```
 
-O projeto está em desenvolvimento.
+Cada fase possui um `phase.yaml`, playbooks correspondentes e uma etapa de validação. Fases futuras devem entrar no roadmap antes de serem implementadas.
 
-A versão `v0.1.0-foundation` representa a conclusão da fundação estrutural e o congelamento da arquitetura inicial.
+## Estado atual
 
-Nenhum playbook deve ser considerado estável até ser validado em uma instalação real.
+As fases 01, 02 e 03 já possuem implementação e validações versionadas. A fase 04 está implementada e aguarda validação completa na workstation antes de ser considerada concluída.
 
-## Conceitos arquiteturais
-
-O projeto utiliza alguns conceitos centrais:
-
-* **Architecture First:** decisões precedem implementações.
-* **Documentation as Source of Truth:** o repositório representa o estado esperado da workstation.
-* **Incremental Evolution:** mudanças são pequenas, verificáveis e reversíveis.
-* **Single Responsibility:** cada artefato possui uma responsabilidade clara.
-* **Capabilities over Implementations:** capacidades são permanentes; ferramentas podem ser substituídas.
-* **Modular Configuration:** configurações são separadas por responsabilidade.
-* **Validate Before Advancing:** cada fase termina com uma validação objetiva.
-
-Consulte [`docs/architecture.md`](docs/architecture.md) e os [Architecture Decision Records](docs/adr/) para detalhes.
+Consulte [`docs/roadmap.md`](docs/roadmap.md) para o estado das milestones e [`docs/architecture.md`](docs/architecture.md) para os limites arquiteturais.
 
 ## Como começar
 
-A documentação deverá ser seguida nesta ordem:
-
-1. Ler a arquitetura e os ADRs.
-2. Identificar o perfil de hardware.
-3. Preparar a mídia de instalação.
-4. Executar os playbooks na ordem indicada.
-5. Validar a instalação com os testes.
-6. Registrar problemas e lições aprendidas.
-
-Os playbooks de instalação serão adicionados progressivamente.
+1. Leia a arquitetura, os padrões e os ADRs.
+2. Identifique o perfil de hardware.
+3. Execute os playbooks na ordem declarada no `phase.yaml`.
+4. Use os `run.sh` como orquestradores das fontes versionadas.
+5. Execute o gate final da fase antes de avançar.
+6. Registre qualquer divergência encontrada durante a execução real.
 
 ## Estados dos documentos
 
-Os documentos podem utilizar os seguintes estados:
-
-* `Draft`: conteúdo em elaboração;
+* `Draft`: conteúdo em elaboração ou ainda não validado completamente;
 * `Review`: pronto para revisão;
-* `Stable`: validado em uma instalação real;
+* `Stable`: validado e adotado;
 * `Deprecated`: mantido apenas como referência histórica.
 
 ## Contribuições
 
-Toda mudança relevante deve:
-
-1. respeitar os princípios do projeto;
-2. possuir uma justificativa clara;
-3. atualizar a documentação correspondente;
-4. incluir ou atualizar verificações quando aplicável;
-5. ser registrada por meio de commits pequenos e objetivos.
-
-Decisões arquiteturais devem ser registradas em um ADR antes da implementação.
+Toda mudança relevante deve respeitar os princípios do projeto, atualizar a documentação correspondente e incluir ou ajustar validações quando aplicável. Decisões arquiteturais devem ser registradas em ADR antes de sua implementação.
 
 ## Licença
 
-Consulte o arquivo [`LICENSE`](LICENSE).
+Consulte o arquivo [`LICENCE`](LICENCE).
