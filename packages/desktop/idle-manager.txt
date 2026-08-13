@@ -1,0 +1,2 @@
+# Hypridle idle manager
+hypridle
