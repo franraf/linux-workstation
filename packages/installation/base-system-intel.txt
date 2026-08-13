@@ -1,0 +1,29 @@
+# Core system
+base
+linux
+linux-firmware
+
+# Intel CPU firmware
+intel-ucode
+
+# Storage and encryption
+btrfs-progs
+cryptsetup
+dosfstools
+
+# Networking
+networkmanager
+
+# Administration
+sudo
+openssh
+
+# Boot support
+efibootmgr
+
+# Essential utilities
+vim
+less
+man-db
+man-pages
+texinfo
