@@ -1,16 +1,15 @@
 ---
-
 title: Instalar pacotes base
-version: 1.0
+version: 1.1
 status: Draft
 author: Rafael
-last_review: 2026-07-31
+last_review: 2026-08-12
 related:
 
 * architecture.md
 * ADR-0002
-* ADR-0003
 * ADR-0004
+* ADR-0007
 
 ---
 
@@ -19,8 +18,6 @@ related:
 ## Objetivo
 
 Instalar o conjunto de utilitários fundamentais utilizados pela workstation para administração, diagnóstico e operação diária.
-
-Ao final deste playbook, o sistema possuirá todas as ferramentas básicas previstas pela arquitetura do projeto.
 
 ---
 
@@ -36,37 +33,35 @@ Ao final deste playbook, o sistema possuirá todas as ferramentas básicas previ
 
 Ao concluir este playbook:
 
-* os utilitários básicos estarão instalados;
+* os utilitários básicos declarados pelo projeto estarão instalados;
 * ferramentas essenciais de administração estarão disponíveis;
-* o sistema estará preparado para as próximas fases da configuração.
+* a lista de pacotes será rastreável e reutilizável por scripts e validações.
 
 ---
 
 # Procedimento
 
-## 1. Revisar a lista de pacotes
+## 1. Revisar a lista declarativa
 
-Confirme a relação de pacotes base definida pelo projeto.
+Mantenha a relação de pacotes base em arquivo de dados sob `packages/`, conforme a ADR-0007.
 
-Evite instalar ferramentas que pertençam a fases posteriores.
+O arquivo declara **o que** pertence à capacidade. O procedimento e os scripts definem **como** instalar e validar.
 
----
+Evite duplicar a lista de pacotes dentro de scripts ou documentação operacional.
 
 ## 2. Instalar os pacotes
 
-Instale os utilitários previstos pela arquitetura.
+Instale os pacotes declarados utilizando Pacman.
 
----
+Pacotes ausentes da lista não deverão ser adicionados implicitamente durante a execução.
 
 ## 3. Validar dependências
 
-Confirme que todos os pacotes foram instalados corretamente e que não existem conflitos.
-
----
+Confirme que todos os pacotes declarados foram instalados e que não existem conflitos ou dependências quebradas.
 
 ## 4. Confirmar disponibilidade
 
-Verifique que as ferramentas instaladas podem ser executadas normalmente.
+Verifique que as ferramentas essenciais podem ser executadas normalmente.
 
 ---
 
@@ -74,7 +69,8 @@ Verifique que as ferramentas instaladas podem ser executadas normalmente.
 
 Confirme que:
 
-* todos os pacotes previstos foram instalados;
+* a lista declarativa existe e é a fonte da verdade da capacidade;
+* todos os pacotes declarados estão instalados;
 * não existem dependências quebradas;
 * as ferramentas essenciais estão disponíveis;
 * o sistema permanece íntegro após a instalação.
@@ -83,27 +79,21 @@ Confirme que:
 
 # Problemas comuns
 
+## Lista ausente ou vazia
+
+Não mantenha uma segunda lista no script. Corrija o arquivo declarativo no repositório.
+
 ## Pacote indisponível
 
-Confirme se o pacote pertence aos repositórios oficiais adotados pelo projeto.
-
----
+Confirme se o nome está correto e se pertence aos repositórios oficiais adotados pelo projeto.
 
 ## Dependências em conflito
 
-Revise a instalação antes de prosseguir para a próxima fase.
-
----
-
-## Ferramenta não encontrada
-
-Confirme se a instalação foi concluída corretamente e se o pacote corresponde ao esperado.
+Revise a composição da lista antes de prosseguir.
 
 ---
 
 # Próximo playbook
-
-Após instalar os pacotes base, prossiga para:
 
 ```text
 12-system-validation.md
@@ -115,9 +105,10 @@ Após instalar os pacotes base, prossiga para:
 
 * Arch Wiki — General recommendations
 * Arch Wiki — Pacman
+* ADR-0007 — Listas declarativas de pacotes
 
 ---
 
 # Lições aprendidas
 
-Registrar aqui alterações na composição do conjunto de pacotes base ou observações relevantes identificadas durante a evolução da workstation.
+A lista de pacotes deve permanecer separada da lógica de instalação para reduzir divergências entre documentação, scripts e validação.
