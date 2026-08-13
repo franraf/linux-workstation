@@ -1,16 +1,17 @@
 ---
-
 title: Configurar sessão gráfica
-version: 1.0
+version: 1.1
 status: Draft
 author: Rafael
-last_review: 2026-07-31
+last_review: 2026-08-12
 related:
 
 * architecture.md
 * ADR-0002
-* ADR-0003
 * ADR-0004
+* ADR-0005
+* ADR-0006
+* ADR-0008
 
 ---
 
@@ -18,20 +19,18 @@ related:
 
 ## Objetivo
 
-Configurar a sessão gráfica da workstation, estabelecendo o comportamento padrão do ambiente Wayland e integrando os componentes fundamentais do desktop.
+Configurar a sessão gráfica da workstation com Hyprland, estabelecendo os parâmetros globais, a estrutura modular da configuração e os pontos de integração utilizados pelas capacidades posteriores do desktop.
 
-Ao final deste playbook, a sessão gráfica estará preparada para inicializar de forma consistente, servindo como base para a configuração individual de cada capacidade do ambiente.
-
-A implementação adotada pelo projeto utiliza o **Hyprland** como compositor e orquestrador da sessão.
+Este playbook configura a sessão. Ele não instala componentes e não substitui os playbooks específicos de Waybar, Hyprlock, Hypridle, Rofi, SwayNC, Kitty, Thunar ou aparência.
 
 ---
 
 # Pré-requisitos
 
-* Todas as capacidades da fase de instalação do desktop concluídas.
-* Stack gráfica validada.
-* Compositor instalado.
-* Componentes fundamentais do desktop instalados.
+* Stack gráfica instalada e validada.
+* Hyprland instalado.
+* Capacidades básicas da fase de instalação do desktop concluídas.
+* Usuário normal disponível para executar a sessão.
 
 ---
 
@@ -39,74 +38,107 @@ A implementação adotada pelo projeto utiliza o **Hyprland** como compositor e 
 
 Ao concluir este playbook:
 
-* a sessão gráfica estará operacional;
-* os componentes essenciais serão inicializados automaticamente;
-* as configurações globais da sessão estarão definidas;
-* a workstation estará pronta para personalização das capacidades individuais.
+* `~/.config/hypr/hyprland.conf` será o ponto de entrada da configuração;
+* a configuração estará modularizada em `~/.config/hypr/conf.d/`;
+* ambiente, monitor, input, comportamento geral e autostart possuirão responsabilidades separadas;
+* a sessão poderá ser iniciada com `start-hyprland`;
+* a estrutura estará preparada para os playbooks seguintes.
 
 ---
 
 # Procedimento
 
-## 1. Revisar a estrutura da sessão
+## 1. Criar o ponto de entrada
 
-Analise a organização da configuração da sessão gráfica.
+Utilize `~/.config/hypr/hyprland.conf` como arquivo principal da sessão.
 
-Defina uma estrutura que favoreça modularidade, manutenção e evolução futura.
+O arquivo principal deverá atuar apenas como agregador dos módulos, conforme a ADR-0005.
 
----
+## 2. Organizar os fragments do Hyprland
 
-## 2. Configurar parâmetros globais
+A estrutura base adotada pela fase desktop é:
 
-Defina os parâmetros que afetam toda a sessão gráfica.
+```text
+~/.config/hypr/
+├── hyprland.conf
+└── conf.d/
+    ├── 10-environment.conf
+    ├── 20-monitor.conf
+    ├── 30-input.conf
+    ├── 40-general.conf
+    └── 50-autostart.conf
+```
 
-Considere, quando aplicável:
+Capacidades posteriores poderão adicionar novos fragments numerados, mantendo uma responsabilidade por arquivo.
 
-* monitores;
-* resolução;
-* escala;
-* layout de teclado;
-* idioma;
-* dispositivos apontadores;
-* variáveis de ambiente.
+Na configuração consolidada da fase, os fragments adicionais previstos são:
 
----
+```text
+60-session-lock.conf
+70-keybindings.conf
+80-appearance.conf
+```
 
-## 3. Configurar a inicialização da sessão
+A numeração define a ordem de carregamento e não deve ser reutilizada para responsabilidades diferentes.
 
-Defina quais componentes deverão iniciar automaticamente durante a abertura da sessão gráfica.
+## 3. Configurar o ambiente
 
-Evite iniciar componentes ainda não configurados.
+Utilize `10-environment.conf` para variáveis de ambiente da sessão Wayland.
 
----
+Não misture keybindings, autostart ou aparência neste arquivo.
 
-## 4. Definir políticas globais
+## 4. Configurar monitor e input
 
-Configure o comportamento geral da sessão.
+Utilize:
 
-Considere aspectos como:
+```text
+20-monitor.conf
+30-input.conf
+```
 
-* gerenciamento de janelas;
-* espaços de trabalho;
-* foco;
-* regras globais;
-* comportamento da sessão.
+As opções devem ser compatíveis com a versão instalada do Hyprland e validadas com o próprio compositor.
 
----
+No Hyprland atualmente validado pelo projeto, a opção de tap do touchpad utiliza:
 
-## 5. Organizar os arquivos de configuração
+```text
+tap-to-click
+```
 
-Estruture os arquivos de configuração de forma modular.
+Não utilizar `tap_to_click` sem validar suporte na versão instalada.
 
-Evite concentrar toda a configuração em um único arquivo.
+## 5. Configurar comportamento geral
 
----
+Utilize `40-general.conf` para opções gerais do compositor.
 
-## 6. Validar a inicialização
+Não configure opções removidas ou sem efeito na versão atual. Em particular, `dwindle:pseudotile` não faz parte da baseline validada e não deverá ser gerado.
 
-Inicie uma nova sessão gráfica.
+## 6. Preparar o autostart
 
-Confirme que todos os componentes essenciais são carregados corretamente.
+Utilize exclusivamente:
+
+```text
+50-autostart.conf
+```
+
+para processos que devem iniciar com a sessão.
+
+Cada playbook posterior adicionará apenas o componente de sua responsabilidade.
+
+## 7. Validar a configuração
+
+Inicie o Hyprland como usuário normal com:
+
+```text
+start-hyprland
+```
+
+Dentro da sessão, valide a configuração com:
+
+```text
+hyprctl configerrors
+```
+
+O resultado esperado é `ok` ou ausência de erros, conforme a versão instalada.
 
 ---
 
@@ -114,43 +146,32 @@ Confirme que todos os componentes essenciais são carregados corretamente.
 
 Confirme que:
 
-* a sessão inicia corretamente;
-* os componentes fundamentais são carregados automaticamente;
-* não existem erros críticos durante a inicialização;
-* as variáveis globais estão disponíveis;
-* a estrutura de configuração permanece organizada e modular.
+* `hyprland.conf` carrega os fragments esperados;
+* os arquivos pertencem ao usuário da sessão;
+* `start-hyprland` inicia o compositor sem erro crítico;
+* `hyprctl configerrors` não apresenta erros;
+* monitor e dispositivos de entrada são reconhecidos;
+* nenhuma capacidade posterior foi configurada prematuramente.
 
 ---
 
 # Problemas comuns
 
-## Sessão não inicia
+## O Hyprland carrega outro arquivo de configuração
 
-Revise a configuração global antes de prosseguir.
+Verifique os logs de inicialização e confirme qual arquivo foi selecionado. Arquivos alternativos antigos, como `hyprland.lua`, não deverão permanecer ativos quando a baseline adotada utiliza `hyprland.conf`.
 
----
+## Opção de configuração inexistente
+
+Confirme a opção diretamente com `hyprctl getoption` e consulte a documentação correspondente à versão instalada antes de alterar a baseline.
 
 ## Componentes não inicializam
 
-Confirme que os componentes foram instalados e registrados corretamente na sessão.
-
----
-
-## Configuração desorganizada
-
-Reestruture os arquivos antes de adicionar novas personalizações.
-
----
-
-## Erros durante o login
-
-Analise os registros da sessão gráfica e identifique o componente responsável pela falha.
+Confirme se o componente já foi configurado pelo playbook responsável e se sua entrada existe em `50-autostart.conf`.
 
 ---
 
 # Próximo playbook
-
-Após validar a sessão gráfica, prossiga para:
 
 ```text
 12-configure-status-bar.md
@@ -161,11 +182,13 @@ Após validar a sessão gráfica, prossiga para:
 # Referências
 
 * Documentação oficial do Hyprland
-* Arch Wiki — Wayland
-* XDG Base Directory Specification
+* Arch Wiki — Hyprland
+* ADR-0005 — Modularizar configurações por capacidade
+* ADR-0006 — Separação entre instalação e configuração
+* ADR-0008 — Autenticação e inicialização da sessão gráfica
 
 ---
 
 # Lições aprendidas
 
-Registrar aqui melhorias na organização da sessão, alterações estruturais, decisões sobre modularização ou observações relevantes identificadas durante a evolução da workstation.
+Durante a validação com Hyprland 0.56.2, opções aparentemente equivalentes apresentaram diferenças de compatibilidade. A configuração deve ser validada pelo compositor em execução, e correções encontradas durante a instalação precisam retornar ao repositório para evitar regressões.
