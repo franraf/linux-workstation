@@ -1,0 +1,4 @@
+# Runtime libraries required by the upstream Visual Studio Code Linux build
+libsecret
+libx11
+libxkbfile
