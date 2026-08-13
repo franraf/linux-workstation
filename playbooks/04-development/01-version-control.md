@@ -1,171 +1,89 @@
 ---
-
 title: Controle de versão
-version: 1.0
+version: 1.1
 status: Draft
 author: Rafael
-last_review: 2026-07-31
+last_review: 2026-08-13
 related:
-
-* architecture.md
-* ADR-0002
-* ADR-0003
-* ADR-0004
-* ADR-0005
-
+  - architecture.md
+  - ADR-0005
+  - ADR-0009
 ---
 
 # 01 — Controle de versão
 
 ## Objetivo
 
-Adicionar à workstation a capacidade de controle de versão distribuído para gerenciamento de código-fonte.
+Instalar e configurar o Git no host sem misturar runtimes ou SDKs específicos de projeto à workstation.
 
-Ao final deste playbook, a workstation estará preparada para clonar, versionar, revisar e publicar projetos utilizando Git.
+A autenticação remota adotada pelo perfil é SSH. Identidade Git e chaves privadas são dados do usuário e não pertencem ao repositório.
 
-A implementação adotada pelo projeto utiliza o **Git**.
+## Fonte canônica
 
----
+A lista de pacotes desta capacidade é:
 
-# Pré-requisitos
+```text
+packages/development/version-control.txt
+```
 
-* Fase **03-desktop** concluída e validada.
-* Sessão gráfica operacional.
-* Conectividade de rede disponível.
+A implementação específica do perfil é:
 
----
+```text
+profiles/dell-latitude-e5470/04-development/01-version-control/run.sh
+```
 
-# Resultado esperado
+## Pré-requisitos
 
-Ao concluir este playbook:
+* `03-desktop` concluída e validada;
+* sistema Arch Linux inicializado com systemd;
+* conectividade com os repositórios oficiais;
+* usuário normal com acesso administrativo.
 
-* o Git estará instalado;
-* a identidade do usuário estará configurada;
-* a autenticação para repositórios remotos estará definida;
-* o ambiente seguirá os padrões de controle de versão estabelecidos pelo projeto.
+## Procedimento
 
----
+Execute a partir do diretório do passo:
 
-# Procedimento
+```bash
+sudo ./run.sh
+```
 
-## 1. Instalar o Git
+Quando chamado via `sudo`, o script usa `SUDO_USER` como usuário alvo. Também é possível informar explicitamente:
 
-Instale a implementação adotada pela arquitetura da workstation.
+```bash
+sudo ./run.sh --user rafael --name "Nome para commits" --email "email@example.com"
+```
 
----
+Se `user.name` e `user.email` já existirem na configuração global do usuário, eles são preservados como valores padrão. Se estiverem ausentes, o script solicita os valores interativamente.
 
-## 2. Configurar a identidade
+O script:
 
-Defina a identidade utilizada nos commits.
+1. instala os pacotes declarados em `packages/development/version-control.txt`;
+2. aplica a identidade Git ao usuário normal, nunca ao `root`;
+3. define `init.defaultBranch=main`;
+4. garante `~/.ssh` com permissão `0700`;
+5. detecta se já existe uma chave pública SSH.
 
-Considere:
+## Política de SSH
 
-* nome;
-* endereço de e-mail;
-* editor padrão;
-* branch inicial.
+O passo **não gera chave SSH automaticamente** e não armazena credenciais no repositório. Caso nenhuma chave pública exista, a execução termina com warning e a criação/registro da chave no GitHub permanece uma ação explícita do usuário.
 
----
+## Verificação
 
-## 3. Configurar o comportamento
+Confirme:
 
-Defina os padrões de operação do Git.
+```bash
+git --version
+git config --global --get user.name
+git config --global --get user.email
+git config --global --get init.defaultBranch
+```
 
-Considere aspectos como:
+O resultado esperado é Git disponível, identidade definida para o usuário correto e branch inicial `main`.
 
-* estratégia de merge;
-* tratamento de conflitos;
-* paginação;
-* cores;
-* aliases;
-* assinaturas de commit, quando utilizadas.
+A autenticação remota será validada de forma completa no gate `07-development-validation`.
 
----
-
-## 4. Configurar autenticação
-
-Defina a estratégia de autenticação para repositórios remotos.
-
-Considere mecanismos como:
-
-* SSH;
-* HTTPS com gerenciador de credenciais;
-* tokens de acesso.
-
-A estratégia adotada deverá estar documentada e ser reproduzível.
-
----
-
-## 5. Validar a operação
-
-Execute operações básicas utilizando um repositório de teste.
-
-Confirme que é possível:
-
-* inicializar um repositório;
-* criar commits;
-* clonar repositórios;
-* autenticar em um repositório remoto;
-* enviar e receber alterações.
-
----
-
-# Verificação
-
-Confirme que:
-
-* o Git está instalado;
-* a identidade do usuário está configurada;
-* a autenticação funciona corretamente;
-* operações locais e remotas são executadas sem erros;
-* o ambiente segue os padrões definidos pelo projeto.
-
----
-
-# Problemas comuns
-
-## Falha de autenticação
-
-Revise o método de autenticação adotado e confirme que as credenciais estão corretamente configuradas.
-
----
-
-## Identidade incorreta
-
-Confirme as configurações globais e locais do Git.
-
----
-
-## Editor não abre
-
-Verifique se o editor configurado está instalado e acessível pelo ambiente.
-
----
-
-## Conflitos inesperados
-
-Revise a estratégia de merge definida pelo projeto.
-
----
-
-# Próximo playbook
-
-Após validar a capacidade de controle de versão, prossiga para:
+## Próximo playbook
 
 ```text
 02-shell-environment.md
 ```
-
----
-
-# Referências
-
-* Documentação oficial do Git
-* Pro Git
-* ADR-0005 — Modularize Configuration by Capability
-
----
-
-# Lições aprendidas
-
-Registrar aqui alterações na estratégia de autenticação, novos aliases, ajustes de comportamento ou observações relevantes identificadas durante a evolução da workstation.
