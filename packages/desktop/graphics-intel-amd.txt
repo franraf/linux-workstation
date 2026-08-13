@@ -13,6 +13,6 @@ vulkan-radeon
 vulkan-tools
 
 # Video acceleration
+# Mesa provides the libva-mesa-driver capability for AMD/Nouveau.
 intel-media-driver
-libva-mesa-driver
 libva-utils
