@@ -1,16 +1,17 @@
 ---
-
 title: Instalar central de notificações
-version: 1.0
+version: 1.1
 status: Draft
 author: Rafael
-last_review: 2026-07-31
+last_review: 2026-08-12
 related:
 
 * architecture.md
 * ADR-0002
-* ADR-0003
 * ADR-0004
+* ADR-0006
+* ADR-0007
+* ADR-0009
 
 ---
 
@@ -18,119 +19,48 @@ related:
 
 ## Objetivo
 
-Instalar uma central de notificações para a sessão gráfica da workstation.
+Instalar o Sway Notification Center (SwayNC) como central de notificações da sessão Wayland, sem configurar aparência, widgets, atalhos ou autostart.
 
-Ao final deste playbook, o ambiente gráfico será capaz de receber, armazenar e apresentar notificações ao usuário.
+## Pré-requisitos
 
-A implementação adotada pelo projeto utiliza o **Sway Notification Center (SwayNC)**.
-
----
-
-# Pré-requisitos
-
-* Stack gráfica instalada.
+* `02-install-compositor` concluído;
 * Hyprland instalado.
 
----
+## Fonte declarativa
 
-# Resultado esperado
+```text
+packages/desktop/notification-center.txt
+```
 
-Ao concluir este playbook:
+Baseline:
 
-* a central de notificações estará instalada;
-* suas dependências obrigatórias estarão disponíveis;
-* o componente poderá ser iniciado durante uma sessão gráfica.
+```text
+swaync
+```
 
----
+## Procedimento
 
-# Procedimento
+1. Validar que o compositor está instalado.
+2. Carregar e validar a lista declarativa.
+3. Instalar somente os pacotes ausentes.
+4. Confirmar os executáveis `swaync` e `swaync-client`.
+5. Confirmar que a versão pode ser consultada.
 
-## 1. Revisar os componentes necessários
-
-Confirme as dependências obrigatórias para utilização da central de notificações.
-
----
-
-## 2. Instalar o componente
-
-Instale a implementação definida pela arquitetura do projeto.
-
----
-
-## 3. Validar a instalação
-
-Confirme que os componentes esperados foram instalados corretamente.
-
----
-
-## 4. Executar um teste funcional
-
-Inicie a central de notificações durante uma sessão de teste.
-
-O objetivo é apenas confirmar que o componente inicia corretamente.
-
-Não configure aparência, widgets ou comportamento nesta etapa.
-
----
-
-## 5. Validar o recebimento de notificações
-
-Gere uma notificação de teste.
-
-Confirme que ela é apresentada corretamente ao usuário.
-
----
-
-# Verificação
+## Verificação
 
 Confirme que:
 
-* a central de notificações está instalada;
-* o componente inicia corretamente;
-* notificações podem ser recebidas;
-* notificações podem ser descartadas;
-* não existem erros críticos durante sua execução.
+* o pacote `swaync` está instalado;
+* `swaync` está disponível;
+* `swaync-client` está disponível;
+* a versão pode ser consultada.
 
----
+## Fora de escopo
 
-# Problemas comuns
+Não iniciar o daemon nem enviar notificações como requisito desta etapa. Recebimento, descarte, atalhos e integração com a sessão serão validados após configuração.
 
-## O componente não inicia
-
-Revise as dependências e confirme que a sessão Wayland está operacional.
-
----
-
-## Notificações não aparecem
-
-Verifique se o serviço de notificações foi iniciado corretamente e se não existe outro daemon concorrente.
-
----
-
-## Erros durante a execução
-
-Analise os registros da sessão antes de prosseguir.
-
----
-
-# Próximo playbook
-
-Após validar a central de notificações, prossiga para:
+## Próximo playbook
 
 ```text
 08-install-terminal-emulator.md
 ```
-
----
-
-# Referências
-
-* Documentação oficial do Sway Notification Center
-* Desktop Notifications Specification
-* Arch Wiki — Wayland
-
----
-
-# Lições aprendidas
-
-Registrar aqui incompatibilidades, dependências adicionais ou observações relevantes identificadas durante a instalação da central de notificações.
