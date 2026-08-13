@@ -1,6 +1,6 @@
 ---
 title: Configurar aparência
-version: 1.1
+version: 1.2
 status: Draft
 author: Rafael
 last_review: 2026-08-12
@@ -128,7 +128,7 @@ Ajuste a baseline visual antes de concluir a fase.
 # Próximo playbook
 
 ```text
-20-desktop-validation.md
+20-install-session-login.md
 ```
 
 ---
