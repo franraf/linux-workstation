@@ -1,0 +1,1 @@
+-- Session-lock bindings are configured by playbook 14.
