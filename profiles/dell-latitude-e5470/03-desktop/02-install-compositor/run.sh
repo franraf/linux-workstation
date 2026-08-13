@@ -67,13 +67,12 @@ validate_compositor() {
 
   require_commands Hyprland start-hyprland
 
-  local version_output
-  version_output="$(Hyprland --version 2>&1)" || die "Hyprland did not return version information."
+  local package_version
+  package_version="$(pacman -Q hyprland 2>/dev/null)" || die "Could not query the installed Hyprland package."
+  [[ -n "$package_version" ]] || die "Hyprland package query returned empty output."
 
-  [[ -n "$version_output" ]] || die "Hyprland returned empty version information."
-
-  printf '\nHyprland version:\n'
-  printf '%s\n' "$version_output" | sed 's/^/  /'
+  printf '\nHyprland package:\n  %s\n' "$package_version"
+  printf '\nRuntime version will be validated later from the authenticated graphical user session.\n'
 }
 
 show_result() {
