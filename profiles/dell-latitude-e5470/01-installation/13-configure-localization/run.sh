@@ -3,37 +3,23 @@
 set -Eeuo pipefail
 
 readonly SCRIPT_NAME="$(basename "$0")"
-
+readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
 readonly DEFAULT_PRIMARY_LOCALE="pt_BR.UTF-8"
 readonly DEFAULT_FALLBACK_LOCALE="en_US.UTF-8"
 readonly DEFAULT_CONSOLE_KEYMAP="br-abnt2"
+readonly LOCALE_TEMPLATE="${REPO_ROOT}/system/localization/locale.conf.template"
+readonly VCONSOLE_TEMPLATE="${REPO_ROOT}/system/localization/vconsole.conf.template"
 
 PRIMARY_LOCALE="$DEFAULT_PRIMARY_LOCALE"
 FALLBACK_LOCALE="$DEFAULT_FALLBACK_LOCALE"
 CONSOLE_KEYMAP="$DEFAULT_CONSOLE_KEYMAP"
 
-log() {
-  printf '[INFO] %s\n' "$*"
-}
+source "${REPO_ROOT}/scripts/lib/logging.sh"
+source "${REPO_ROOT}/scripts/lib/requirements.sh"
+source "${REPO_ROOT}/scripts/lib/installation.sh"
 
-die() {
-  printf '[ERROR] %s\n' "$*" >&2
-  exit 1
-}
-
-on_error() {
-  local exit_code=$?
-  local line_number=$1
-
-  printf '[ERROR] %s failed at line %s with exit code %s.\n' \
-    "$SCRIPT_NAME" \
-    "$line_number" \
-    "$exit_code" >&2
-
-  exit "$exit_code"
-}
-
-trap 'on_error "$LINENO"' ERR
+setup_error_trap "$SCRIPT_NAME"
 
 usage() {
   cat <<EOF
@@ -41,330 +27,145 @@ Usage:
   ./$SCRIPT_NAME [options]
 
 Options:
-  --primary-locale <locale>
-      Primary system locale.
-      Default: ${DEFAULT_PRIMARY_LOCALE}
-
-  --fallback-locale <locale>
-      Additional generated fallback locale.
-      Default: ${DEFAULT_FALLBACK_LOCALE}
-
-  --keymap <keymap>
-      Persistent virtual-console keymap.
-      Default: ${DEFAULT_CONSOLE_KEYMAP}
-
+  --primary-locale <locale>   Default: ${DEFAULT_PRIMARY_LOCALE}
+  --fallback-locale <locale>  Default: ${DEFAULT_FALLBACK_LOCALE}
+  --keymap <keymap>           Default: ${DEFAULT_CONSOLE_KEYMAP}
   --help, -h
-      Show this help message.
-
-Examples:
-  ./$SCRIPT_NAME
-
-  ./$SCRIPT_NAME \\
-    --primary-locale pt_BR.UTF-8 \\
-    --fallback-locale en_US.UTF-8 \\
-    --keymap br-abnt2
-
-This script must run inside the installed Arch Linux system.
 EOF
-}
-
-require_root() {
-  [[ $EUID -eq 0 ]] ||
-    die "This script must be executed as root."
-}
-
-require_commands() {
-  local commands=(
-    grep
-    install
-    locale
-    locale-gen
-    localedef
-    sed
-    find
-    tr
-    cat
-  )
-
-  local command_name
-
-  for command_name in "${commands[@]}"; do
-    command -v "$command_name" >/dev/null 2>&1 ||
-      die "Required command not found: $command_name"
-  done
 }
 
 parse_arguments() {
   while (($# > 0)); do
     case "$1" in
-      --primary-locale)
-        (($# >= 2)) ||
-          die "Missing value for --primary-locale."
-
-        PRIMARY_LOCALE="$2"
-        shift 2
-        ;;
-
-      --fallback-locale)
-        (($# >= 2)) ||
-          die "Missing value for --fallback-locale."
-
-        FALLBACK_LOCALE="$2"
-        shift 2
-        ;;
-
-      --keymap)
-        (($# >= 2)) ||
-          die "Missing value for --keymap."
-
-        CONSOLE_KEYMAP="$2"
-        shift 2
-        ;;
-
-      --help | -h)
-        usage
-        exit 0
-        ;;
-
-      *)
-        die "Unknown argument: $1"
-        ;;
+      --primary-locale) (($# >= 2)) || die "Missing value for --primary-locale."; PRIMARY_LOCALE="$2"; shift 2 ;;
+      --fallback-locale) (($# >= 2)) || die "Missing value for --fallback-locale."; FALLBACK_LOCALE="$2"; shift 2 ;;
+      --keymap) (($# >= 2)) || die "Missing value for --keymap."; CONSOLE_KEYMAP="$2"; shift 2 ;;
+      --help | -h) usage; exit 0 ;;
+      *) die "Unknown argument: $1" ;;
     esac
   done
 }
 
-validate_execution_context() {
-  [[ -f /etc/os-release ]] ||
-    die "The current root does not contain /etc/os-release."
-
-  grep -q '^ID=arch$' /etc/os-release ||
-    die "This script must run inside the installed Arch Linux system."
-
-  [[ -s /etc/fstab ]] ||
-    die "The installed-system fstab is missing or empty."
-
-  [[ -f /etc/locale.gen ]] ||
-    die "/etc/locale.gen is unavailable."
-}
-
 validate_locale_name() {
-  local locale_name=$1
-
-  [[ "$locale_name" =~ ^[a-z]{2}_[A-Z]{2}\.UTF-8$ ]] ||
-    die "Unsupported locale format: $locale_name"
+  local locale_name="$1"
+  [[ "$locale_name" =~ ^[a-z]{2}_[A-Z]{2}\.UTF-8$ ]] || die "Unsupported locale format: $locale_name"
 }
 
 locale_gen_entry() {
-  local locale_name=$1
-
-  printf '%s UTF-8' "$locale_name"
+  printf '%s UTF-8' "$1"
 }
 
 validate_locale_available() {
-  local locale_name=$1
+  local locale_name="$1"
   local entry
-
   entry="$(locale_gen_entry "$locale_name")"
-
-  grep -Eq \
-    "^[#[:space:]]*${entry//./\\.}[[:space:]]*$" \
-    /etc/locale.gen ||
+  grep -Eq "^[#[:space:]]*${entry//./\\.}[[:space:]]*$" /etc/locale.gen ||
     die "Locale is not available in /etc/locale.gen: $locale_name"
 }
 
 validate_keymap() {
-  [[ -n "$CONSOLE_KEYMAP" ]] ||
-    die "Console keymap cannot be empty."
-
-  [[ "$CONSOLE_KEYMAP" =~ ^[a-zA-Z0-9._+-]+$ ]] ||
-    die "Console keymap contains unsupported characters."
-
+  [[ "$CONSOLE_KEYMAP" =~ ^[a-zA-Z0-9._+-]+$ ]] || die "Console keymap contains unsupported characters."
   local keymap_file
-
-  keymap_file="$(
-    find /usr/share/kbd/keymaps \
-      -type f \
-      \( \
-        -name "${CONSOLE_KEYMAP}.map" \
-        -o -name "${CONSOLE_KEYMAP}.map.gz" \
-      \) \
-      -print \
-      -quit 2>/dev/null || true
-  )"
-
-  [[ -n "$keymap_file" ]] ||
-    die "Console keymap was not found: $CONSOLE_KEYMAP"
+  keymap_file="$(find /usr/share/kbd/keymaps -type f \( -name "${CONSOLE_KEYMAP}.map" -o -name "${CONSOLE_KEYMAP}.map.gz" \) -print -quit 2>/dev/null || true)"
+  [[ -n "$keymap_file" ]] || die "Console keymap was not found: $CONSOLE_KEYMAP"
 }
 
 enable_locale() {
-  local locale_name=$1
-  local escaped_locale
-
-  escaped_locale="${locale_name//./\\.}"
-
-  log "Enabling locale: $locale_name"
-
-  sed -Ei \
-    "s|^[#[:space:]]*(${escaped_locale}[[:space:]]+UTF-8)[[:space:]]*$|\1|" \
-    /etc/locale.gen
+  local locale_name="$1"
+  local escaped_locale="${locale_name//./\\.}"
+  sed -Ei "s|^[#[:space:]]*(${escaped_locale}[[:space:]]+UTF-8)[[:space:]]*$|\1|" /etc/locale.gen
 }
 
 show_plan() {
-  cat <<EOF
-
-Localization configuration
---------------------------
-
-Primary locale:  $PRIMARY_LOCALE
-Fallback locale: $FALLBACK_LOCALE
-Console keymap:  $CONSOLE_KEYMAP
-
-Files
------
-
-/etc/locale.gen
-/etc/locale.conf
-/etc/vconsole.conf
-EOF
+  printf '\nLocalization configuration\n'
+  printf '%s\n\n' '--------------------------'
+  printf 'Primary locale:\n  %s\n\n' "$PRIMARY_LOCALE"
+  printf 'Fallback locale:\n  %s\n\n' "$FALLBACK_LOCALE"
+  printf 'Console keymap:\n  %s\n\n' "$CONSOLE_KEYMAP"
+  printf 'Templates:\n  %s\n  %s\n' "$LOCALE_TEMPLATE" "$VCONSOLE_TEMPLATE"
 }
 
 confirm_configuration() {
   local confirmation
-
   printf '\nType LOCALE to apply the localization configuration: '
   read -r confirmation
-
-  [[ "$confirmation" == "LOCALE" ]] ||
-    die "Localization configuration was not authorized."
+  [[ "$confirmation" == "LOCALE" ]] || die "Localization configuration was not authorized."
 }
 
 configure_locale_generation() {
   enable_locale "$PRIMARY_LOCALE"
-
-  if [[ "$FALLBACK_LOCALE" != "$PRIMARY_LOCALE" ]]; then
-    enable_locale "$FALLBACK_LOCALE"
-  fi
-}
-
-generate_locales() {
-  log "Generating configured locales."
-
+  [[ "$FALLBACK_LOCALE" == "$PRIMARY_LOCALE" ]] || enable_locale "$FALLBACK_LOCALE"
   locale-gen
 }
 
-configure_locale_conf() {
-  log "Writing /etc/locale.conf."
+render_template() {
+  local source_file="$1"
+  local target_file="$2"
+  shift 2
+  local temporary_file
+  temporary_file="$(mktemp)"
+  trap 'rm -f "$temporary_file"' RETURN
+  cp "$source_file" "$temporary_file"
 
-  printf 'LANG=%s\n' "$PRIMARY_LOCALE" |
-    install \
-      --mode 0644 \
-      /dev/stdin \
-      /etc/locale.conf
+  local placeholder
+  local value
+  while (($# >= 2)); do
+    placeholder="$1"
+    value="$2"
+    sed -i "s|${placeholder}|${value}|g" "$temporary_file"
+    shift 2
+  done
+
+  install --mode 0644 "$temporary_file" "$target_file"
+  rm -f "$temporary_file"
+  trap - RETURN
 }
 
-configure_vconsole() {
-  log "Writing /etc/vconsole.conf."
-
-  printf 'KEYMAP=%s\n' "$CONSOLE_KEYMAP" |
-    install \
-      --mode 0644 \
-      /dev/stdin \
-      /etc/vconsole.conf
+configure_files() {
+  render_template "$LOCALE_TEMPLATE" /etc/locale.conf '@PRIMARY_LOCALE@' "$PRIMARY_LOCALE"
+  render_template "$VCONSOLE_TEMPLATE" /etc/vconsole.conf '@CONSOLE_KEYMAP@' "$CONSOLE_KEYMAP"
 }
 
 normalize_locale_name() {
-  local locale_name=$1
-
-  printf '%s\n' "$locale_name" |
-    tr '[:upper:]' '[:lower:]' |
-    sed 's/utf-8/utf8/'
+  printf '%s\n' "$1" | tr '[:upper:]' '[:lower:]' | sed 's/utf-8/utf8/'
 }
 
 validate_generated_locale() {
-  local locale_name=$1
-  local normalized_locale
-  local generated_locales
-
-  normalized_locale="$(normalize_locale_name "$locale_name")"
-
-  generated_locales="$(
-    localedef --list-archive |
-      tr '[:upper:]' '[:lower:]'
-  )"
-
-  grep -Fxq "$normalized_locale" <<<"$generated_locales" ||
-    die "Locale was not generated successfully: $locale_name"
+  local normalized
+  normalized="$(normalize_locale_name "$1")"
+  local generated
+  generated="$(localedef --list-archive | tr '[:upper:]' '[:lower:]')"
+  grep -Fxq "$normalized" <<<"$generated" || die "Locale was not generated successfully: $1"
 }
 
-validate_locale_gen_entries() {
+validate_configuration() {
   local locale_name
-  local escaped_locale
-
+  local escaped
   for locale_name in "$PRIMARY_LOCALE" "$FALLBACK_LOCALE"; do
-    escaped_locale="${locale_name//./\\.}"
-
-    grep -Eq \
-      "^${escaped_locale}[[:space:]]+UTF-8[[:space:]]*$" \
-      /etc/locale.gen ||
+    escaped="${locale_name//./\\.}"
+    grep -Eq "^${escaped}[[:space:]]+UTF-8[[:space:]]*$" /etc/locale.gen ||
       die "Locale remains disabled in /etc/locale.gen: $locale_name"
   done
-}
 
-validate_locale_conf() {
-  [[ -f /etc/locale.conf ]] ||
-    die "/etc/locale.conf was not created."
-
-  [[ "$(cat /etc/locale.conf)" == "LANG=$PRIMARY_LOCALE" ]] ||
-    die "/etc/locale.conf does not contain the expected LANG value."
-}
-
-validate_vconsole_conf() {
-  [[ -f /etc/vconsole.conf ]] ||
-    die "/etc/vconsole.conf was not created."
-
-  [[ "$(cat /etc/vconsole.conf)" == "KEYMAP=$CONSOLE_KEYMAP" ]] ||
-    die "/etc/vconsole.conf does not contain the expected keymap."
-}
-
-validate_locale_environment() {
-  local charmap
-
-  charmap="$(
-    LANG="$PRIMARY_LOCALE" \
-      LC_ALL= \
-      locale charmap
-  )"
-
-  [[ "$charmap" == "UTF-8" ]] ||
-    die "Primary locale does not use UTF-8."
+  [[ "$(cat /etc/locale.conf)" == "LANG=$PRIMARY_LOCALE" ]] || die "/etc/locale.conf is incorrect."
+  [[ "$(cat /etc/vconsole.conf)" == "KEYMAP=$CONSOLE_KEYMAP" ]] || die "/etc/vconsole.conf is incorrect."
+  [[ "$(LANG="$PRIMARY_LOCALE" LC_ALL= locale charmap)" == "UTF-8" ]] || die "Primary locale does not use UTF-8."
 }
 
 show_result() {
   printf '\nLocalization configured successfully.\n\n'
-
-  printf '/etc/locale.conf:\n'
-  sed 's/^/  /' /etc/locale.conf
-
-  printf '\n/etc/vconsole.conf:\n'
-  sed 's/^/  /' /etc/vconsole.conf
-
-  printf '\nGenerated locales:\n'
-  printf '  %s\n' "$PRIMARY_LOCALE"
-
-  if [[ "$FALLBACK_LOCALE" != "$PRIMARY_LOCALE" ]]; then
-    printf '  %s\n' "$FALLBACK_LOCALE"
-  fi
-
-  printf '\nNext step:\n'
-  printf '  14-configure-network\n'
+  printf '/etc/locale.conf:\n  %s\n' "$(cat /etc/locale.conf)"
+  printf '/etc/vconsole.conf:\n  %s\n' "$(cat /etc/vconsole.conf)"
+  printf '\nNext step:\n  14-configure-network\n'
 }
 
 main() {
   require_root
-  require_commands
+  require_commands cat cp find grep install locale locale-gen localedef mktemp sed tr
   parse_arguments "$@"
-
-  validate_execution_context
+  require_installed_arch_context
+  [[ -f /etc/locale.gen ]] || die "/etc/locale.gen is unavailable."
+  [[ -s "$LOCALE_TEMPLATE" && -s "$VCONSOLE_TEMPLATE" ]] || die "Localization templates are missing."
   validate_locale_name "$PRIMARY_LOCALE"
   validate_locale_name "$FALLBACK_LOCALE"
   validate_locale_available "$PRIMARY_LOCALE"
@@ -373,15 +174,10 @@ main() {
   show_plan
   confirm_configuration
   configure_locale_generation
-  generate_locales
-  configure_locale_conf
-  configure_vconsole
-  validate_locale_gen_entries
+  configure_files
   validate_generated_locale "$PRIMARY_LOCALE"
   validate_generated_locale "$FALLBACK_LOCALE"
-  validate_locale_conf
-  validate_vconsole_conf
-  validate_locale_environment
+  validate_configuration
   show_result
 }
 
