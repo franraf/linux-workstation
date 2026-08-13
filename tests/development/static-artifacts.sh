@@ -17,14 +17,27 @@ require_file() {
 
 bash "${REPO_ROOT}/tests/repository/phase-consistency.sh"
 
-for step in 01-version-control 02-shell-environment 03-code-editor 04-container-platform 05-cli-tools; do
+for step in \
+  01-version-control \
+  02-shell-environment \
+  03-code-editor \
+  04-container-platform \
+  05-cli-tools \
+  06-ai-tooling \
+  07-development-validation; do
   run_file="${PROFILE_ROOT}/${step}/run.sh"
   require_file "$run_file"
   bash -n "$run_file" || fail "Bash syntax failed: ${run_file#${REPO_ROOT}/}"
   pass "Bash syntax: ${run_file#${REPO_ROOT}/}"
 done
 
-for package_file in version-control shell code-editor-runtime container-platform cli-tools; do
+for package_file in \
+  version-control \
+  shell \
+  code-editor-runtime \
+  container-platform \
+  cli-tools \
+  ai-tooling; do
   require_file "${REPO_ROOT}/packages/development/${package_file}.txt"
 done
 
@@ -40,7 +53,11 @@ done
 require_file "${REPO_ROOT}/dotfiles/vscode/settings.json"
 require_file "${REPO_ROOT}/dotfiles/vscode/keybindings.json"
 require_file "${REPO_ROOT}/dotfiles/vscode/extensions.txt"
+require_file "${REPO_ROOT}/dotfiles/ai/README.md"
 require_file "${REPO_ROOT}/docs/adr/0011-upstream-distribution-exception.md"
+require_file "${REPO_ROOT}/tests/development/runtime-state.sh"
+bash -n "${REPO_ROOT}/tests/development/runtime-state.sh" || fail "Runtime validator syntax failed"
+pass "Bash syntax: tests/development/runtime-state.sh"
 require_file "${PROFILE_ROOT}/phase.yaml"
 
 if head -n 1 "${REPO_ROOT}/profiles/dell-latitude-e5470/profile.yaml" | grep -q '^```'; then
