@@ -1,14 +1,12 @@
 ---
 title: Plataforma de contêineres
-version: 1.1
+version: 1.2
 status: Draft
 author: Rafael
-last_review: 2026-08-12
+last_review: 2026-08-13
 related:
 
 * architecture.md
-* ADR-0002
-* ADR-0004
 * ADR-0005
 
 ---
@@ -17,127 +15,85 @@ related:
 
 ## Objetivo
 
-Adicionar à workstation uma plataforma de contêineres para execução de ambientes de desenvolvimento isolados, reproduzíveis e portáveis.
+Instalar Docker Engine, Docker Compose e Docker Buildx como plataforma de desenvolvimento isolada da workstation.
 
-A implementação adotada utiliza Docker Engine, Docker Compose e Buildx.
+Runtimes e SDKs específicos de projeto continuam fora do host e devem ser fornecidos preferencialmente por Dev Containers.
 
----
+## Fonte declarativa
 
-# Pré-requisitos
-
-* Ambiente de shell configurado.
-* Editor de código configurado.
-* Controle de versão concluído.
-
----
-
-# Resultado esperado
-
-Ao concluir este playbook:
-
-* a plataforma de contêineres estará instalada e operacional;
-* o usuário autorizado poderá executar contêineres conforme a política definida pelo projeto;
-* Compose e Buildx estarão disponíveis;
-* a integração com Dev Containers poderá ser validada de ponta a ponta.
-
----
-
-# Estrutura da configuração
-
-Mantenha apenas configuração reproduzível e apropriada ao escopo da workstation.
-
-Exemplo:
+Os pacotes pertencentes à capacidade ficam em:
 
 ```text
-dotfiles/
-└── docker/
-    ├── daemon.json
-    └── README.md
+packages/development/container-platform.txt
 ```
 
-Dados do Docker permanecem separados da configuração versionada.
+A lista atual utiliza os pacotes oficiais Arch Linux:
 
----
+* `docker`;
+* `docker-compose`;
+* `docker-buildx`.
 
-# Procedimento
+## Armazenamento
 
-## 1. Instalar a plataforma
+O Docker utiliza o caminho padrão:
 
-Instale Docker Engine, Docker Compose e Buildx conforme a arquitetura.
+```text
+/var/lib/docker
+```
 
-## 2. Configurar a plataforma
+Esse caminho já possui subvolume Btrfs dedicado definido pela fase `01-installation`, portanto este playbook não redefine `data-root` sem necessidade.
 
-Defina inicialização do serviço, permissões do usuário, armazenamento e opções do daemon somente quando necessárias.
+## Procedimento
 
-## 3. Validar operações básicas
+Execute:
 
-Confirme que é possível:
+```bash
+sudo ./04-container-platform/run.sh
+```
 
-* executar um contêiner;
-* construir uma imagem;
-* executar um projeto com Compose.
+O script:
 
-## 4. Integrar com o editor
+1. valida sistema e usuário de destino;
+2. instala apenas os pacotes ausentes;
+3. solicita confirmação `DOCKER`;
+4. habilita e inicia `docker.service`;
+5. valida Engine, Compose e Buildx;
+6. confirma o data root `/var/lib/docker`;
+7. solicita separadamente `DOCKER-GROUP` antes de adicionar o usuário ao grupo `docker`.
 
-Com a plataforma agora operacional, abra um projeto preparado para Dev Containers e confirme que o editor consegue criar ou reutilizar o ambiente e conectar-se ao contêiner.
+## Política de acesso
 
-## 5. Validar o isolamento
+O grupo `docker` concede acesso privilegiado ao daemon. A automação não trata essa associação como uma alteração trivial e exige confirmação específica.
 
-Confirme que dependências específicas de linguagens e projetos permanecem preferencialmente dentro dos ambientes de desenvolvimento, conforme a arquitetura.
+Depois de adicionar o usuário ao grupo, é necessário iniciar uma nova sessão para que terminal e aplicações gráficas herdem a nova associação.
 
----
+## Dev Containers
 
-# Verificação
+A extensão do VS Code foi preparada em `03-code-editor`. A validação ponta a ponta de Dev Containers deve ocorrer depois de uma nova sessão, quando o usuário conseguir acessar o Docker sem `sudo`.
+
+## Verificação
 
 Confirme que:
 
-* o serviço da plataforma está operacional;
-* Docker executa um contêiner de teste;
-* Compose funciona;
-* Buildx está disponível;
-* Dev Containers funcionam no editor;
-* não existem erros críticos durante a operação.
+* `docker.service` está habilitado e ativo;
+* `docker version` funciona;
+* `docker compose version` funciona;
+* `docker buildx version` funciona;
+* `/var/lib/docker` é o data root;
+* o usuário consta no grupo `docker`, quando a autorização foi concedida;
+* após novo login, `docker info` funciona como usuário normal;
+* o VS Code consegue conectar-se a um Dev Container.
 
----
-
-# Problemas comuns
-
-## Serviço indisponível
-
-Confirme instalação, habilitação e logs do serviço.
-
-## Permissões insuficientes
-
-Revise a política de acesso definida pelo projeto antes de alterar grupos ou privilégios.
-
-## Dev Containers não iniciam
-
-Separe o diagnóstico entre plataforma Docker, extensão/editor e configuração do projeto.
-
-## Configuração divergente
-
-Compare o estado local com os arquivos versionados antes de realizar ajustes manuais.
-
----
-
-# Próximo playbook
+## Próximo playbook
 
 ```text
 05-cli-tools.md
 ```
 
----
+## Referências
 
-# Referências
-
-* Documentação oficial do Docker Engine
-* Docker Compose
-* Docker Buildx
+* Arch Linux — docker
+* Arch Linux — docker-compose
+* Arch Linux — docker-buildx
+* Docker Engine documentation
 * Development Containers Specification
-* ADR-0005 — Modularizar configurações por capacidade
-
----
-
-# Lições aprendidas
-
-A validação de Dev Containers pertence naturalmente à etapa em que a plataforma de contêineres já está disponível. O playbook do editor prepara a integração, e este playbook a valida.
