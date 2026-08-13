@@ -53,7 +53,9 @@ show_plan() {
 }
 
 confirm_installation() {
-  ((${#MISSING_PACKAGES[@]} > 0)) || return
+  if ((${#MISSING_PACKAGES[@]} == 0)); then
+    return 0
+  fi
 
   local confirmation
   printf '\nType PACKAGES to install the missing graphics packages: '
