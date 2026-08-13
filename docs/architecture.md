@@ -1,32 +1,33 @@
 ---
-
 title: Arquitetura da workstation
-version: 0.1
+version: 0.2
 status: Draft
 author: Rafael
-last_review: 2026-07-30
+last_review: 2026-08-13
 related:
-
-* ADR-0001
-* ADR-0002
-* ADR-0004
-* ADR-0005
-
+  - ADR-0001
+  - ADR-0002
+  - ADR-0004
+  - ADR-0005
+  - ADR-0006
+  - ADR-0007
+  - ADR-0008
+  - ADR-0009
+  - ADR-0010
+  - ADR-0011
 ---
 
 # Arquitetura da workstation
 
 ## Objetivo
 
-Este documento apresenta a arquitetura geral do projeto `linux-workstation`.
+Este documento descreve a arquitetura geral do projeto `linux-workstation`: responsabilidades de cada camada, estado esperado da workstation e limites que devem ser preservados durante a implementação.
 
-Seu propósito é explicar como os principais componentes da workstation se relacionam, quais responsabilidades pertencem a cada camada e quais limites devem ser preservados durante a implementação.
-
-Detalhes sobre as razões de cada escolha devem ser registrados nos respectivos Architecture Decision Records.
+Razões detalhadas para decisões específicas pertencem aos respectivos ADRs.
 
 ## Visão geral
 
-O projeto é dividido em três camadas principais:
+A workstation é organizada em três camadas funcionais:
 
 ```text
 Infraestrutura
@@ -36,126 +37,87 @@ Sistema
 Usuário
 ```
 
-Cada camada possui responsabilidades distintas.
+Essas camadas descrevem responsabilidades da máquina. A estrutura do repositório é transversal a elas e separa **fontes declarativas**, **orquestração**, **lógica reutilizável** e **validação**.
 
 ### Infraestrutura
 
-Responsável pelos elementos necessários para inicializar, armazenar e recuperar o sistema.
-
-Inclui:
-
-* firmware UEFI;
-* tabela de partições GPT;
-* partição EFI;
-* criptografia LUKS2;
-* filesystem Btrfs;
-* subvolumes;
-* initramfs;
-* kernel;
-* systemd-boot;
-* snapshots;
-* recuperação.
+Inclui firmware UEFI, GPT, EFI, LUKS2, Btrfs, subvolumes, initramfs, kernel, systemd-boot, snapshots e recuperação.
 
 ### Sistema
 
-Responsável pelos serviços e recursos compartilhados da workstation.
-
-Inclui:
-
-* gerenciamento de pacotes;
-* rede;
-* áudio;
-* Bluetooth;
-* energia;
-* gráficos;
-* Docker;
-* OpenSSH;
-* logs;
-* timers;
-* serviços systemd;
-* segurança;
-* manutenção.
+Inclui gerenciamento de pacotes, rede, áudio, Bluetooth, gráficos, serviços systemd, OpenSSH, Docker, logs, timers, segurança e manutenção.
 
 ### Usuário
 
-Responsável pelo ambiente interativo e pelas configurações pessoais.
+Inclui sessão gráfica, shell, editor, ferramentas CLI, configuração do usuário e integrações de desenvolvimento.
 
-Inclui:
+## Modelo do repositório
 
-* Hyprland;
-* Waybar;
-* Kitty;
-* Rofi;
-* SwayNC;
-* Hyprlock;
-* Hypridle;
-* Thunar;
-* Zsh;
-* Oh My Zsh;
-* Starship;
-* tmux;
-* Visual Studio Code;
-* chezmoi;
-* dotfiles.
+As responsabilidades são distribuídas assim:
+
+| Diretório | Responsabilidade |
+| --- | --- |
+| `docs/` | arquitetura, padrões, roadmap e decisões |
+| `playbooks/` | procedimento e intenção operacional |
+| `packages/` | listas declarativas de pacotes |
+| `system/` | configurações canônicas compartilhadas |
+| `dotfiles/` | configurações canônicas de usuário mantidas neste repositório |
+| `profiles/` | manifests e orquestração específica de hardware |
+| `scripts/lib/` | comportamento Bash reutilizável |
+| `tests/` | gates estáticos e validação de runtime |
+| `examples/` | exemplos não canônicos |
+
+Um `run.sh` de profile deve ser pequeno: resolve contexto, carrega fontes compartilhadas, aplica mudanças e valida o resultado. Listas de pacotes, configurações e lógica reutilizável não devem ser duplicadas dentro do profile quando puderem ser compartilhadas.
 
 ## Conceitos arquiteturais centrais
 
-O projeto é orientado por um conjunto de conceitos que guiam sua documentação, implementação e evolução.
-
 ### Architecture First
 
-Decisões arquiteturais relevantes devem ser compreendidas e documentadas antes de sua implementação.
+Decisões relevantes devem ser compreendidas e registradas antes da implementação.
 
-A arquitetura define o estado desejado da workstation. Playbooks, scripts e configurações implementam esse estado.
+### Repository as Source of Truth
 
-### Documentation as Source of Truth
-
-A documentação versionada representa o comportamento esperado da workstation.
-
-Configurações manuais que não estejam documentadas ou representadas no repositório são consideradas dívida técnica.
+O repositório representa o estado esperado da workstation. Ajustes manuais não representados por documentação ou fontes versionadas são dívida técnica.
 
 ### Incremental Evolution
 
-O projeto evolui por meio de mudanças pequenas, verificáveis e reversíveis.
-
-Novas capacidades são introduzidas progressivamente, evitando alterações extensas que dificultem revisão, validação ou recuperação.
+Mudanças devem ser pequenas, verificáveis e reversíveis.
 
 ### Single Responsibility
 
-Cada playbook, script e módulo de configuração deve possuir uma responsabilidade claramente identificável.
-
-A divisão ocorre por responsabilidade técnica e capacidade entregue, não apenas por tamanho de arquivo ou quantidade de comandos.
+Cada playbook, script, módulo e fonte declarativa deve possuir uma responsabilidade clara.
 
 ### Capabilities over Implementations
 
-O projeto documenta capacidades da workstation, enquanto ferramentas específicas são tratadas como implementações substituíveis.
+Capacidades são estáveis; implementações podem mudar.
 
-Exemplos:
+| Capacidade | Implementação atual |
+| --- | --- |
+| Compositor Wayland | Hyprland |
+| Barra de status | Waybar |
+| Bloqueio da sessão | Hyprlock |
+| Ciclo de vida da sessão | Hypridle |
+| Lançador de aplicações | Rofi |
+| Central de notificações | SwayNC |
+| Emulador de terminal | Kitty |
+| Gerenciador de arquivos | Thunar |
+| Login gráfico | greetd + tuigreet |
+| Shell | Zsh + Oh My Zsh + Starship |
+| Editor | Visual Studio Code |
+| Containers | Docker Engine + Compose + Buildx |
+| IA no terminal | Codex CLI |
 
-| Capacidade              | Implementação atual |
-| ----------------------- | ------------------- |
-| Compositor Wayland      | Hyprland            |
-| Barra de status         | Waybar              |
-| Bloqueio da sessão      | Hyprlock            |
-| Ciclo de vida da sessão | Hypridle            |
-| Lançador de aplicações  | Rofi                |
-| Central de notificações | SwayNC              |
-| Emulador de terminal    | Kitty               |
-| Gerenciador de arquivos | Thunar              |
+### Shared Sources, Profile Orchestration
 
-Uma implementação pode ser substituída sem alterar a responsabilidade arquitetural da capacidade.
+Fontes reutilizáveis pertencem a `packages/`, `system/` ou `dotfiles/`. O profile escolhe e aplica essas fontes para o hardware correspondente. Essa separação reduz duplicação e permite reutilização futura em outros perfis.
 
-### Modular Configuration
+### Install Then Configure When the Phase Requires It
 
-Configurações devem ser organizadas por capacidade ou responsabilidade.
-
-Arquivos principais devem atuar como pontos de entrada e delegar comportamentos específicos para módulos menores sempre que a ferramenta oferecer suporte adequado.
+A ordem entre instalação e configuração é definida pela responsabilidade da fase, não por uma regra universal. A fase 03, por decisão específica, instala primeiro as capacidades do desktop e depois as configura. Outras fases podem intercalar instalação e configuração quando isso fizer mais sentido operacionalmente.
 
 ### Validate Before Advancing
 
-Cada fase deve terminar com uma validação objetiva antes do início da fase seguinte.
-
-O projeto segue o ciclo:
+Cada fase termina com um gate objetivo. O ciclo é:
 
 ```text
 Construir
@@ -167,16 +129,11 @@ Validar
 Avançar
 ```
 
-Uma fase não é considerada concluída apenas porque seus comandos foram executados.
-
+Validações estáticas verificam coerência do repositório; validações de runtime verificam o estado real da máquina. Checks manuais são permitidos quando dependem de credenciais, interação gráfica ou recursos externos.
 
 ## Perfil inicial de hardware
 
-O primeiro perfil suportado pelo projeto é:
-
-```text
-profiles/dell-latitude-e5470/
-```
+O primeiro perfil é `profiles/dell-latitude-e5470/`.
 
 Hardware previsto:
 
@@ -189,24 +146,17 @@ Hardware previsto:
 * Bluetooth integrado;
 * processador Intel x86-64.
 
-Não haverá dual boot.
-
-A GPU Intel integrada será utilizada como padrão.
-
-A GPU AMD dedicada poderá permanecer disponível para uso sob demanda, desde que isso não prejudique estabilidade, consumo de energia ou suspensão do sistema.
+Não há dual boot. A GPU Intel é a padrão; a AMD permanece disponível sob demanda.
 
 ## Armazenamento
 
-O disco utilizará uma tabela de partições GPT.
-
-A estrutura inicial será:
+A estrutura é:
 
 ```text
 Disco
 ├── EFI System Partition
 │   ├── FAT32
 │   └── 1 GiB
-│
 └── Linux LUKS Partition
     └── LUKS2
         └── Btrfs
@@ -220,204 +170,97 @@ Disco
             └── @snapshots
 ```
 
-## Subvolumes Btrfs
+O layout canônico é mantido em `system/storage/btrfs-layout.tsv`.
 
-Os subvolumes planejados são:
+As opções de montagem incluem `noatime` e `compress=zstd:3`.
 
-| Subvolume    | Montagem                | Responsabilidade                   |
-| ------------ | ----------------------- | ---------------------------------- |
-| `@`          | `/`                     | Sistema raiz                       |
-| `@home`      | `/home`                 | Dados e configurações dos usuários |
-| `@var`       | `/var`                  | Dados variáveis do sistema         |
-| `@var_log`   | `/var/log`              | Logs                               |
-| `@var_cache` | `/var/cache`            | Cache geral                        |
-| `@pkg`       | `/var/cache/pacman/pkg` | Cache de pacotes do Pacman         |
-| `@docker`    | `/var/lib/docker`       | Dados do Docker                    |
-| `@snapshots` | `/.snapshots`           | Snapshots do Snapper               |
+## Snapshots
 
-As opções de montagem deverão incluir:
-
-```text
-compress=zstd:3
-```
-
-Outras opções somente serão adicionadas após justificativa técnica e validação.
-
-## Estratégia de snapshots
-
-O Snapper será utilizado para snapshots do sistema.
-
-Os snapshots deverão incluir o subvolume raiz:
-
-```text
-@
-```
-
-Os seguintes dados não participarão dos snapshots do sistema:
-
-* diretórios pessoais;
-* dados do Docker;
-* logs;
-* caches;
-* cache de pacotes.
-
-O objetivo é permitir rollback do sistema sem misturar dados mutáveis, pessoais ou volumosos.
-
-Snapshots não substituem backup.
+Snapper protege o subvolume raiz `@`. Home, Docker, logs e caches ficam fora dos snapshots do sistema. Snapshots não substituem backup.
 
 ## Inicialização
 
-A inicialização utilizará:
+A inicialização utiliza UEFI, systemd-boot, kernel Linux, mkinitcpio e desbloqueio LUKS2 por passphrase. Secure Boot e TPM2 permanecem planejados, não ativos.
 
-* UEFI;
-* systemd-boot;
-* kernel Linux;
-* initramfs;
-* desbloqueio do volume LUKS2 durante o boot.
+## Sistema operacional e pacotes
 
-Secure Boot permanecerá desabilitado na primeira versão.
+A distribuição é Arch Linux. O padrão é utilizar os repositórios oficiais e manter AUR desabilitado.
 
-Sua adoção futura deverá ser registrada em um novo ADR.
+Exceções upstream são permitidas somente quando documentadas e estreitas. A ADR-0011 registra o Visual Studio Code oficial da Microsoft como exceção atual. Uma exceção não habilita genericamente software de terceiros.
 
-## Sistema operacional
+## Desktop
 
-A distribuição base será Arch Linux.
+A sessão gráfica utiliza Wayland com Hyprland. greetd + tuigreet fornecem autenticação e início da sessão. Waybar, Kitty, Rofi, SwayNC, Hyprlock, Hypridle e Thunar compõem as principais capacidades do desktop.
 
-O sistema deverá permanecer próximo das recomendações oficiais da Arch Wiki, evitando camadas desnecessárias e ferramentas sem manutenção ativa.
+Configurações canônicas ficam em `system/`; o profile as aplica ao usuário quando necessário.
 
-A instalação inicial utilizará apenas pacotes dos repositórios oficiais.
+## Desenvolvimento
 
-Pacotes do AUR deverão ser avaliados individualmente e exigirão uma decisão documentada quando forem essenciais.
+O host contém ferramentas globais de workstation, não ambientes específicos de projetos.
 
-## Ambiente gráfico
+Baseline atual:
 
-A sessão gráfica utilizará Wayland com Hyprland.
+* Git e OpenSSH;
+* Zsh, Oh My Zsh e Starship;
+* Visual Studio Code oficial da Microsoft;
+* Docker Engine, Compose e Buildx;
+* ferramentas CLI globais de produtividade;
+* Codex CLI.
 
-Componentes principais:
+Dev Containers são o ambiente principal para SDKs e runtimes de projeto. `.NET`, Node.js, Terraform, kubectl, Helm, AWS CLI e runtimes Python específicos não fazem parte da baseline do host.
 
-* Hyprland como compositor;
-* Waybar como barra de status;
-* Kitty como terminal;
-* Rofi como launcher;
-* SwayNC para notificações;
-* Hyprlock para bloqueio;
-* Hypridle para controle de inatividade;
-* Thunar como gerenciador de arquivos;
-* PipeWire para áudio;
-* NetworkManager para rede;
-* BlueZ para Bluetooth.
+## Configuração de usuário e dotfiles
 
-As configurações do usuário serão gerenciadas pelo repositório de dotfiles.
+O repositório possui `dotfiles/` para configurações de usuário que são parte reproduzível desta workstation, como VS Code e configuração de ferramentas de IA.
 
-## Ambiente de desenvolvimento
-
-O host deverá conter apenas as ferramentas fundamentais para operação da workstation:
-
-* Git;
-* Docker;
-* Docker Compose;
-* Visual Studio Code;
-* OpenSSH.
-
-SDKs, linguagens, CLIs e dependências específicas de projetos deverão ser instalados preferencialmente em Dev Containers.
-
-Exemplos:
-
-* .NET;
-* Node.js;
-* Terraform;
-* kubectl;
-* Helm;
-* AWS CLI;
-* ferramentas Python específicas de projetos.
-
-Essa separação reduz conflitos de versões e facilita a reprodução dos ambientes de desenvolvimento.
-
-## Dotfiles
-
-As configurações pessoais serão armazenadas em um repositório separado e gerenciadas com chezmoi.
-
-O repositório `linux-workstation` será responsável pelo sistema e pelo bootstrap do chezmoi.
-
-O repositório de dotfiles será responsável pelas configurações do usuário.
-
-Essa separação preserva os limites entre infraestrutura da máquina e preferências pessoais.
+O profile também declara `chezmoi` como gerenciador planejado para sincronização de dotfiles. Até essa integração ser implementada, os scripts podem instalar diretamente as fontes versionadas apropriadas no home. Nenhum segredo deve ser armazenado em `dotfiles/`.
 
 ## Automação
 
-A automação deverá ser adicionada somente após o procedimento manual correspondente estar entendido e documentado.
+Scripts Bash usam `set -Eeuo pipefail`, validam pré-requisitos, falham explicitamente e devem ser idempotentes quando possível. Funções compartilháveis pertencem a `scripts/lib/`.
 
-Os scripts deverão:
+Pipelines usadas apenas para testar existência devem ser evitadas quando `pipefail` puder transformar encerramento antecipado em falso erro. Prefira capturar saída e comparar diretamente quando apropriado.
 
-* utilizar Bash;
-* iniciar com `set -Eeuo pipefail`;
-* validar pré-requisitos;
-* produzir mensagens claras;
-* falhar de forma explícita;
-* ser idempotentes sempre que possível;
-* exigir confirmação forte antes de ações destrutivas;
-* referenciar os ADRs relacionados.
-
-Nenhum script deverá assumir silenciosamente o disco, usuário, interface de rede ou UUID corretos.
+Scripts não devem assumir silenciosamente disco, usuário, interface, UUID ou credencial.
 
 ## Validação
 
-O diretório `tests/` conterá scripts de verificação do estado da workstation.
-
-Os testes poderão validar:
-
-* boot;
-* armazenamento;
-* criptografia;
-* Btrfs;
-* snapshots;
-* rede;
-* áudio;
-* Bluetooth;
-* GPU;
-* Docker;
-* Hyprland;
-* serviços;
-* segurança.
-
-Esses testes não substituem testes de software tradicionais. Eles validam a configuração e o funcionamento da workstation.
+`tests/` contém gates de repositório, validações estáticas por fase e testes de runtime. Fontes declarativas devem ser reutilizadas pelos testes sempre que possível, evitando duplicar o estado esperado dentro do próprio teste.
 
 ## Fluxo de mudança
-
-Mudanças relevantes deverão seguir este fluxo:
 
 ```text
 Necessidade
     ↓
-ADR ou atualização de decisão
+ADR quando necessário
     ↓
-Documentação
+Documentação / fonte declarativa
     ↓
 Implementação
     ↓
 Validação
     ↓
-Changelog
+Revisão do roadmap/status
 ```
 
-Mudanças pequenas que não alteram decisões arquiteturais podem dispensar um novo ADR, mas ainda devem atualizar a documentação e os testes aplicáveis.
+Mudanças pequenas que não alteram decisões arquiteturais podem dispensar um novo ADR.
 
-## Limites da primeira versão
+## Limites atuais
 
-A primeira versão não incluirá:
+Ainda não fazem parte da baseline:
 
 * Secure Boot;
 * desbloqueio automático por TPM2;
-* suporte a múltiplas distribuições;
-* suporte a BIOS legado;
+* BIOS legado;
 * dual boot;
+* múltiplas distribuições;
 * helper de AUR;
-* instalação completa sem supervisão;
+* instalação totalmente sem supervisão;
 * gerenciamento centralizado de segredos;
 * backup remoto automatizado.
 
-Esses itens poderão ser adicionados posteriormente por meio do roadmap e de novos ADRs.
+Esses itens só devem avançar via roadmap e ADR quando aplicável.
 
 ## Lições aprendidas
 
-Nenhuma até o momento.
+A evolução das primeiras fases mostrou que separar fontes compartilhadas de orquestração específica de hardware reduz duplicação e torna testes e refatorações muito mais previsíveis.
