@@ -1,0 +1,4 @@
+default @ENTRY_ID@.conf
+timeout @TIMEOUT@
+console-mode keep
+editor no
