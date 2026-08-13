@@ -6,3 +6,5 @@ configuration {
 
     /* Keep Rofi's built-in navigation bindings unchanged. */
 }
+
+@theme "theme"
