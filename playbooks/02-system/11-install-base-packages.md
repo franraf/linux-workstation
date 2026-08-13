@@ -1,15 +1,15 @@
 ---
 title: Instalar pacotes base
-version: 1.1
+version: 1.2
 status: Draft
 author: Rafael
-last_review: 2026-08-12
+last_review: 2026-08-13
 related:
 
 * architecture.md
 * ADR-0002
 * ADR-0004
-* ADR-0007
+* ADR-0009
 
 ---
 
@@ -17,98 +17,68 @@ related:
 
 ## Objetivo
 
-Instalar o conjunto de utilitários fundamentais utilizados pela workstation para administração, diagnóstico e operação diária.
+Instalar os utilitários fundamentais de administração, diagnóstico e operação diária da workstation a partir de uma fonte declarativa compartilhada.
 
----
-
-# Pré-requisitos
+## Pré-requisitos
 
 * Sistema configurado.
-* Pacman configurado.
-* Política de serviços aplicada.
+* Pacman funcional.
+* Serviços base configurados.
 
----
+## Fonte canônica
 
-# Resultado esperado
+```text
+packages/system/base-workstation.txt
+```
 
-Ao concluir este playbook:
+O `run.sh` desta etapa é apenas o orquestrador. Leitura, validação e instalação dos pacotes reutilizam `scripts/lib/packages.sh`.
 
-* os utilitários básicos declarados pelo projeto estarão instalados;
-* ferramentas essenciais de administração estarão disponíveis;
-* a lista de pacotes será rastreável e reutilizável por scripts e validações.
+## Execução
 
----
+```bash
+sudo ./run.sh
+```
 
-# Procedimento
+Opcionalmente, uma lista alternativa pode ser fornecida explicitamente:
 
-## 1. Revisar a lista declarativa
+```bash
+sudo ./run.sh --package-file /caminho/lista.txt
+```
 
-Mantenha a relação de pacotes base em arquivo de dados sob `packages/`, conforme a ADR-0007.
+## Resultado esperado
 
-O arquivo declara **o que** pertence à capacidade. O procedimento e os scripts definem **como** instalar e validar.
+* todos os pacotes declarados estarão instalados;
+* comandos essenciais estarão disponíveis;
+* nenhuma segunda lista de pacotes será mantida dentro do profile ou do script.
 
-Evite duplicar a lista de pacotes dentro de scripts ou documentação operacional.
+## Verificação
 
-## 2. Instalar os pacotes
+O script deve:
 
-Instale os pacotes declarados utilizando Pacman.
+* validar a fonte declarativa;
+* validar disponibilidade dos pacotes;
+* instalar somente os ausentes;
+* validar o estado final dos pacotes;
+* confirmar os comandos essenciais da baseline.
 
-Pacotes ausentes da lista não deverão ser adicionados implicitamente durante a execução.
+## Problemas comuns
 
-## 3. Validar dependências
+### Pacote indisponível
 
-Confirme que todos os pacotes declarados foram instalados e que não existem conflitos ou dependências quebradas.
+Corrija o nome na fonte canônica. Não introduza exceções hardcoded no `run.sh`.
 
-## 4. Confirmar disponibilidade
+### Lista divergente no profile
 
-Verifique que as ferramentas essenciais podem ser executadas normalmente.
+Arquivos como `11-install-base-packages/packages.txt` são legado e devem ser removidos; a fonte canônica pertence a `packages/system/`.
 
----
-
-# Verificação
-
-Confirme que:
-
-* a lista declarativa existe e é a fonte da verdade da capacidade;
-* todos os pacotes declarados estão instalados;
-* não existem dependências quebradas;
-* as ferramentas essenciais estão disponíveis;
-* o sistema permanece íntegro após a instalação.
-
----
-
-# Problemas comuns
-
-## Lista ausente ou vazia
-
-Não mantenha uma segunda lista no script. Corrija o arquivo declarativo no repositório.
-
-## Pacote indisponível
-
-Confirme se o nome está correto e se pertence aos repositórios oficiais adotados pelo projeto.
-
-## Dependências em conflito
-
-Revise a composição da lista antes de prosseguir.
-
----
-
-# Próximo playbook
+## Próximo playbook
 
 ```text
 12-system-validation.md
 ```
 
----
-
-# Referências
+## Referências
 
 * Arch Wiki — General recommendations
 * Arch Wiki — Pacman
-* ADR-0007 — Listas declarativas de pacotes
-
----
-
-# Lições aprendidas
-
-A lista de pacotes deve permanecer separada da lógica de instalação para reduzir divergências entre documentação, scripts e validação.
+* ADR-0009 — Fontes compartilhadas para profiles
