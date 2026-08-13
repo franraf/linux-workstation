@@ -1,17 +1,16 @@
 ---
-
 title: Configurar gerenciador de arquivos
-version: 1.0
+version: 1.1
 status: Draft
 author: Rafael
-last_review: 2026-07-31
+last_review: 2026-08-12
 related:
 
 * architecture.md
 * ADR-0002
-* ADR-0003
 * ADR-0004
 * ADR-0005
+* ADR-0006
 
 ---
 
@@ -19,18 +18,17 @@ related:
 
 ## Objetivo
 
-Configurar o gerenciador de arquivos da workstation, definindo sua integração com a sessão gráfica e proporcionando uma experiência consistente para navegação e gerenciamento do sistema de arquivos.
+Configurar o Thunar como gerenciador de arquivos da workstation, definindo comportamento de navegação, integração com serviços já instalados e atalho global da sessão.
 
-Ao final deste playbook, o gerenciador de arquivos estará alinhado com os padrões definidos pelo projeto.
-
-A implementação adotada pelo projeto utiliza o **Thunar**.
+A aparência global pertence ao playbook `19-configure-appearance.md`.
 
 ---
 
 # Pré-requisitos
 
 * Sessão gráfica configurada.
-* Gerenciador de arquivos instalado.
+* Thunar instalado.
+* Integrações necessárias, como `gvfs`, `tumbler` e `thunar-volman`, instaladas pela etapa apropriada.
 
 ---
 
@@ -38,69 +36,54 @@ A implementação adotada pelo projeto utiliza o **Thunar**.
 
 Ao concluir este playbook:
 
-* o gerenciador de arquivos seguirá a identidade visual da workstation;
-* a navegação pelo sistema de arquivos estará configurada conforme os padrões do projeto;
-* a integração com a sessão gráfica estará concluída.
+* navegação e visualização estarão configuradas;
+* lixeira, miniaturas e dispositivos removíveis estarão disponíveis quando suportados;
+* o atalho global estará registrado em `70-keybindings.conf`;
+* associações existentes serão respeitadas sem sobrescritas arbitrárias.
 
 ---
 
 # Procedimento
 
-## 1. Organizar a configuração
+## 1. Configurar a navegação
 
-Estruture os arquivos conforme a ADR-0005.
+Defina painel lateral, modo de visualização, arquivos ocultos, ordenação e comportamento de abas.
 
-Separe aparência, comportamento e integrações sempre que possível.
+## 2. Configurar operações
 
----
+Valide operações de cópia, movimentação, exclusão e lixeira.
 
-## 2. Configurar a navegação
+## 3. Validar integrações
 
-Defina o comportamento padrão da navegação.
+Confirme o funcionamento de:
 
-Considere:
+```text
+gvfs
 
-* painel lateral;
-* diretório inicial;
-* ordenação;
-* visualização;
-* arquivos ocultos;
-* miniaturas.
+tumbler
 
----
+thunar-volman
+```
 
-## 3. Configurar integrações
+O script de configuração não deverá instalar dependências ausentes; deverá falhar com mensagem clara conforme a ADR-0006.
 
-Integre o gerenciador de arquivos aos componentes da workstation.
+## 4. Preservar associações de aplicações
 
-Considere:
+Não sobrescreva associações MIME de forma ampla apenas para concluir este playbook. Utilize as aplicações padrão já registradas e trate associações específicas na capacidade responsável quando necessário.
 
-* emulador de terminal;
-* navegador padrão;
-* aplicações associadas;
-* lançador de aplicações.
+## 5. Integrar ao Hyprland
 
----
+Adicione o atalho ao fragmento:
 
-## 4. Configurar operações de arquivos
+```text
+~/.config/hypr/conf.d/70-keybindings.conf
+```
 
-Defina os padrões para manipulação de arquivos.
+A baseline utiliza:
 
-Considere:
-
-* cópia;
-* movimentação;
-* exclusão;
-* lixeira;
-* dispositivos removíveis.
-
----
-
-## 5. Validar a experiência
-
-Execute operações comuns de gerenciamento de arquivos.
-
-Confirme que a navegação e as operações ocorrem conforme esperado.
+```text
+SUPER + E → thunar
+```
 
 ---
 
@@ -108,43 +91,17 @@ Confirme que a navegação e as operações ocorrem conforme esperado.
 
 Confirme que:
 
-* o gerenciador inicia corretamente;
-* a navegação pelo sistema de arquivos é funcional;
-* arquivos podem ser manipulados normalmente;
-* aplicações associadas são abertas corretamente;
-* não existem erros durante a execução.
-
----
-
-# Problemas comuns
-
-## Aplicação não inicia
-
-Revise a instalação e confirme a integração com a sessão gráfica.
-
----
-
-## Associações incorretas
-
-Revise as aplicações padrão configuradas para cada tipo de arquivo.
-
----
-
-## Dispositivos removíveis não aparecem
-
-Confirme que os componentes necessários para gerenciamento de dispositivos estão instalados e configurados.
-
----
-
-## Problemas de permissões
-
-Revise as permissões do usuário e a integração com os serviços do sistema.
+* Thunar inicia normalmente;
+* navegação e manipulação de arquivos funcionam;
+* lixeira está disponível;
+* miniaturas são geradas;
+* dispositivos removíveis aparecem quando presentes;
+* arquivos conhecidos usam suas aplicações padrão;
+* `SUPER + E` abre o Thunar.
 
 ---
 
 # Próximo playbook
-
-Após validar o gerenciador de arquivos, prossiga para:
 
 ```text
 19-configure-appearance.md
@@ -155,12 +112,11 @@ Após validar o gerenciador de arquivos, prossiga para:
 # Referências
 
 * Documentação oficial do Thunar
-* Arch Wiki — Thunar
-* XDG Base Directory Specification
-* ADR-0005 — Modularize Configuration by Capability
+* ADR-0005 — Modularizar configurações por capacidade
+* ADR-0006 — Separação entre instalação e configuração
 
 ---
 
 # Lições aprendidas
 
-Registrar aqui melhorias na navegação, novas integrações, ajustes de comportamento ou observações relevantes identificadas durante a evolução do gerenciador de arquivos.
+Configurar o gerenciador de arquivos não deve implicar mudanças indiscriminadas nas associações MIME nem instalação silenciosa de componentes auxiliares. Essas dependências e decisões devem permanecer explícitas.
