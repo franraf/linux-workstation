@@ -1,137 +1,62 @@
 ---
-
 title: Configurar o journald
-version: 1.0
+version: 1.1
 status: Draft
 author: Rafael
-last_review: 2026-07-31
+last_review: 2026-08-13
 related:
-
-* architecture.md
-* ADR-0002
-* ADR-0003
-* ADR-0004
-
+  - architecture.md
+  - ADR-0002
+  - ADR-0003
+  - ADR-0004
 ---
 
 # 06 — Configurar o journald
 
 ## Objetivo
 
-Configurar o serviço de registro de eventos do sistema (`systemd-journald`) conforme os padrões definidos pelo projeto.
+Configurar armazenamento persistente e limites do `systemd-journald` a partir de uma fonte versionada compartilhada.
 
-Ao final deste playbook, a workstation armazenará registros do sistema de forma consistente, previsível e adequada às necessidades de operação e diagnóstico.
+## Fonte canônica
 
----
+```text
+system/systemd/journald/10-linux-workstation.conf
+```
 
-# Pré-requisitos
+O `run.sh` apenas instala essa fonte em `/etc/systemd/journald.conf.d/10-linux-workstation.conf`, prepara `/var/log/journal`, reinicia o serviço e valida o resultado.
 
-* Sistema operacional funcional.
-* Sincronização de horário configurada.
-* Componentes básicos do `systemd` operacionais.
+## Resultado esperado
 
----
+* `Storage=persistent` aplicado;
+* limites de uso e retenção correspondentes à fonte versionada;
+* `/var/log/journal` preparado para persistência;
+* `systemd-journald.service` operacional;
+* journal verificável com `journalctl --verify`.
 
-# Resultado esperado
+## Procedimento
 
-Ao concluir este playbook:
+Execute:
 
-* a política de armazenamento dos registros estará definida;
-* a retenção de logs seguirá os padrões do projeto;
-* o sistema registrará eventos de maneira consistente.
+```bash
+sudo ./run.sh
+```
 
----
+Autorize a alteração digitando `JOURNAL` quando solicitado.
 
-# Procedimento
+O script não deve gerar configuração por heredoc. Mudanças de política devem ser realizadas primeiro no arquivo canônico sob `system/`.
 
-## 1. Revisar a configuração padrão
+## Verificação
 
-Analise a configuração atual do `systemd-journald`.
+Confirme que o arquivo instalado é idêntico à fonte versionada, que o serviço voltou ao estado ativo e que o armazenamento persistente pode ser lido.
 
-Identifique quais parâmetros serão personalizados conforme os padrões da workstation.
+## Próximo playbook
 
----
-
-## 2. Definir a política de armazenamento
-
-Configure como os registros serão armazenados.
-
-Considere aspectos como:
-
-* persistência;
-* utilização de disco;
-* retenção;
-* rotação automática.
-
----
-
-## 3. Aplicar a configuração
-
-Atualize a configuração do serviço conforme as decisões adotadas pelo projeto.
-
----
-
-## 4. Reiniciar ou recarregar o serviço
-
-Aplique as alterações realizadas utilizando o procedimento recomendado.
-
----
-
-## 5. Validar o funcionamento
-
-Confirme que novos eventos continuam sendo registrados normalmente após a aplicação da configuração.
-
----
-
-# Verificação
-
-Confirme que:
-
-* o serviço está operacional;
-* os registros continuam sendo gravados;
-* a política de armazenamento corresponde ao esperado;
-* não existem erros relacionados ao `journald`.
-
----
-
-# Problemas comuns
-
-## Logs não persistem após reinicialização
-
-Verifique se a política de armazenamento persistente foi configurada corretamente.
-
----
-
-## Crescimento excessivo dos logs
-
-Revise os limites de retenção e utilização de disco.
-
----
-
-## Serviço indisponível
-
-Confirme a integridade da configuração antes de reiniciar o serviço.
-
----
-
-# Próximo playbook
-
-Após validar o `journald`, prossiga para:
-
-```text id="d0m9yu"
+```text
 07-configure-zram.md
 ```
 
----
-
-# Referências
+## Referências
 
 * Arch Wiki — systemd-journald
 * Arch Wiki — Journal
 * Arch Wiki — systemd
-
----
-
-# Lições aprendidas
-
-Registrar aqui ajustes na política de retenção, alterações na configuração do `journald` ou observações relevantes identificadas durante a operação da workstation.
