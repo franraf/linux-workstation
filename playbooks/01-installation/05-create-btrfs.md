@@ -1,16 +1,16 @@
 ---
-
 title: Criar o sistema de arquivos Btrfs
-version: 1.0
+version: 1.1
 status: Draft
 author: Rafael
-last_review: 2026-07-31
+last_review: 2026-08-12
 related:
 
 * architecture.md
 * ADR-0002
 * ADR-0003
 * ADR-0004
+* standards.md
 
 ---
 
@@ -20,16 +20,14 @@ related:
 
 Criar o sistema de arquivos Btrfs sobre o volume criptografado preparado no playbook anterior.
 
-Ao final deste playbook, o volume criptografado estará formatado e pronto para a criação dos subvolumes.
-
 ---
 
 # Pré-requisitos
 
 * Volume LUKS2 criado e aberto.
-* Dispositivo mapeado disponível.
+* Dispositivo mapeado disponível e identificado.
 
-> **Atenção:** este procedimento remove permanentemente qualquer dado existente no volume selecionado.
+> **Atenção:** a formatação remove permanentemente qualquer dado existente no volume selecionado.
 
 ---
 
@@ -37,7 +35,7 @@ Ao final deste playbook, o volume criptografado estará formatado e pronto para 
 
 Ao concluir este playbook:
 
-* o dispositivo mapeado conterá um sistema de arquivos Btrfs;
+* o dispositivo mapeado conterá Btrfs;
 * o sistema de arquivos estará pronto para montagem;
 * ainda não existirão subvolumes personalizados.
 
@@ -47,21 +45,25 @@ Ao concluir este playbook:
 
 ## 1. Confirmar o dispositivo mapeado
 
-Verifique qual dispositivo corresponde ao volume criptografado aberto no playbook anterior.
+Verifique qual dispositivo corresponde ao volume criptografado aberto no playbook anterior e confirme que não está montado.
 
-Confirme que o dispositivo selecionado é o destino correto.
+## 2. Exigir confirmação destrutiva
 
----
+Imediatamente antes da formatação, solicite confirmação forte conforme `docs/standards.md`.
 
-## 2. Criar o sistema de arquivos
+O usuário deverá digitar exatamente:
 
-Formate o dispositivo utilizando Btrfs.
+```text
+ERASE
+```
 
-O sistema de arquivos deverá ser criado diretamente sobre o volume criptografado.
+Qualquer outra entrada deverá cancelar o procedimento.
 
----
+## 3. Criar o sistema de arquivos
 
-## 3. Confirmar a criação
+Somente após a confirmação, formate o dispositivo utilizando Btrfs.
+
+## 4. Confirmar a criação
 
 Verifique se a formatação foi concluída sem erros.
 
@@ -72,36 +74,33 @@ Verifique se a formatação foi concluída sem erros.
 Confirme que:
 
 * o sistema de arquivos é Btrfs;
-* o dispositivo permanece acessível;
-* nenhuma mensagem de erro foi apresentada durante a formatação.
-
-Uma verificação simples pode ser realizada utilizando ferramentas de inspeção do sistema de arquivos.
+* o dispositivo correto foi alterado;
+* o volume permanece acessível;
+* não houve erro durante a formatação.
 
 ---
 
 # Problemas comuns
 
-## Sistema de arquivos não criado
+## Dispositivo incorreto
 
-Verifique se o volume criptografado está aberto e se o dispositivo correto foi selecionado.
+Não formate. Retorne à identificação do mapper.
 
----
+## Confirmação diferente de `ERASE`
+
+Cancele a operação.
 
 ## Dispositivo ocupado
 
-Confirme que o volume não está montado ou sendo utilizado por outro processo.
-
----
+Confirme que o volume não está montado ou em uso.
 
 ## Ferramentas Btrfs indisponíveis
 
-Certifique-se de que o ambiente live possui as ferramentas necessárias para manipulação do Btrfs.
+Confirme a disponibilidade de `btrfs-progs` no ambiente live.
 
 ---
 
 # Próximo playbook
-
-Após validar a criação do sistema de arquivos, prossiga para:
 
 ```text
 06-create-subvolumes.md
@@ -113,9 +112,10 @@ Após validar a criação do sistema de arquivos, prossiga para:
 
 * Arch Wiki — Btrfs
 * Arch Wiki — mkfs.btrfs
+* `docs/standards.md`
 
 ---
 
 # Lições aprendidas
 
-Registrar aqui observações sobre compatibilidade, desempenho, mensagens relevantes ou ajustes necessários para futuras instalações envolvendo Btrfs.
+Formatações devem seguir a mesma política de confirmação forte aplicada ao particionamento e à criação do LUKS.
