@@ -1,0 +1,20 @@
+# Navigation and search
+eza
+fd
+ripgrep
+fzf
+
+# Viewing and structured data
+bat
+jq
+yq
+
+# HTTP and terminal productivity
+httpie
+tmux
+just
+make
+
+# Git productivity
+lazygit
+git-delta
