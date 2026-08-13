@@ -1,0 +1,9 @@
+# subvolume	mountpoint
+@	/
+@home	/home
+@var	/var
+@var_log	/var/log
+@var_cache	/var/cache
+@pkg	/var/cache/pacman/pkg
+@docker	/var/lib/docker
+@snapshots	/.snapshots
