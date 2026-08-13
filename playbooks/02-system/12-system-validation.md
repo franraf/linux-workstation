@@ -1,14 +1,15 @@
 ---
 title: Validar o sistema
-version: 1.1
+version: 1.2
 status: Draft
 author: Rafael
-last_review: 2026-08-12
+last_review: 2026-08-13
 related:
 
 * architecture.md
 * ADR-0002
 * ADR-0004
+* ADR-0009
 
 ---
 
@@ -16,103 +17,92 @@ related:
 
 ## Objetivo
 
-Validar que a configuração da fase `02-system` foi aplicada corretamente e que a workstation está pronta para receber a camada gráfica.
+Validar que a fase `02-system` foi aplicada corretamente e que a workstation está pronta para `03-desktop`.
 
-Este playbook é um gate de fase e não deve corrigir automaticamente as capacidades verificadas.
+Este playbook é um gate: validação não deve alterar o sistema para fazê-lo passar.
 
----
+## Pré-requisitos
 
-# Pré-requisitos
-
-* Todos os playbooks anteriores de `02-system` concluídos.
-* Sistema inicializado normalmente.
+* Etapas `01–11` concluídas.
+* Sistema inicializado normalmente com systemd.
 * Usuário administrativo disponível.
 
----
+## 1. Validar as fontes versionadas
 
-# Resultado esperado
+Na raiz do repositório execute:
 
-Ao concluir este playbook:
+```bash
+bash tests/system/static-artifacts.sh
+```
 
-* a linha de base do sistema estará validada;
-* não existirão falhas críticas conhecidas;
-* a workstation estará pronta para `03-desktop`.
+Esse teste valida sintaxe dos `run.sh`, bibliotecas compartilhadas, manifesto da fase e presença das fontes canônicas em `packages/` e `system/`.
 
----
+Falhas estáticas devem ser corrigidas no repositório antes de investigar o estado da máquina.
 
-# Procedimento
+## 2. Executar a validação de runtime
 
-## 1. Validar o estado do sistema
+```bash
+./profiles/dell-latitude-e5470/02-system/12-system-validation/run.sh
+```
 
-Confirme que o sistema inicializa normalmente e permanece estável.
+O gate de runtime deve permanecer somente leitura e verificar, entre outros pontos:
 
-## 2. Validar gerenciamento de pacotes
+* Pacman e pacotes esperados;
+* microcode Intel;
+* systemd e sincronização de horário;
+* journal persistente;
+* ZRAM;
+* TRIM periódico;
+* NetworkManager e Bluetooth;
+* OpenSSH;
+* Btrfs, ESP e systemd-boot;
+* unidades systemd em estado de falha.
 
-Confirme que o Pacman está funcional e sem inconsistências conhecidas.
+## Fontes canônicas relevantes
 
-## 3. Validar componentes fundamentais
+```text
+packages/system/base-workstation.txt
+packages/system/services.txt
+system/systemd/10-linux-workstation.conf
+system/systemd/timesyncd/10-linux-workstation.conf
+system/systemd/journald/10-linux-workstation.conf
+system/systemd/zram/10-linux-workstation.conf
+system/openssh/10-linux-workstation.conf
+system/storage/btrfs-layout.tsv
+```
 
-Verifique microcode, sincronização de horário, journald, zram e política de TRIM.
+A validação não deve manter cópias independentes dessas políticas.
 
-## 4. Validar serviços
+## Resultado esperado
 
-Confirme que os serviços previstos pela fase estão ativos e que `systemctl --failed` não apresenta falhas críticas não tratadas.
+* teste estático aprovado;
+* nenhuma falha crítica no gate de runtime;
+* warnings aceitos analisados explicitamente;
+* workstation pronta para iniciar `03-desktop`.
 
-## 5. Validar acesso administrativo
+## Problemas comuns
 
-Confirme acesso local e remoto conforme a política do projeto.
+### Fonte versionada ausente ou divergente
 
-## 6. Revisar registros
+Corrija `packages/`, `system/` ou as bibliotecas; não faça patches locais apenas para satisfazer o gate.
 
-Analise os registros em busca de erros críticos ou recorrentes.
+### Serviço em falha
 
-## 7. Registrar o estado
+Retorne ao playbook responsável e corrija a origem da configuração.
 
-Documente limitações e warnings aceitos antes de avançar.
+### Estado de hardware variável
 
----
+Bluetooth e sincronização imediata de horário podem produzir warnings dependentes do ambiente; valide o contexto antes de tratá-los como falha de configuração.
 
-# Verificação
-
-Confirme que:
-
-* o sistema inicia sem erros críticos;
-* todos os playbooks da fase foram aplicados;
-* os serviços essenciais estão operacionais;
-* o acesso administrativo funciona;
-* não existem pendências que impeçam `03-desktop`.
-
----
-
-# Problemas comuns
-
-## Serviço em falha
-
-Retorne ao playbook responsável, corrija a fonte versionada e repita a validação.
-
-## Configuração divergente
-
-Compare o estado atual com a documentação e os arquivos versionados antes de realizar alterações locais.
-
----
-
-# Próximo playbook
+## Próximo playbook
 
 ```text
 03-desktop/
 01-install-graphics-stack.md
 ```
 
----
-
-# Referências
+## Referências
 
 * architecture.md
-* Playbooks da fase `02-system`
+* ADR-0009 — Fontes compartilhadas para profiles
 * Arch Wiki — General recommendations
-
----
-
-# Lições aprendidas
-
-As transições entre fases devem apontar para arquivos realmente existentes no repositório; referências planejadas ou antigas comprometem a documentação como fonte da verdade.
