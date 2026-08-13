@@ -49,8 +49,7 @@ validate_configuration() {
   [[ -s "$keybindings" ]] || die "Hyprland keybindings module was not installed."
   grep -q '"notifications"' "$swaync_config" || die "SwayNC notifications widget is missing."
   [[ "$(grep -c 'pidof swaync || swaync' "$autostart")" -eq 1 ]] || die "SwayNC must appear exactly once in autostart."
-  grep -q 'hl.bind("SUPER", "N"' "$keybindings" || die "SUPER+N notification binding is missing."
-  grep -q 'swaync-client -t' "$keybindings" || die "Notification binding does not invoke swaync-client."
+  grep -Fq 'hl.bind("SUPER + N", hl.dsp.exec_cmd("swaync-client -t"))' "$keybindings" || die "SUPER+N notification binding is missing."
 }
 
 validate_notification_daemons() {
