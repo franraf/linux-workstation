@@ -1,5 +1,6 @@
+# Network service
 networkmanager
+
+# Bluetooth service
 bluez
 bluez-utils
-openssh
-zram-generator
