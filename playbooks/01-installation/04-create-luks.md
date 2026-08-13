@@ -1,16 +1,16 @@
 ---
-
 title: Criar o volume LUKS2
-version: 1.0
+version: 1.1
 status: Draft
 author: Rafael
-last_review: 2026-07-31
+last_review: 2026-08-12
 related:
 
 * architecture.md
 * ADR-0002
 * ADR-0003
 * ADR-0004
+* standards.md
 
 ---
 
@@ -29,7 +29,7 @@ Ao final deste playbook, a partição estará protegida por criptografia e dispo
 * Disco particionado conforme o playbook anterior.
 * Partição destinada ao sistema identificada corretamente.
 
-> **Atenção:** este procedimento remove permanentemente qualquer dado existente na partição selecionada.
+> **Atenção:** `cryptsetup luksFormat` remove permanentemente qualquer dado existente na partição selecionada.
 
 ---
 
@@ -39,7 +39,7 @@ Ao concluir este playbook:
 
 * a partição do sistema estará formatada com LUKS2;
 * será possível abrir o volume criptografado;
-* um dispositivo mapeado estará disponível para utilização nas próximas etapas.
+* um dispositivo mapeado estará disponível para as próximas etapas.
 
 Nenhum sistema de arquivos será criado neste momento.
 
@@ -49,33 +49,33 @@ Nenhum sistema de arquivos será criado neste momento.
 
 ## 1. Identificar a partição
 
-Confirme qual partição será utilizada para a criptografia.
+Confirme dispositivo, tamanho, disco de origem e finalidade da partição.
 
-Verifique cuidadosamente o dispositivo antes de prosseguir.
+## 2. Exigir confirmação destrutiva
 
----
+Imediatamente antes de `cryptsetup luksFormat`, solicite confirmação forte conforme `docs/standards.md`.
 
-## 2. Inicializar o volume LUKS2
+O usuário deverá digitar exatamente:
 
-Inicialize a partição utilizando o formato LUKS2.
+```text
+ERASE
+```
 
-Durante esta etapa será solicitada uma senha de desbloqueio.
+Qualquer outra entrada deverá cancelar o procedimento.
 
-Escolha uma senha forte e armazene-a de forma segura.
+## 3. Inicializar o volume LUKS2
 
----
+Somente após a confirmação, inicialize a partição utilizando LUKS2.
 
-## 3. Abrir o volume criptografado
+Durante esta etapa será solicitada uma senha de desbloqueio. Escolha uma senha forte e armazene-a de forma segura.
 
-Desbloqueie o volume recém-criado.
+## 4. Abrir o volume criptografado
 
-O sistema criará um dispositivo mapeado no *device mapper*, que será utilizado nos próximos playbooks.
+Desbloqueie o volume recém-criado e disponibilize o dispositivo pelo device mapper.
 
----
+## 5. Confirmar o mapeamento
 
-## 4. Confirmar o mapeamento
-
-Verifique se o dispositivo criptografado foi aberto corretamente antes de prosseguir.
+Verifique se o dispositivo criptografado foi aberto corretamente.
 
 ---
 
@@ -83,36 +83,34 @@ Verifique se o dispositivo criptografado foi aberto corretamente antes de prosse
 
 Confirme que:
 
-* a partição utiliza o formato LUKS2;
+* a partição utiliza LUKS2;
 * o volume foi aberto com sucesso;
 * o dispositivo mapeado está disponível;
-* nenhuma mensagem de erro foi apresentada durante a abertura.
+* não houve erro durante a abertura.
 
 ---
 
 # Problemas comuns
 
+## Partição incorreta
+
+Não execute `luksFormat`. Retorne à identificação do dispositivo.
+
+## Confirmação diferente de `ERASE`
+
+Cancele a operação.
+
 ## Senha incorreta
 
 Confirme a senha utilizada durante a criação do volume.
 
----
-
 ## Volume não pode ser aberto
 
-Verifique se a inicialização do LUKS foi concluída corretamente e se a partição correta foi selecionada.
-
----
-
-## Dispositivo mapeado não aparece
-
-Confirme se o volume foi aberto com sucesso e se não existem mensagens de erro relacionadas ao `cryptsetup`.
+Verifique se a inicialização do LUKS foi concluída e se a partição correta foi selecionada.
 
 ---
 
 # Próximo playbook
-
-Após validar o volume criptografado, prossiga para:
 
 ```text
 05-create-btrfs.md
@@ -125,9 +123,10 @@ Após validar o volume criptografado, prossiga para:
 * Arch Wiki — dm-crypt
 * Arch Wiki — LUKS
 * Arch Wiki — cryptsetup
+* `docs/standards.md`
 
 ---
 
 # Lições aprendidas
 
-Registrar particularidades observadas durante a criação ou abertura do volume criptografado, incluindo compatibilidade de hardware, mensagens relevantes ou ajustes necessários para futuras instalações.
+A confirmação forte deve ocorrer imediatamente antes da ação destrutiva, mesmo quando o playbook já contém avisos de risco.
