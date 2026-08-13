@@ -6,14 +6,8 @@ readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 readonly REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../.." && pwd)"
 readonly PROFILE_ROOT="${REPO_ROOT}/profiles/dell-latitude-e5470/02-system"
 
-fail() {
-  printf '[FAIL] %s\n' "$*" >&2
-  exit 1
-}
-
-pass() {
-  printf '[PASS] %s\n' "$*"
-}
+fail() { printf '[FAIL] %s\n' "$*" >&2; exit 1; }
+pass() { printf '[PASS] %s\n' "$*"; }
 
 require_file() {
   local path="$1"
@@ -40,6 +34,9 @@ require_file "${REPO_ROOT}/system/systemd/timesyncd/10-linux-workstation.conf"
 require_file "${REPO_ROOT}/system/systemd/journald/10-linux-workstation.conf"
 require_file "${REPO_ROOT}/system/systemd/zram/10-linux-workstation.conf"
 require_file "${REPO_ROOT}/system/openssh/10-linux-workstation.conf"
+require_file "${REPO_ROOT}/tests/system/runtime-state.sh"
+bash -n "${REPO_ROOT}/tests/system/runtime-state.sh" || fail "Runtime validator syntax failed"
+pass "Bash syntax: tests/system/runtime-state.sh"
 
 if head -n 1 "${PROFILE_ROOT}/phase.yaml" | grep -q '^```'; then
   fail "02-system/phase.yaml is wrapped in a Markdown code fence"
@@ -48,7 +45,7 @@ pass "02-system/phase.yaml is a plain YAML document"
 
 local_package_file="${PROFILE_ROOT}/11-install-base-packages/packages.txt"
 if [[ -e "$local_package_file" ]]; then
-  printf '[WARN] Legacy profile-local package file still exists: %s\n' "${local_package_file#${REPO_ROOT}/}" >&2
+  printf '[WARN] Legacy profile-local package file still exists but is not consumed: %s\n' "${local_package_file#${REPO_ROOT}/}" >&2
 else
   pass "Legacy profile-local package file is absent"
 fi
