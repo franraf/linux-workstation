@@ -5,6 +5,11 @@ require_uefi() {
     die "The installation environment was not booted in UEFI mode."
 }
 
+require_installed_arch_context() {
+  require_arch_linux
+  [[ -s /etc/fstab ]] || die "The installed-system fstab is missing or empty."
+}
+
 canonicalize_existing_path() {
   local path="${1:-}"
   [[ -n "$path" ]] || die "canonicalize_existing_path expects a path."
