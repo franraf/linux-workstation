@@ -1,17 +1,14 @@
 ---
-
 title: Ferramentas de linha de comando
-version: 1.0
+version: 1.1
 status: Draft
 author: Rafael
-last_review: 2026-07-31
+last_review: 2026-08-13
 related:
 
 * architecture.md
-* ADR-0002
-* ADR-0003
-* ADR-0004
 * ADR-0005
+* ADR-0007
 
 ---
 
@@ -19,199 +16,99 @@ related:
 
 ## Objetivo
 
-Adicionar à workstation um conjunto de ferramentas de linha de comando voltadas para produtividade, automação e inspeção do sistema.
+Instalar o conjunto global de ferramentas de produtividade usado pela workstation sem introduzir runtimes ou SDKs específicos de projetos.
 
-Ao final deste playbook, a workstation oferecerá um ambiente de terminal completo para atividades de desenvolvimento, administração e depuração.
+## Fonte declarativa
 
----
-
-# Pré-requisitos
-
-* Ambiente de shell configurado.
-* Plataforma de contêineres configurada.
-
----
-
-# Resultado esperado
-
-Ao concluir este playbook:
-
-* as ferramentas previstas pelo projeto estarão instaladas;
-* a experiência da linha de comando será consistente;
-* as ferramentas estarão integradas ao ambiente de shell.
-
----
-
-# Estrutura da configuração
-
-Sempre que uma ferramenta permitir configuração reproduzível, mantenha seus arquivos versionados nos dotfiles.
-
-Estrutura recomendada:
+A fonte canônica é:
 
 ```text
-dotfiles/
-
-cli/
-├── bat/
-├── delta/
-├── lazygit/
-├── tmux/
-└── ...
+packages/development/cli-tools.txt
 ```
 
-Cada ferramenta deverá utilizar sua estrutura nativa de configuração.
+Ferramentas já pertencentes à baseline de `02-system`, como `curl`, `wget`, `tree`, `zip` e `unzip`, não são repetidas nesta capacidade.
 
-Evite criar convenções artificiais quando a implementação já possuir um formato consolidado.
+## Conjunto adotado
 
----
+### Navegação e pesquisa
 
-# Procedimento
+* `eza`
+* `fd`
+* `ripgrep`
+* `fzf`
 
-## 1. Instalar as ferramentas
+### Visualização e dados estruturados
 
-Instale apenas as ferramentas previstas pela arquitetura da workstation.
+* `bat`
+* `jq`
+* `yq`
 
-Considere, quando adotadas pelo projeto:
+### HTTP e produtividade de terminal
 
-### Navegação
-
-* eza
-* tree
-
-### Pesquisa
-
-* fd
-* ripgrep
-* fzf
-
-### Visualização
-
-* bat
-* jq
-* yq
-
-### Rede
-
-* curl
-* wget
-* HTTPie
-
-### Arquivos
-
-* zip
-* unzip
-
-### Produtividade
-
-* tmux
-* just
-* make
+* `httpie`
+* `tmux`
+* `just`
+* `make`
 
 ### Git
 
-* lazygit
-* git-delta
+* `lazygit`
+* `git-delta`
 
----
+## Procedimento
 
-## 2. Configurar as ferramentas
+Execute:
 
-Aplique as configurações versionadas para cada implementação.
+```bash
+sudo ./05-cli-tools/run.sh
+```
 
-Respeite o formato nativo suportado por cada ferramenta.
+O script instala apenas pacotes ausentes, valida todos os pacotes declarados e confirma a presença dos executáveis correspondentes.
 
----
+Quando não há nada a instalar, a etapa segue diretamente para validação sem exigir confirmação artificial.
 
-## 3. Integrar ao ambiente de shell
+## Limites da capacidade
 
-Confirme que as ferramentas estão integradas ao ambiente de shell.
+Este playbook não instala:
 
-Considere:
+* Node.js;
+* .NET;
+* Terraform;
+* Kubernetes tooling;
+* AWS CLI;
+* runtimes Python específicos;
+* SDKs de projetos.
 
-* aliases;
-* funções;
-* autocompletar;
-* integração com Git;
-* integração com Docker.
+Essas dependências permanecem dentro dos ambientes de desenvolvimento conforme a política de Dev Containers.
 
----
+## Verificação
 
-## 4. Validar as capacidades
+Confirme que os executáveis abaixo estão disponíveis:
 
-Confirme que cada categoria de ferramentas atende ao propósito esperado.
+```text
+bat
+delta
+eza
+fd
+fzf
+http
+jq
+just
+lazygit
+make
+rg
+tmux
+yq
+```
 
-Valide, quando aplicável:
-
-* pesquisa de arquivos;
-* busca textual;
-* manipulação de JSON e YAML;
-* gerenciamento de sessões;
-* inspeção de repositórios Git;
-* automação de tarefas.
-
----
-
-## 5. Revisar consistência
-
-Confirme que as ferramentas seguem os padrões definidos pelo projeto e que não existem sobreposições desnecessárias de funcionalidades.
-
----
-
-# Verificação
-
-Confirme que:
-
-* todas as ferramentas previstas estão instaladas;
-* as configurações versionadas foram aplicadas;
-* integrações com Shell, Git e Docker funcionam corretamente;
-* não existem conflitos entre ferramentas equivalentes;
-* o ambiente permanece consistente e reproduzível.
-
----
-
-# Problemas comuns
-
-## Ferramenta não encontrada
-
-Confirme que a instalação foi concluída corretamente e que o executável está disponível no ambiente.
-
----
-
-## Configuração não aplicada
-
-Revise os arquivos presentes em `dotfiles/cli/`.
-
----
-
-## Integração ausente
-
-Confirme que aliases, funções e integrações do shell foram carregados corretamente.
-
----
-
-## Ferramentas redundantes
-
-Revise a lista adotada pelo projeto e elimine implementações que entreguem capacidades equivalentes sem benefício claro.
-
----
-
-# Próximo playbook
-
-Após validar as ferramentas de linha de comando, prossiga para:
+## Próximo playbook
 
 ```text
 06-ai-tooling.md
 ```
 
----
+## Referências
 
-# Referências
-
-* Documentação oficial de cada ferramenta adotada
 * ADR-0005 — Modularize Configuration by Capability
-
----
-
-# Lições aprendidas
-
-Registrar aqui novas ferramentas incorporadas, substituições, integrações adicionadas ou observações relevantes identificadas durante a evolução do ambiente de linha de comando.
+* ADR-0007 — Declarative Package Lists
+* Arch Linux package repositories
