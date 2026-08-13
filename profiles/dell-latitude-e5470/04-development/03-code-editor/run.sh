@@ -140,8 +140,9 @@ validate_vscode() {
   cmp -s "$SETTINGS_SOURCE" "${TARGET_HOME}/.config/Code/User/settings.json" || die "VS Code settings differ from canonical source."
   cmp -s "$KEYBINDINGS_SOURCE" "${TARGET_HOME}/.config/Code/User/keybindings.json" || die "VS Code keybindings differ from canonical source."
 
-  local version
-  version="$(run_as_target_user "$CODE_LINK" --version | head -n 1)"
+  local version_output version
+  version_output="$(run_as_target_user "$CODE_LINK" --version)"
+  version="${version_output%%$'\n'*}"
   [[ -n "$version" ]] || die "Visual Studio Code did not return a version."
 
   local extension
