@@ -1,16 +1,17 @@
 ---
-
 title: Instalar a stack gráfica
-version: 1.0
+version: 1.1
 status: Draft
 author: Rafael
-last_review: 2026-07-31
+last_review: 2026-08-12
 related:
 
 * architecture.md
 * ADR-0002
-* ADR-0003
 * ADR-0004
+* ADR-0006
+* ADR-0007
+* ADR-0009
 
 ---
 
@@ -18,176 +19,66 @@ related:
 
 ## Objetivo
 
-Instalar e validar os componentes fundamentais necessários para execução de uma sessão gráfica baseada em Wayland.
+Instalar e validar a base gráfica necessária para uma sessão Wayland e para a posterior instalação do Hyprland.
 
-Ao final deste playbook, a workstation possuirá a base gráfica necessária para instalação e execução do Hyprland.
+Este playbook instala capacidade. Ele não configura a sessão gráfica nem aplica personalizações.
 
----
+## Pré-requisitos
 
-# Pré-requisitos
+* fase `02-system` concluída e validada;
+* hardware gráfico identificado pelo perfil;
+* Pacman operacional;
+* acesso administrativo disponível.
 
-* Fase **02-system** concluída e validada.
-* Sistema atualizado.
-* Pacman configurado.
-* Hardware gráfico identificado.
-* Acesso administrativo disponível.
+## Fonte declarativa
 
----
+A lista de pacotes deve residir em `packages/desktop/` e ser selecionada pelo perfil de hardware conforme a ADR-0009.
 
-# Resultado esperado
+Para o perfil Dell Latitude E5470, a implementação utiliza:
 
-Ao concluir este playbook:
+```text
+packages/desktop/graphics-intel-amd.txt
+```
 
-* os componentes fundamentais do Wayland estarão instalados;
-* os drivers gráficos necessários estarão disponíveis;
-* a aceleração gráfica estará funcional;
-* o sistema estará preparado para instalação do compositor.
+A lista contempla a base Wayland/XWayland e os componentes Intel/AMD necessários ao hardware do perfil.
 
----
+## Procedimento
 
-# Procedimento
+1. Confirmar as GPUs presentes e os drivers de kernel esperados.
+2. Carregar a lista declarativa de pacotes correspondente ao perfil.
+3. Validar que os pacotes declarados estão disponíveis nos repositórios configurados.
+4. Instalar somente os pacotes ausentes.
+5. Confirmar que os módulos de kernel esperados estão presentes.
+6. Confirmar a disponibilidade das ferramentas de validação gráfica instaladas pela stack.
 
-## 1. Identificar o hardware gráfico
-
-Confirme quais dispositivos gráficos estão presentes na workstation.
-
-Identifique:
-
-* GPU integrada;
-* GPU dedicada, quando aplicável;
-* fabricante de cada dispositivo;
-* driver utilizado pelo kernel.
-
----
-
-## 2. Definir a estratégia gráfica
-
-Confirme qual dispositivo gráfico será utilizado como principal durante a sessão Wayland.
-
-Em sistemas com múltiplas GPUs, documente a estratégia adotada para:
-
-* renderização principal;
-* aceleração gráfica;
-* uso eventual da GPU secundária;
-* economia de energia.
-
----
-
-## 3. Instalar os componentes do Wayland
-
-Instale os componentes fundamentais necessários para execução de aplicações e compositores Wayland.
-
-Evite incluir neste playbook componentes específicos do Hyprland ou ferramentas de personalização do desktop.
-
----
-
-## 4. Instalar os componentes gráficos
-
-Instale os componentes correspondentes ao hardware identificado.
-
-A seleção deverá seguir o perfil da workstation e as recomendações oficiais para o hardware utilizado.
-
----
-
-## 5. Instalar suporte a aplicações legadas
-
-Configure o suporte necessário para execução de aplicações que ainda dependam do protocolo X11 dentro da sessão Wayland.
-
-Esse suporte não deverá substituir o Wayland como arquitetura gráfica principal.
-
----
-
-## 6. Validar os módulos do kernel
-
-Confirme que os módulos gráficos esperados foram carregados corretamente.
-
-Verifique se não existem conflitos entre os dispositivos gráficos ou drivers disponíveis.
-
----
-
-## 7. Validar a aceleração gráfica
-
-Confirme que o sistema reconhece corretamente o hardware gráfico e que a aceleração está disponível.
-
-Registre qualquer limitação específica do hardware.
-
----
-
-## 8. Revisar os registros do sistema
-
-Analise os registros relacionados ao subsistema gráfico.
-
-Confirme que não existem erros críticos de inicialização, firmware ou carregamento de módulos.
-
----
-
-# Verificação
+## Verificação
 
 Confirme que:
 
-* o hardware gráfico foi identificado corretamente;
-* os drivers esperados estão carregados;
-* a aceleração gráfica está disponível;
-* os componentes fundamentais do Wayland estão instalados;
-* o suporte a aplicações X11 está disponível quando necessário;
-* não existem erros gráficos críticos nos registros do sistema.
+* a GPU integrada esperada foi identificada;
+* a GPU dedicada opcional foi identificada quando presente;
+* `i915` está carregado no hardware Intel;
+* `amdgpu` é reconhecido quando a GPU AMD estiver ativa;
+* os pacotes declarados estão instalados;
+* ferramentas de OpenGL, VA-API e Vulkan estão disponíveis;
+* falhas de inicialização dependentes de uma sessão gráfica são registradas para validação posterior, e não tratadas como erro de instalação quando a ferramenta não pode inicializar fora da sessão.
 
----
+## Fora de escopo
 
-# Problemas comuns
+Este playbook não deve:
 
-## Dispositivo gráfico não identificado
+* instalar Hyprland;
+* configurar monitores;
+* configurar variáveis de sessão;
+* definir GPU principal por configuração do compositor;
+* aplicar aparência ou atalhos.
 
-Confirme que o dispositivo está habilitado no firmware e que o kernel possui suporte ao hardware.
-
----
-
-## Driver incorreto carregado
-
-Revise os módulos ativos e confirme que correspondem ao hardware identificado.
-
----
-
-## Aceleração gráfica indisponível
-
-Verifique a instalação dos componentes gráficos, a disponibilidade de firmware e os registros do kernel.
-
----
-
-## Conflito entre GPUs
-
-Revise a estratégia definida para sistemas híbridos e confirme qual dispositivo deve assumir a renderização principal.
-
----
-
-## Aplicações X11 não executam
-
-Confirme que a camada de compatibilidade prevista pelo projeto está instalada e operacional.
-
----
-
-# Próximo playbook
-
-Após validar a stack gráfica, prossiga para:
+## Próximo playbook
 
 ```text
 02-install-compositor.md
 ```
 
----
+## Lições aprendidas
 
-# Referências
-
-* Arch Wiki — Wayland
-* Arch Wiki — Hardware video acceleration
-* Arch Wiki — Intel graphics
-* Arch Wiki — AMDGPU
-* Arch Wiki — PRIME
-* Documentação oficial do Hyprland
-
----
-
-# Lições aprendidas
-
-Registrar aqui particularidades do hardware gráfico, conflitos entre dispositivos, limitações de drivers ou ajustes necessários para futuras instalações.
-
+A validação de uma stack gráfica deve distinguir a presença correta dos drivers e ferramentas da capacidade de inicializar APIs que dependem de uma sessão gráfica já ativa.
