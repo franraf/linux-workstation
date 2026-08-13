@@ -1,0 +1,18 @@
+# Wayland base
+wayland
+wayland-protocols
+xorg-xwayland
+
+# OpenGL / Mesa
+mesa
+mesa-utils
+
+# Vulkan
+vulkan-intel
+vulkan-radeon
+vulkan-tools
+
+# Video acceleration
+intel-media-driver
+libva-mesa-driver
+libva-utils
