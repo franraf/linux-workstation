@@ -15,7 +15,7 @@ setup_error_trap "$SCRIPT_NAME"
 usage() {
   cat <<EOF
 Usage:
-  ./$SCRIPT_NAME
+  bash ./$SCRIPT_NAME
 
 Runs the final validation gate for phase 03-desktop.
 Execute it as the authenticated graphical user from inside Hyprland.
@@ -38,14 +38,14 @@ main() {
   require_package_installed thunar "Run 09-install-file-manager first."
   require_package_installed greetd "Run 11-install-session-login first."
 
-  [[ -x "${TEST_DIRECTORY}/static-config.sh" ]] || chmod +x "${TEST_DIRECTORY}/static-config.sh"
-  [[ -x "${TEST_DIRECTORY}/runtime-session.sh" ]] || chmod +x "${TEST_DIRECTORY}/runtime-session.sh"
+  [[ -s "${TEST_DIRECTORY}/static-config.sh" ]] || die "Static desktop test is missing."
+  [[ -s "${TEST_DIRECTORY}/runtime-session.sh" ]] || die "Runtime desktop test is missing."
 
   log_info "Running static desktop configuration tests."
-  "${TEST_DIRECTORY}/static-config.sh"
+  bash "${TEST_DIRECTORY}/static-config.sh"
 
   log_info "Running live Hyprland session tests."
-  "${TEST_DIRECTORY}/runtime-session.sh"
+  bash "${TEST_DIRECTORY}/runtime-session.sh"
 
   printf '\nAutomated desktop validation passed.\n'
   printf 'Complete the manual checks printed above before marking phase 03-desktop complete.\n'
