@@ -1,0 +1,2 @@
+# Dev Containers is installed now and validated after Docker is configured.
+ms-vscode-remote.remote-containers
