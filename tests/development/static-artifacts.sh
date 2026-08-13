@@ -17,25 +17,30 @@ require_file() {
 
 bash "${REPO_ROOT}/tests/repository/phase-consistency.sh"
 
-for step in 01-version-control 02-shell-environment; do
+for step in 01-version-control 02-shell-environment 03-code-editor; do
   run_file="${PROFILE_ROOT}/${step}/run.sh"
   require_file "$run_file"
   bash -n "$run_file" || fail "Bash syntax failed: ${run_file#${REPO_ROOT}/}"
   pass "Bash syntax: ${run_file#${REPO_ROOT}/}"
 done
 
-for package_file in version-control shell; do
+for package_file in version-control shell code-editor-runtime; do
   require_file "${REPO_ROOT}/packages/development/${package_file}.txt"
 done
 
 require_file "${REPO_ROOT}/system/development/zsh/zshenv"
 require_file "${REPO_ROOT}/system/development/zsh/zshrc"
 require_file "${REPO_ROOT}/system/development/starship/starship.toml"
+require_file "${REPO_ROOT}/system/development/vscode/code.desktop"
 
 for module in environment aliases completion functions integrations prompt; do
   require_file "${REPO_ROOT}/system/development/zsh/modules/${module}.zsh"
 done
 
+require_file "${REPO_ROOT}/dotfiles/vscode/settings.json"
+require_file "${REPO_ROOT}/dotfiles/vscode/keybindings.json"
+require_file "${REPO_ROOT}/dotfiles/vscode/extensions.txt"
+require_file "${REPO_ROOT}/docs/adr/0011-upstream-distribution-exception.md"
 require_file "${PROFILE_ROOT}/phase.yaml"
 
 if head -n 1 "${REPO_ROOT}/profiles/dell-latitude-e5470/profile.yaml" | grep -q '^```'; then
