@@ -1,13 +1,11 @@
-local hl = require("hyprlang")
-
 -- Application launcher
-hl.bind("SUPER", "SPACE", "exec", "rofi -show drun")
+hl.bind("SUPER + SPACE", hl.dsp.exec_cmd("rofi -show drun"))
 
 -- Notification center
-hl.bind("SUPER", "N", "exec", "swaync-client -t")
+hl.bind("SUPER + N", hl.dsp.exec_cmd("swaync-client -t"))
 
 -- Terminal emulator
-hl.bind("SUPER", "RETURN", "exec", "kitty")
+hl.bind("SUPER + RETURN", hl.dsp.exec_cmd("kitty"))
 
 -- File manager
-hl.bind("SUPER", "E", "exec", "thunar")
+hl.bind("SUPER + E", hl.dsp.exec_cmd("thunar"))
