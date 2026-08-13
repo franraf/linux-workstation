@@ -1,5 +1,3 @@
-local hl = require("hyprlang")
-
 -- Canonical session autostart registry.
 -- Each configured capability owns one guarded command here.
 hl.on("hyprland.start", function()
