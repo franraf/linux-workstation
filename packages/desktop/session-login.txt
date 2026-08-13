@@ -1,0 +1,3 @@
+# Session login manager and terminal greeter
+greetd
+greetd-tuigreet
