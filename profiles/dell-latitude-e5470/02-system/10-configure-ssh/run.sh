@@ -3,397 +3,92 @@
 set -Eeuo pipefail
 
 readonly SCRIPT_NAME="$(basename "$0")"
-
+readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
+readonly SOURCE_FILE="${REPO_ROOT}/system/openssh/10-linux-workstation.conf"
+readonly CONFIG_FILE="/etc/ssh/sshd_config.d/10-linux-workstation.conf"
 readonly SSH_PACKAGE="openssh"
 readonly SSH_SERVICE="sshd.service"
 
-readonly CONFIG_DIRECTORY="/etc/ssh/sshd_config.d"
-readonly CONFIG_FILE="${CONFIG_DIRECTORY}/10-linux-workstation.conf"
+source "${REPO_ROOT}/scripts/lib/logging.sh"
+source "${REPO_ROOT}/scripts/lib/requirements.sh"
+source "${REPO_ROOT}/scripts/lib/system-config.sh"
 
-log() {
-  printf '[INFO] %s\n' "$*"
-}
-
-warn() {
-  printf '[WARN] %s\n' "$*" >&2
-}
-
-die() {
-  printf '[ERROR] %s\n' "$*" >&2
-  exit 1
-}
-
-on_error() {
-  local exit_code=$?
-  local line_number=$1
-
-  printf '[ERROR] %s failed at line %s with exit code %s.\n' \
-    "$SCRIPT_NAME" \
-    "$line_number" \
-    "$exit_code" >&2
-
-  exit "$exit_code"
-}
-
-trap 'on_error "$LINENO"' ERR
+setup_error_trap "$SCRIPT_NAME"
 
 usage() {
-  cat <<EOF
-Usage:
-  sudo ./$SCRIPT_NAME
-
-This script installs and configures the OpenSSH server.
-
-Package:
-  ${SSH_PACKAGE}
-
-Service:
-  ${SSH_SERVICE}
-
-Configuration:
-  ${CONFIG_FILE}
-
-Managed policy:
-
-  PermitRootLogin no
-  PubkeyAuthentication yes
-  PasswordAuthentication yes
-  PermitEmptyPasswords no
-  KbdInteractiveAuthentication no
-  X11Forwarding no
-
-Password authentication remains enabled during the base-system phase.
-Further hardening belongs to the security phase.
-EOF
-}
-
-require_root() {
-  [[ $EUID -eq 0 ]] ||
-    die "This script must be executed as root."
-}
-
-require_commands() {
-  local commands=(
-    grep
-    install
-    mktemp
-    pacman
-    sshd
-    systemctl
-    find
-    sed
-    ssh-keygen
-  )
-
-  local command_name
-
-  for command_name in "${commands[@]}"; do
-    command -v "$command_name" >/dev/null 2>&1 ||
-      die "Required command not found: $command_name"
-  done
+  printf 'Usage:\n  sudo ./%s\n\nCanonical source:\n  %s\n' "$SCRIPT_NAME" "$SOURCE_FILE"
 }
 
 parse_arguments() {
   while (($# > 0)); do
     case "$1" in
-      --help | -h)
-        usage
-        exit 0
-        ;;
-
-      *)
-        die "Unknown argument: $1"
-        ;;
+      --help|-h) usage; exit 0 ;;
+      *) die "Unknown argument: $1" ;;
     esac
   done
 }
 
-validate_execution_context() {
-  [[ -f /etc/os-release ]] ||
-    die "The current root does not contain /etc/os-release."
-
-  grep -q '^ID=arch$' /etc/os-release ||
-    die "This script must run on Arch Linux."
-
-  [[ -d /run/systemd/system ]] ||
-    die "systemd is not running as PID 1."
-}
-
-show_plan() {
-  cat <<EOF
-
-OpenSSH configuration
----------------------
-
-Package:
-  ${SSH_PACKAGE}
-
-Service:
-  ${SSH_SERVICE}
-
-Configuration:
-  ${CONFIG_FILE}
-
-Authentication
---------------
-
-Root login:
-  disabled
-
-Public key authentication:
-  enabled
-
-Password authentication:
-  enabled
-
-Empty passwords:
-  disabled
-
-Keyboard-interactive authentication:
-  disabled
-
-X11 forwarding:
-  disabled
-
-Password authentication is intentionally retained during this phase
-to avoid requiring SSH key provisioning before remote access works.
-EOF
-}
-
 confirm_configuration() {
   local confirmation
-
   printf '\nType SSH to configure OpenSSH: '
   read -r confirmation
-
-  [[ "$confirmation" == "SSH" ]] ||
-    die "OpenSSH configuration was not authorized."
+  [[ "$confirmation" == "SSH" ]] || die "OpenSSH configuration was not authorized."
 }
 
-install_package() {
-  if pacman -Q "$SSH_PACKAGE" >/dev/null 2>&1; then
-    log "${SSH_PACKAGE} is already installed."
-    return
-  fi
+validate_effective_option() {
+  local effective_config="$1"
+  local option="$2"
+  local expected="$3"
 
-  log "Installing ${SSH_PACKAGE}."
-
-  pacman \
-    --sync \
-    --needed \
-    "$SSH_PACKAGE"
-}
-
-validate_package() {
-  pacman -Q "$SSH_PACKAGE" >/dev/null 2>&1 ||
-    die "${SSH_PACKAGE} is not installed."
-
-  command -v sshd >/dev/null 2>&1 ||
-    die "sshd executable is unavailable."
-
-  systemctl cat "$SSH_SERVICE" >/dev/null 2>&1 ||
-    die "${SSH_SERVICE} is unavailable."
-}
-
-write_configuration() {
-  local temporary_file
-
-  temporary_file="$(mktemp)"
-  trap 'rm -f "$temporary_file"' RETURN
-
-  cat >"$temporary_file" <<EOF
-# Managed by linux-workstation.
-# Profile: dell-latitude-e5470
-
-PermitRootLogin no
-PubkeyAuthentication yes
-PasswordAuthentication yes
-PermitEmptyPasswords no
-KbdInteractiveAuthentication no
-X11Forwarding no
-EOF
-
-  install \
-    --directory \
-    --owner root \
-    --group root \
-    --mode 0755 \
-    "$CONFIG_DIRECTORY"
-
-  install \
-    --owner root \
-    --group root \
-    --mode 0644 \
-    "$temporary_file" \
-    "$CONFIG_FILE"
-
-  rm -f "$temporary_file"
-  trap - RETURN
-}
-
-validate_configuration_file() {
-  [[ -s "$CONFIG_FILE" ]] ||
-    die "OpenSSH configuration file was not created."
-
-  grep -Fxq 'PermitRootLogin no' "$CONFIG_FILE" ||
-    die "PermitRootLogin policy is incorrect."
-
-  grep -Fxq 'PubkeyAuthentication yes' "$CONFIG_FILE" ||
-    die "PubkeyAuthentication policy is incorrect."
-
-  grep -Fxq 'PasswordAuthentication yes' "$CONFIG_FILE" ||
-    die "PasswordAuthentication policy is incorrect."
-
-  grep -Fxq 'PermitEmptyPasswords no' "$CONFIG_FILE" ||
-    die "PermitEmptyPasswords policy is incorrect."
-
-  grep -Fxq 'KbdInteractiveAuthentication no' "$CONFIG_FILE" ||
-    die "KbdInteractiveAuthentication policy is incorrect."
-
-  grep -Fxq 'X11Forwarding no' "$CONFIG_FILE" ||
-    die "X11Forwarding policy is incorrect."
-}
-
-ensure_host_keys() {
-  local existing_keys
-
-  existing_keys="$(
-    find /etc/ssh \
-      -maxdepth 1 \
-      -type f \
-      -name 'ssh_host_*_key' \
-      -print
-  )"
-
-  if [[ -n "$existing_keys" ]]; then
-    log "OPENSSH host keys already exist."
-    return
-  fi
-
-  log "Generating OpenSSH host keys."
-
-  ssh-keygen -A
-}
-
-validate_sshd_syntax() {
-  log "Validating sshd configuration syntax."
-
-  sshd -t ||
-    die "OpenSSH configuration validation failed."
-}
-
-validate_effective_configuration() {
-  local effective_config
-
-  effective_config="$(sshd -T)"
-
-  validate_sshd_option() {
-    local option="$1"
-    local expected="$2"
-
-    awk \
-      -v option="$option" \
-      -v expected="$expected" '
-        tolower($1) == tolower(option) &&
-	tolower($2) == tolower(expected) {
-          found = 1
-	  exit
-	}
-
-        END {
-	  exit(found ? 0 : 1)
-        }
-      ' <<<"$effective_config" ||
-      die "${option}=${expected} is not effective."
-  }
-
-  validate_sshd_option "PermitRootLogin" "no"
-  validate_sshd_option "PubkeyAuthentication" "yes"
-  validate_sshd_option "PasswordAuthentication" "yes"
-  validate_sshd_option "PermitEmptyPasswords" "no"
-  validate_sshd_option "KbdInteractiveAuthentication" "no"
-  validate_sshd_option "X11Forwarding" "no"
-}
-
-enable_service() {
-  log "Enabling ${SSH_SERVICE}."
-
-  systemctl enable "$SSH_SERVICE"
-}
-
-restart_service() {
-  log "Restarting ${SSH_SERVICE}."
-
-  systemctl restart "$SSH_SERVICE"
-}
-
-validate_service() {
-  systemctl is-enabled --quiet "$SSH_SERVICE" ||
-    die "${SSH_SERVICE} is not enabled."
-
-  systemctl is-active --quiet "$SSH_SERVICE" ||
-    die "${SSH_SERVICE} is not active."
-}
-
-validate_host_keys() {
-  local host_keys
-
-  host_keys="$(
-    find /etc/ssh \
-      -maxdepth 1 \
-      -type f \
-      -name 'ssh_host_*_key' \
-      -print
-  )"
-
-  [[ -n "$host_keys" ]] ||
-    die "No OpenSSH host private keys were found."
-}
-
-show_result() {
-  printf '\nOpenSSH configured successfully.\n\n'
-
-  printf 'Configuration:\n'
-  printf '  %s\n' "$CONFIG_FILE"
-
-  printf '\nService:\n'
-  printf '  enabled: %s\n' \
-    "$(systemctl is-enabled "$SSH_SERVICE")"
-
-  printf '  active:  %s\n' \
-    "$(systemctl is-active "$SSH_SERVICE")"
-
-  printf '\nEffective policy:\n'
-
-  sshd -T |
-    grep -Ei \
-      '^(permitrootlogin|pubkeyauthentication|passwordauthentication|permitemptypasswords|kbdinteractiveauthentication|x11forwarding)[[:space:]]' |
-    sed 's/^/  /'
-
-  printf '\nNext step:\n'
-  printf '  11-install-base-packages\n'
+  awk -v option="$option" -v expected="$expected" '
+    tolower($1) == tolower(option) && tolower($2) == tolower(expected) { found = 1; exit }
+    END { exit(found ? 0 : 1) }
+  ' <<<"$effective_config" || die "${option}=${expected} is not effective."
 }
 
 main() {
   require_root
-  require_commands
+  require_commands cmp find pacman sshd ssh-keygen systemctl
+  require_arch_systemd
+  require_system_config_commands
   parse_arguments "$@"
 
-  validate_execution_context
-  show_plan
+  if ! pacman -Q "$SSH_PACKAGE" >/dev/null 2>&1; then
+    log_info "Installing ${SSH_PACKAGE}."
+    pacman -S --needed "$SSH_PACKAGE"
+  fi
+
+  systemctl cat "$SSH_SERVICE" >/dev/null 2>&1 || die "${SSH_SERVICE} is unavailable."
+
+  printf '\nOpenSSH configuration\n---------------------\n\nSource:\n  %s\n\nDestination:\n  %s\n' "$SOURCE_FILE" "$CONFIG_FILE"
   confirm_configuration
-  install_package
-  validate_package
-  write_configuration
-  validate_configuration_file
-  ensure_host_keys
-  validate_sshd_syntax
-  validate_effective_configuration
-  enable_service
-  restart_service
-  validate_service
-  validate_host_keys
-  show_result
+
+  install_system_file "$SOURCE_FILE" "$CONFIG_FILE"
+  validate_system_file_matches "$SOURCE_FILE" "$CONFIG_FILE"
+
+  if ! find /etc/ssh -maxdepth 1 -type f -name 'ssh_host_*_key' -print -quit | grep -q .; then
+    log_info "Generating OpenSSH host keys."
+    ssh-keygen -A
+  fi
+
+  sshd -t || die "OpenSSH configuration validation failed."
+
+  local effective_config
+  effective_config="$(sshd -T)"
+  validate_effective_option "$effective_config" PermitRootLogin no
+  validate_effective_option "$effective_config" PubkeyAuthentication yes
+  validate_effective_option "$effective_config" PasswordAuthentication yes
+  validate_effective_option "$effective_config" PermitEmptyPasswords no
+  validate_effective_option "$effective_config" KbdInteractiveAuthentication no
+  validate_effective_option "$effective_config" X11Forwarding no
+
+  systemctl enable "$SSH_SERVICE"
+  systemctl restart "$SSH_SERVICE"
+  systemctl is-enabled --quiet "$SSH_SERVICE" || die "${SSH_SERVICE} is not enabled."
+  systemctl is-active --quiet "$SSH_SERVICE" || die "${SSH_SERVICE} is not active."
+
+  printf '\nOpenSSH configured successfully.\n\nNext step:\n  11-install-base-packages\n'
 }
 
 main "$@"
