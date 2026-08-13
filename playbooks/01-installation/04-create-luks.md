@@ -1,132 +1,49 @@
 ---
-title: Criar o volume LUKS2
+title: Criar volume LUKS
 version: 1.1
 status: Draft
 author: Rafael
-last_review: 2026-08-12
+last_review: 2026-08-13
 related:
-
-* architecture.md
-* ADR-0002
-* ADR-0003
-* ADR-0004
-* standards.md
-
+  - ADR-0009
+  - 03-partition-disk.md
+  - 05-create-btrfs.md
 ---
 
-# 04 — Criar o volume LUKS2
+# 04 — Criar volume LUKS
 
 ## Objetivo
 
-Criptografar a partição destinada ao sistema utilizando LUKS2.
-
-Ao final deste playbook, a partição estará protegida por criptografia e disponível para abertura durante a instalação.
-
----
-
-# Pré-requisitos
-
-* Disco particionado conforme o playbook anterior.
-* Partição destinada ao sistema identificada corretamente.
-
-> **Atenção:** `cryptsetup luksFormat` remove permanentemente qualquer dado existente na partição selecionada.
-
----
-
-# Resultado esperado
-
-Ao concluir este playbook:
-
-* a partição do sistema estará formatada com LUKS2;
-* será possível abrir o volume criptografado;
-* um dispositivo mapeado estará disponível para as próximas etapas.
-
-Nenhum sistema de arquivos será criado neste momento.
-
----
-
-# Procedimento
-
-## 1. Identificar a partição
-
-Confirme dispositivo, tamanho, disco de origem e finalidade da partição.
-
-## 2. Exigir confirmação destrutiva
-
-Imediatamente antes de `cryptsetup luksFormat`, solicite confirmação forte conforme `docs/standards.md`.
-
-O usuário deverá digitar exatamente:
+Transformar a partição Linux LUKS criada no passo anterior em um container LUKS2 e abri-lo como:
 
 ```text
-ERASE
+/dev/mapper/cryptroot
 ```
 
-Qualquer outra entrada deverá cancelar o procedimento.
+Este é um passo **destrutivo** e a senha nunca é armazenada pelo repositório.
 
-## 3. Inicializar o volume LUKS2
+## Execução
 
-Somente após a confirmação, inicialize a partição utilizando LUKS2.
+```bash
+sudo profiles/dell-latitude-e5470/01-installation/04-create-luks/run.sh \
+  --partition /dev/<particao-luks>
+```
 
-Durante esta etapa será solicitada uma senha de desbloqueio. Escolha uma senha forte e armazene-a de forma segura.
+O script valida que o alvo é uma partição gravável com o GUID Linux LUKS, sem mounts, holders ativos, mapper `cryptroot` existente ou cabeçalho LUKS prévio.
 
-## 4. Abrir o volume criptografado
+Antes do `luksFormat`, exige o caminho completo da partição e a palavra `ERASE`. A senha é solicitada diretamente pelo `cryptsetup` com confirmação interativa.
 
-Desbloqueie o volume recém-criado e disponibilize o dispositivo pelo device mapper.
+## Verificação
 
-## 5. Confirmar o mapeamento
+O passo só passa quando:
 
-Verifique se o dispositivo criptografado foi aberto corretamente.
+- o container é LUKS versão 2;
+- o mapper `/dev/mapper/cryptroot` existe;
+- `cryptsetup status cryptroot` informa mapping ativo;
+- o backing device do mapper é exatamente a partição selecionada.
 
----
-
-# Verificação
-
-Confirme que:
-
-* a partição utiliza LUKS2;
-* o volume foi aberto com sucesso;
-* o dispositivo mapeado está disponível;
-* não houve erro durante a abertura.
-
----
-
-# Problemas comuns
-
-## Partição incorreta
-
-Não execute `luksFormat`. Retorne à identificação do dispositivo.
-
-## Confirmação diferente de `ERASE`
-
-Cancele a operação.
-
-## Senha incorreta
-
-Confirme a senha utilizada durante a criação do volume.
-
-## Volume não pode ser aberto
-
-Verifique se a inicialização do LUKS foi concluída e se a partição correta foi selecionada.
-
----
-
-# Próximo playbook
+## Próximo playbook
 
 ```text
 05-create-btrfs.md
 ```
-
----
-
-# Referências
-
-* Arch Wiki — dm-crypt
-* Arch Wiki — LUKS
-* Arch Wiki — cryptsetup
-* `docs/standards.md`
-
----
-
-# Lições aprendidas
-
-A confirmação forte deve ocorrer imediatamente antes da ação destrutiva, mesmo quando o playbook já contém avisos de risco.
