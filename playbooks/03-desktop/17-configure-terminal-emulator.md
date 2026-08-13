@@ -1,17 +1,16 @@
 ---
-
 title: Configurar emulador de terminal
-version: 1.0
+version: 1.1
 status: Draft
 author: Rafael
-last_review: 2026-07-31
+last_review: 2026-08-12
 related:
 
 * architecture.md
 * ADR-0002
-* ADR-0003
 * ADR-0004
 * ADR-0005
+* ADR-0006
 
 ---
 
@@ -19,18 +18,14 @@ related:
 
 ## Objetivo
 
-Configurar o emulador de terminal da workstation, definindo sua integração com a sessão gráfica e proporcionando uma experiência consistente para administração do sistema e desenvolvimento de software.
-
-Ao final deste playbook, o terminal estará alinhado com os padrões definidos pelo projeto.
-
-A implementação adotada pelo projeto utiliza o **Kitty**.
+Configurar o Kitty como emulador de terminal da workstation, separando comportamento, teclado e aparência conforme a ADR-0005 e integrando o terminal aos atalhos globais da sessão.
 
 ---
 
 # Pré-requisitos
 
 * Sessão gráfica configurada.
-* Emulador de terminal instalado.
+* Kitty instalado.
 * Stack tipográfica instalada.
 
 ---
@@ -39,9 +34,10 @@ A implementação adotada pelo projeto utiliza o **Kitty**.
 
 Ao concluir este playbook:
 
-* o terminal seguirá a identidade visual da workstation;
-* o comportamento do terminal estará configurado conforme os padrões do projeto;
-* a integração com a sessão gráfica estará concluída.
+* Kitty estará configurado de forma modular;
+* comportamento e atalhos internos estarão definidos;
+* o atalho global estará registrado em `70-keybindings.conf`;
+* a identidade visual final poderá ser aplicada posteriormente pelo playbook 19.
 
 ---
 
@@ -49,60 +45,33 @@ Ao concluir este playbook:
 
 ## 1. Organizar a configuração
 
-Estruture os arquivos conforme a ADR-0005.
+Utilize `~/.config/kitty/kitty.conf` como ponto de entrada e módulos separados para aparência, comportamento e teclado.
 
-Separe aparência, teclado, comportamento e integrações em módulos independentes sempre que possível.
+## 2. Configurar comportamento
 
----
+Defina rolagem, histórico, seleção, janelas, abas e redimensionamento.
 
-## 2. Configurar a interface
+## 3. Configurar teclado
 
-Defina a experiência visual do terminal.
+Defina apenas atalhos internos do Kitty, evitando conflitos com os atalhos globais do Hyprland.
 
-Considere:
+## 4. Integrar ao Hyprland
 
-* família tipográfica;
-* tamanho da fonte;
-* espaçamento;
-* cursor;
-* transparência, quando aplicável;
-* esquema de cores.
+Adicione o atalho em:
 
----
+```text
+~/.config/hypr/conf.d/70-keybindings.conf
+```
 
-## 3. Configurar o comportamento
+A baseline utiliza:
 
-Defina o comportamento esperado durante a utilização do terminal.
+```text
+SUPER + RETURN → kitty
+```
 
-Considere aspectos como:
+## 5. Validar
 
-* seleção de texto;
-* rolagem;
-* histórico;
-* múltiplas janelas;
-* múltiplas abas, quando suportadas;
-* redimensionamento.
-
----
-
-## 4. Configurar a integração
-
-Integre o terminal aos demais componentes da workstation.
-
-Considere:
-
-* lançador de aplicações;
-* gerenciador de arquivos;
-* sessão gráfica;
-* atalhos globais.
-
----
-
-## 5. Validar a experiência
-
-Execute uma sessão completa de utilização.
-
-Confirme que o terminal atende às necessidades de administração do sistema e desenvolvimento.
+Confirme que `kitty --version` responde corretamente e que o terminal abre pela sessão gráfica.
 
 ---
 
@@ -110,43 +79,16 @@ Confirme que o terminal atende às necessidades de administração do sistema e 
 
 Confirme que:
 
-* o terminal inicia corretamente;
-* a renderização de texto é consistente;
-* Unicode, ícones e emojis são exibidos corretamente;
-* atalhos funcionam conforme esperado;
-* não existem erros durante a execução.
-
----
-
-# Problemas comuns
-
-## Renderização incorreta
-
-Revise a stack tipográfica e confirme a disponibilidade das fontes utilizadas.
-
----
-
-## Atalhos não funcionam
-
-Confirme que não existem conflitos entre o terminal e a sessão gráfica.
-
----
-
-## Problemas de integração
-
-Revise a configuração da sessão e das aplicações relacionadas.
-
----
-
-## Comportamento inesperado
-
-Compare a configuração atual com os padrões definidos pelo projeto.
+* Kitty inicia normalmente;
+* texto, Unicode, ícones e emojis são renderizados;
+* clipboard funciona;
+* atalhos internos não conflitam com o Hyprland;
+* `SUPER + RETURN` abre o terminal;
+* a configuração permanece modular.
 
 ---
 
 # Próximo playbook
-
-Após validar o emulador de terminal, prossiga para:
 
 ```text
 18-configure-file-manager.md
@@ -157,11 +99,11 @@ Após validar o emulador de terminal, prossiga para:
 # Referências
 
 * Documentação oficial do Kitty
-* Arch Wiki — Kitty
-* ADR-0005 — Modularize Configuration by Capability
+* ADR-0005 — Modularizar configurações por capacidade
+* ADR-0006 — Separação entre instalação e configuração
 
 ---
 
 # Lições aprendidas
 
-Registrar aqui melhorias na experiência de utilização, novos recursos adotados ou observações relevantes identificadas durante a evolução do terminal.
+A aparência específica do terminal deve permanecer separada de sua integração funcional, permitindo que o playbook de aparência aplique a identidade visual sem alterar comportamento ou keybindings.
