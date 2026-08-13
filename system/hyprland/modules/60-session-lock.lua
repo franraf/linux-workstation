@@ -1,3 +1,2 @@
-local hl = require("hyprlang")
-
-hl.bind("SUPER", "L", "exec", "pidof hyprlock || hyprlock")
+-- Session lock
+hl.bind("SUPER + L", hl.dsp.exec_cmd("pidof hyprlock || hyprlock"))
