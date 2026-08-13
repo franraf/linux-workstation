@@ -1,125 +1,65 @@
 ---
-
-title: Instalar Lançador de Aplicações
-version: 1.0
+title: Instalar lançador de aplicações
+version: 1.1
 status: Draft
 author: Rafael
-last_review: 2026-07-31
+last_review: 2026-08-12
 related:
 
 * architecture.md
 * ADR-0002
-* ADR-0003
 * ADR-0004
+* ADR-0006
+* ADR-0007
+* ADR-0009
 
 ---
 
-# 06 — Instalar Lançador de Aplicações
+# 06 — Instalar lançador de aplicações
 
 ## Objetivo
 
-Instalar o Rofi como lançador de aplicações da workstation.
+Instalar o Rofi como lançador de aplicações da workstation, sem configurar tema, modos ou atalhos.
 
-Ao final deste playbook, o sistema possuirá um componente capaz de localizar e iniciar aplicações da sessão gráfica.
+## Pré-requisitos
 
----
-
-# Pré-requisitos
-
-* Stack gráfica instalada.
+* `02-install-compositor` concluído;
 * Hyprland instalado.
 
----
+## Fonte declarativa
 
-# Resultado esperado
+```text
+packages/desktop/application-launcher.txt
+```
 
-Ao concluir este playbook:
+Baseline:
 
-* o Rofi estará instalado;
-* suas dependências obrigatórias estarão disponíveis;
-* o lançador poderá ser iniciado durante uma sessão Hyprland.
+```text
+rofi
+```
 
----
+## Procedimento
 
-# Procedimento
+1. Validar que o compositor está instalado.
+2. Carregar e validar a lista declarativa.
+3. Instalar somente os pacotes ausentes.
+4. Confirmar o executável `rofi`.
+5. Confirmar que a versão pode ser consultada.
 
-## 1. Revisar os componentes necessários
-
-Confirme as dependências obrigatórias para utilização do Rofi em ambiente Wayland.
-
----
-
-## 2. Instalar o Rofi
-
-Instale o componente utilizando os repositórios definidos pelo projeto.
-
----
-
-## 3. Validar a instalação
-
-Confirme que os arquivos esperados foram instalados corretamente.
-
----
-
-## 4. Executar um teste funcional
-
-Inicie o Rofi durante uma sessão de teste.
-
-O objetivo é apenas confirmar que o componente executa corretamente.
-
-Não configure temas, atalhos ou modos adicionais nesta etapa.
-
----
-
-# Verificação
+## Verificação
 
 Confirme que:
 
-* o Rofi está instalado;
-* o componente inicia corretamente;
-* aplicações podem ser localizadas e iniciadas;
-* não existem erros críticos durante sua execução.
+* o pacote `rofi` está instalado;
+* o executável está disponível;
+* a versão pode ser consultada.
 
----
+## Fora de escopo
 
-# Problemas comuns
+Não abrir o launcher como requisito desta etapa e não configurar tema, bindings ou modos adicionais. A busca e abertura de aplicações serão validadas após configuração.
 
-## O launcher não inicia
+## Próximo playbook
 
-Revise as dependências e confirme que a sessão Wayland está operacional.
-
----
-
-## Aplicações não aparecem
-
-Verifique se os arquivos `.desktop` estão disponíveis e acessíveis ao launcher.
-
----
-
-## Erros durante a execução
-
-Analise os registros da sessão antes de prosseguir.
-
----
-
-# Próximo playbook
-
-Após validar a instalação do Rofi, prossiga para:
-
-```text id="t98p4h"
+```text
 07-install-notification-center.md
 ```
-
----
-
-# Referências
-
-* Documentação oficial do Rofi
-* Arch Wiki — Rofi
-* Arch Wiki — Wayland
-
----
-
-# Lições aprendidas
-
-Registrar aqui incompatibilidades, dependências adicionais ou observações relevantes identificadas durante a instalação do Rofi.
