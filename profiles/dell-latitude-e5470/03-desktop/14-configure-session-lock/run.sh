@@ -40,7 +40,7 @@ validate_configuration() {
 
   [[ -s "$hypr_directory/hyprlock.conf" ]] || die "Hyprlock configuration was not installed."
   [[ -s "$hypr_directory/modules/60-session-lock.lua" ]] || die "Session-lock module was not installed."
-  grep -q 'hl.bind("SUPER", "L"' "$hypr_directory/modules/60-session-lock.lua" || die "SUPER+L binding is missing."
+  grep -Fq 'hl.bind("SUPER + L", hl.dsp.exec_cmd(' "$hypr_directory/modules/60-session-lock.lua" || die "SUPER+L binding is missing."
   grep -q 'hyprlock' "$hypr_directory/modules/60-session-lock.lua" || die "Session-lock binding does not invoke Hyprlock."
 }
 
