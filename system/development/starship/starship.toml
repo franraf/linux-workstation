@@ -3,5 +3,5 @@ add_newline = false
 [status]
 disabled = false
 
-[command_duration]
+[cmd_duration]
 min_time = 1000
