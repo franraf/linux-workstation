@@ -21,6 +21,7 @@ required_files=(
   "system/mkinitcpio/10-linux-workstation-intel.conf"
   "system/systemd-boot/loader.conf.template"
   "system/systemd-boot/entry.conf.template"
+  "tests/repository/phase-consistency.sh"
 )
 
 for relative_path in "${required_files[@]}"; do
@@ -37,7 +38,10 @@ done
 for library in logging requirements packages installation storage; do
   bash -n "${REPO_ROOT}/scripts/lib/${library}.sh" || fail "bash syntax error in library: ${library}.sh"
 done
+bash -n "${REPO_ROOT}/tests/repository/phase-consistency.sh" || fail "bash syntax error in cross-phase consistency test"
 pass "shell syntax"
+
+bash "${REPO_ROOT}/tests/repository/phase-consistency.sh"
 
 [[ ! -e "${PROFILE_DIR}/09-install-base-system/packages.txt" ]] || fail "profile-local package list returned"
 pass "package list ownership"
