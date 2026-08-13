@@ -1,303 +1,224 @@
-
-
 ---
-
 title: Roadmap
-version: 2.0
+version: 2.1
 status: Stable
 author: Rafael
-last_review: 2026-07-30
+last_review: 2026-08-13
 related:
-
-* ADR-0002
-* architecture.md
-
+  - ADR-0002
+  - architecture.md
 ---
 
 # Roadmap
 
 ## Objetivo
 
-Este documento descreve a evolução planejada do projeto `linux-workstation`.
+Este documento registra a evolução planejada do projeto `linux-workstation` sem misturar intenção futura com estado já validado.
 
-O roadmap registra funcionalidades, melhorias e iniciativas futuras sem interromper a implementação em andamento.
+Itens listados aqui representam direção arquitetural e prioridades, não garantia de implementação.
 
-Itens listados aqui representam intenções, não compromissos.
+## Estado atual
 
----
+A fundação estrutural está consolidada. As fases 01, 02 e 03 possuem implementação e validações versionadas. A fase 04 está implementada, mas ainda depende da validação completa na workstation para ser considerada concluída.
 
-# Estado atual
+O repositório já possui fontes compartilhadas em `packages/`, `system/` e `dotfiles/`, bibliotecas reutilizáveis em `scripts/lib/` e gates em `tests/`.
 
-## Versão atual
+## Milestone 1 — Base Arch Installation ✅
 
-```text
-v0.2.0
-```
+Objetivo: realizar a instalação base do Arch Linux com UEFI, GPT, LUKS2, Btrfs e systemd-boot.
 
-Situação:
+Escopo implementado:
 
-* Fundação do projeto concluída.
-* Arquitetura definida.
-* ADRs iniciais aprovados.
-* Estrutura do repositório criada.
-* Documentação principal em desenvolvimento.
-* Foundation concluída.
-* Installation concluída.
-* System concluído.
-* Desktop concluído.
-* Development concluído.
-* Documentação alinhada à arquitetura.
+* preparação e particionamento do disco;
+* LUKS2;
+* Btrfs e subvolumes;
+* montagem;
+* sistema base;
+* fstab;
+* chroot;
+* timezone, locale e hostname;
+* usuário e sudo;
+* initramfs;
+* systemd-boot;
+* first boot.
 
-A workstation já está apta para desenvolvimento de software utilizando ambientes reproduzíveis baseados em contêineres.
+Critério: sistema inicializa corretamente e a fase passa em sua validação aplicável.
 
----
+## Milestone 2 — Base System ✅
 
-# Milestone 1 — Base Arch Installation ✅
+Objetivo: transformar a instalação mínima em uma workstation operacional sem desktop.
 
-Objetivo:
+Escopo implementado:
 
-Realizar uma instalação manual completa do Arch Linux seguindo a documentação oficial.
+* atualização e configuração do Pacman;
+* microcode;
+* systemd e timesyncd;
+* journald;
+* ZRAM;
+* TRIM;
+* NetworkManager e Bluetooth;
+* OpenSSH;
+* pacotes base;
+* validação de runtime.
 
-Escopo:
+Critério: serviços e baseline do sistema passam no gate da fase 02.
 
-* Preparação do disco
-* GPT
-* EFI
-* LUKS2
-* Btrfs
-* Subvolumes
-* Montagem
-* Pacstrap
-* fstab
-* Chroot
-* Kernel
-* Microcode
-* Locale
-* Timezone
-* Hostname
-* Usuário
-* sudo
-* systemd-boot
-* Boot funcional
+## Milestone 3 — Desktop Environment ✅
 
-Critério de conclusão:
+Objetivo: construir um desktop Wayland funcional e autenticado.
 
-O sistema inicializa corretamente até um terminal de login.
+Escopo implementado:
 
----
+* stack gráfico Intel/AMD;
+* Hyprland;
+* Waybar;
+* Hyprlock e Hypridle;
+* Rofi;
+* SwayNC;
+* Kitty;
+* Thunar;
+* fontes e aparência;
+* greetd + tuigreet;
+* validação do desktop.
 
-# Milestone 2 — Base System ✅
+Critério: login gráfico e sessão desktop passam no gate da fase 03.
 
-Objetivo:
+## Milestone 4 — Development Environment 🟡
 
-Transformar a instalação mínima em uma workstation utilizável.
+Objetivo: preparar a workstation para desenvolvimento sem transformar o host em ambiente específico de linguagem.
 
-Escopo:
+Escopo implementado:
 
-* NetworkManager
-* PipeWire
-* BlueZ
-* OpenSSH
-* fstrim.timer
-* Snapper
-* Pacman configuration
-* Ferramentas essenciais
-* Atualizações
+* Git e identidade local;
+* Zsh, Oh My Zsh e Starship;
+* Visual Studio Code oficial da Microsoft;
+* Docker Engine, Compose e Buildx;
+* Dev Containers;
+* ferramentas CLI globais;
+* Codex CLI;
+* gates estático e de runtime.
 
-Critério de conclusão:
+Pendente para conclusão:
 
-Sistema totalmente operacional sem interface gráfica.
+* executar toda a fase 04 na workstation atual;
+* reabrir sessão após associação ao grupo `docker`;
+* validar GitHub via SSH/push-pull;
+* validar VS Code gráfico e terminal integrado;
+* validar um Dev Container real;
+* validar autenticação e uma tarefa controlada com Codex CLI.
 
----
+Critério: `07-development-validation` passa e os checks manuais documentados são concluídos.
 
-# Milestone 3 — Desktop Environment ✅
+## Milestone 5 — Repository Automation
 
-Objetivo:
+Objetivo: elevar a automação já existente para uma experiência de reconstrução e operação mais integrada.
 
-Construir o ambiente gráfico Wayland.
+Parte significativa da automação de fases já existe; esta milestone agora foca no que falta para coordená-la como sistema.
 
-Escopo:
+Escopo futuro:
 
-* Hyprland
-* Waybar
-* Kitty
-* Rofi
-* SwayNC
-* Hyprlock
-* Hypridle
-* Thunar
-* Fontes
-* Temas mínimos
-
-Critério de conclusão:
-
-Login gráfico funcional e ambiente utilizável.
-
----
-
-# Milestone 4 — Development Environment ✅
-
-Objetivo:
-
-Preparar a workstation para desenvolvimento de software.
-
-Escopo:
-
-* Docker
-* Docker Compose
-* VS Code
-* Dev Containers
-* Git
-* SSH
-* chezmoi
-
-Critério de conclusão:
-
-Projetos podem ser desenvolvidos utilizando containers sem instalar SDKs diretamente no host.
-
----
-
-# Milestone 5 — Automation
-
-Objetivo:
-
-Automatizar os procedimentos documentados e validados, permitindo reconstruir a workstation diretamente a partir do repositório.
-
-Escopo:
-
-* scripts de instalação;
-* bootstrap da workstation;
-* seleção de perfil;
-* listas declarativas de pacotes;
-* aplicação das configurações do sistema;
-* integração com o repositório de dotfiles;
-* validações automáticas;
+* bootstrap de alto nível da workstation;
+* descoberta/seleção de profile;
+* executor de fases e steps;
+* retomada segura após falhas;
+* validação pré e pós-fase integrada;
 * testes de idempotência;
-* confirmações fortes para operações destrutivas.
+* integração do `chezmoi` quando adotada operacionalmente;
+* CI para gates estáticos e consistência do repositório;
+* comandos convenientes via Makefile ou mecanismo equivalente.
 
-Critério de conclusão:
+Critério: uma nova instalação pode ser conduzida a partir da ISO e do repositório com somente as intervenções indispensáveis e sem exigir conhecimento dos scripts internos.
 
-Uma nova instalação pode ser realizada a partir da ISO oficial do Arch Linux, utilizando o repositório e exigindo apenas as intervenções indispensáveis, como seleção do disco, credenciais e confirmação de ações destrutivas.
+## Milestone 6 — Operations
 
----
+Objetivo: manter a workstation durante todo seu ciclo de vida.
 
-# Milestone 6 — Operations
+Escopo planejado:
 
-Objetivo:
+* manutenção periódica;
+* atualização de pacotes;
+* health checks;
+* snapshots e revisão de retenção;
+* backup;
+* recuperação;
+* disaster recovery;
+* validação operacional.
 
-Operar, manter e recuperar a workstation durante todo o seu ciclo de vida.
+Critério: manutenção e recuperação possuem procedimentos reproduzíveis e testados.
 
-Escopo:
+## Milestone 7 — Security
 
-* Backup
-* System Maintenance
-* Package Management
-* System Upgrades
-* Health Check
-* Recovery
-* Disaster Recovery
-* Operations Validation
+Objetivo: elevar a postura de segurança sem sacrificar recuperabilidade.
 
-Critério de conclusão:
+Escopo planejado:
 
-A workstation pode ser mantida e recuperada de forma reproduzível durante todo seu ciclo de vida.
+* gestão de segredos;
+* revisão de SSH hardening;
+* GPG quando houver caso de uso;
+* revisão de criptografia do disco;
+* Secure Boot;
+* TPM2, se aprovado em ADR;
+* hardware token opcional;
+* validação de segurança.
 
----
+Critério: controles aprovados estão documentados, implementados e verificáveis.
 
-# Milestone 7 — Security
+## Backlog
 
-Objetivo:
+Itens aprovados para avaliação futura, sem prioridade atual:
 
-Aumentar a segurança e confiabilidade.
+* benchmark da workstation;
+* instalação com menos interação;
+* CI mais completa;
+* geração automática de índices/documentação;
+* backup remoto;
+* gerenciamento de segredos;
+* sincronização opcional de configurações;
+* expansão de `examples/` com casos realmente reutilizáveis.
 
-Escopo:
+## Ideias em avaliação
 
-* Secrets Management
-* GPG
-* SSH Hardening
-* YubiKey (optional)
-* Disk Encryption Review
-* Security Validation
+Exigem decisão arquitetural antes de implementação:
 
-Critério de conclusão:
+* suporte geral ao AUR;
+* Nix;
+* systemd-homed;
+* Podman;
+* Flatpak;
+* Distrobox;
+* Bcachefs;
+* TPM unlock;
+* measured boot;
+* compositor Wayland alternativo;
+* múltiplos bootloaders.
 
-A workstation segue as práticas de segurança adotadas pelo projeto.
+## Fora do escopo da geração atual
 
----
-
-# Backlog
-
-Ideias aprovadas, mas sem prioridade definida.
-
-* Suporte ao AUR
-* Benchmark da workstation
-* Instalação sem interação
-* Integração contínua mais completa
-* Verificação automática de documentação
-* Geração automática de índice da documentação
-* Backup remoto
-* Gerenciamento de segredos
-* Sincronização opcional de configurações
-
----
-
-# Ideias em avaliação
-
-Estas propostas ainda não possuem decisão arquitetural.
-
-* Nix
-* systemd-homed
-* Podman
-* Flatpak
-* Distrobox
-* Bcachefs
-* TPM unlock
-* Boot medido
-* Wayland alternativo
-* Múltiplos bootloaders
-
-Nenhuma delas deverá ser implementada antes da criação de um ADR correspondente.
-
----
-
-# Fora do escopo
-
-A primeira geração do projeto não pretende oferecer:
-
-* suporte a BIOS legado;
+* BIOS legado;
 * dual boot;
-* múltiplas distribuições Linux;
-* instalação universal para qualquer hardware;
-* configuração automática de ambientes de desenvolvimento específicos;
-* personalização estética avançada.
-* aplicações de uso geral (office, media, gaming etc.);
-* SDKs e runtimes específicos de projetos instalados diretamente no host;
-* ambientes de desenvolvimento específicos de linguagens;
+* múltiplas distribuições;
+* profile universal para qualquer hardware;
+* ambientes de linguagem específicos instalados globalmente;
+* personalização estética avançada;
+* catálogo de aplicações de uso geral, mídia ou jogos.
 
----
+## Critérios para inclusão
 
-# Critérios para inclusão
+Antes de promover uma ideia para trabalho ativo:
 
-Antes de adicionar uma nova funcionalidade ao roadmap, responder:
+1. Qual problema resolve?
+2. Pertence à milestone atual?
+3. Existe alternativa mais simples?
+4. Introduz dependência ou complexidade permanente?
+5. Exige ADR?
+6. Como será validada?
 
-1. Qual problema ela resolve?
-2. Ela é necessária para a milestone atual?
-3. Existe uma alternativa mais simples?
-4. Ela aumenta a complexidade do projeto?
-5. Exige um novo ADR?
+Se não pertencer à milestone atual, permanece no roadmap.
 
-Se a resposta à segunda pergunta for "não", a funcionalidade deve permanecer no roadmap até o momento adequado.
+## Revisão
 
----
+Este é um documento vivo. O status deve refletir validação real, não apenas existência de código no repositório.
 
-# Revisão
+## Lições aprendidas
 
-O roadmap é um documento vivo.
-
-Mudanças são esperadas conforme o projeto evolui, desde que respeitem a arquitetura definida e os princípios estabelecidos nos ADRs.
-
----
-
-# Lições aprendidas
-
-Registrar ideias futuras em um roadmap permite manter o foco na implementação atual sem perder oportunidades de evolução.
+Marcar separadamente “implementado” e “validado” evita que o roadmap declare uma capacidade pronta antes de ela ser exercitada na máquina real.
