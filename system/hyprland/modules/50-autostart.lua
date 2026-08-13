@@ -1,6 +1,8 @@
--- Session autostart registry.
--- Later configuration playbooks add their own commands here.
+local hl = require("hyprlang")
 
+-- Canonical session autostart registry.
+-- Each configured capability owns one guarded command here.
 hl.on("hyprland.start", function()
-  -- Intentionally empty in the desktop-session baseline.
+  hl.exec_cmd("pidof waybar || waybar")
+  hl.exec_cmd("pidof hypridle || hypridle")
 end)
