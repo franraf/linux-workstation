@@ -1,0 +1,5 @@
+# Interactive shell
+zsh
+
+# Prompt
+starship
