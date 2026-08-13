@@ -1,16 +1,17 @@
 ---
-
 title: Instalar gerenciador de arquivos
-version: 1.0
+version: 1.1
 status: Draft
 author: Rafael
-last_review: 2026-07-31
+last_review: 2026-08-12
 related:
 
 * architecture.md
 * ADR-0002
-* ADR-0003
 * ADR-0004
+* ADR-0006
+* ADR-0007
+* ADR-0009
 
 ---
 
@@ -18,115 +19,52 @@ related:
 
 ## Objetivo
 
-Instalar um gerenciador de arquivos para utilização no ambiente gráfico da workstation.
+Instalar o Thunar e as integrações básicas previstas pelo projeto, sem configurar aparência, ações personalizadas ou atalhos.
 
-Ao final deste playbook, a sessão gráfica permitirá navegar, organizar e manipular arquivos e diretórios.
+## Pré-requisitos
 
-A implementação adotada pelo projeto utiliza o **Thunar**.
-
----
-
-# Pré-requisitos
-
-* Stack gráfica instalada.
+* `02-install-compositor` concluído;
 * Hyprland instalado.
 
----
+## Fonte declarativa
 
-# Resultado esperado
+```text
+packages/desktop/file-manager.txt
+```
 
-Ao concluir este playbook:
+Baseline:
 
-* o gerenciador de arquivos estará instalado;
-* suas dependências obrigatórias estarão disponíveis;
-* será possível navegar pelo sistema de arquivos durante a sessão gráfica.
+```text
+thunar
+gvfs
+tumbler
+thunar-volman
+```
 
----
+## Procedimento
 
-# Procedimento
+1. Validar que o compositor está instalado.
+2. Carregar e validar a lista declarativa.
+3. Instalar somente os pacotes ausentes.
+4. Confirmar o executável `thunar`.
+5. Confirmar a presença de `gvfs`, `tumbler` e `thunar-volman`.
+6. Confirmar que a versão do Thunar pode ser consultada.
 
-## 1. Revisar os componentes necessários
-
-Confirme as dependências obrigatórias para utilização do gerenciador de arquivos.
-
----
-
-## 2. Instalar o componente
-
-Instale a implementação definida pela arquitetura do projeto.
-
----
-
-## 3. Validar a instalação
-
-Confirme que todos os componentes esperados foram instalados corretamente.
-
----
-
-## 4. Executar um teste funcional
-
-Inicie o gerenciador de arquivos durante uma sessão de teste.
-
-Confirme que é possível:
-
-* navegar entre diretórios;
-* abrir arquivos;
-* criar diretórios;
-* copiar e mover arquivos.
-
-Não configure temas, integrações ou ações personalizadas nesta etapa.
-
----
-
-# Verificação
+## Verificação
 
 Confirme que:
 
-* o gerenciador de arquivos está instalado;
-* o sistema de arquivos pode ser navegado normalmente;
-* operações básicas funcionam corretamente;
-* não existem erros críticos durante sua execução.
+* o pacote `thunar` está instalado;
+* o executável está disponível;
+* as integrações declaradas estão instaladas;
+* a versão pode ser consultada.
 
----
+## Fora de escopo
 
-# Problemas comuns
+Não abrir o gerenciador como requisito desta etapa e não realizar operações de arquivos como teste funcional. Navegação, thumbnails, mídias removíveis e integração com a sessão serão validadas após configuração.
 
-## O gerenciador não inicia
-
-Revise as dependências e confirme que a sessão gráfica está operacional.
-
----
-
-## Arquivos não podem ser abertos
-
-Confirme que os aplicativos associados estão instalados e corretamente registrados.
-
----
-
-## Problemas de permissões
-
-Verifique as permissões do usuário e do sistema de arquivos antes de prosseguir.
-
----
-
-# Próximo playbook
-
-Após validar o gerenciador de arquivos, prossiga para:
+## Próximo playbook
 
 ```text
 10-install-font-stack.md
 ```
-
----
-
-# Referências
-
-* Documentação oficial do Thunar
-* Arch Wiki — Thunar
-* Arch Wiki — XDG Base Directory Specification
-
----
-
-# Lições aprendidas
-
-Registrar aqui incompatibilidades, dependências adicionais ou observações relevantes identificadas durante a instalação do gerenciador de arquivos.
