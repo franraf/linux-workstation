@@ -41,7 +41,8 @@ EOF
 }
 
 install_keybindings() {
-  local hypr_directory="${TARGET_HOME}/.config/hypr"
+  local hypr_directory
+  hypr_directory="$(user_config_path hypr)"
 
   install_user_directory "$hypr_directory"
   install_user_directory "$hypr_directory/modules"
@@ -49,14 +50,12 @@ install_keybindings() {
 }
 
 validate_configuration() {
-  local keybindings="${TARGET_HOME}/.config/hypr/modules/70-keybindings.lua"
+  local keybindings output
+  keybindings="$(user_config_path hypr/modules/70-keybindings.lua)"
 
-  grep -q 'hl.bind("SUPER", "E"' "$keybindings" || die "SUPER+E file manager binding is missing."
-  grep -q 'thunar' "$keybindings" || die "File manager binding does not invoke Thunar."
+  grep -Fq 'hl.bind("SUPER + E", hl.dsp.exec_cmd("thunar"))' "$keybindings" || die "SUPER+E file manager binding is missing."
 
-  local output
-  output="$(runuser -u "$TARGET_USER" -- dbus-run-session -- xfconf-query -c thunar -p /last-view 2>/dev/null)" || \
-    die "Could not query Thunar preferences."
+  output="$(runuser -u "$TARGET_USER" -- dbus-run-session -- xfconf-query -c thunar -p /last-view 2>/dev/null)" || die "Could not query Thunar preferences."
   [[ "$output" == "ThunarDetailsView" ]] || die "Unexpected Thunar default view: $output"
 }
 
@@ -67,7 +66,6 @@ show_result() {
   printf 'Integrations validated:\n  gvfs, tumbler, thunar-volman\n\n'
   printf 'Binding:\n  SUPER + E -> thunar\n\n'
   printf 'Existing MIME associations were not modified.\n'
-  printf 'Trash, thumbnails, removable devices and file operations must be validated from the graphical session.\n'
   printf '\nNext step:\n  20-configure-appearance\n'
 }
 
