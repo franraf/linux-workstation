@@ -1,0 +1,1 @@
+-- Visual appearance is configured by playbook 20.
