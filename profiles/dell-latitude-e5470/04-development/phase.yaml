@@ -17,6 +17,7 @@ execution:
   order:
     - 01-version-control
     - 02-shell-environment
+    - 03-code-editor
   stop_on_error: true
   validate_after_each_step: true
 
@@ -33,8 +34,13 @@ steps:
     playbook: ../../../playbooks/04-development/02-shell-environment.md
     entrypoint: 02-shell-environment/run.sh
 
+  03-code-editor:
+    mode: interactive-script
+    destructive: false
+    playbook: ../../../playbooks/04-development/03-code-editor.md
+    entrypoint: 03-code-editor/run.sh
+
 planned_order:
-  - 03-code-editor
   - 04-container-platform
   - 05-cli-tools
   - 06-ai-tooling
