@@ -1,17 +1,16 @@
 ---
-
 title: Configurar central de notificações
-version: 1.0
+version: 1.1
 status: Draft
 author: Rafael
-last_review: 2026-07-31
+last_review: 2026-08-12
 related:
 
 * architecture.md
 * ADR-0002
-* ADR-0003
 * ADR-0004
 * ADR-0005
+* ADR-0006
 
 ---
 
@@ -19,18 +18,16 @@ related:
 
 ## Objetivo
 
-Configurar a central de notificações da workstation, definindo como eventos do sistema e das aplicações são apresentados, organizados e disponibilizados ao usuário.
+Configurar o SwayNC como central de notificações da workstation, definindo comportamento, histórico e integração com a sessão gráfica.
 
-Ao final deste playbook, a sessão gráfica oferecerá uma experiência consistente para recebimento, histórico e gerenciamento de notificações.
-
-A implementação adotada pelo projeto utiliza o **Sway Notification Center (SwayNC)**.
+A aparência global do componente será tratada no playbook `19-configure-appearance.md`.
 
 ---
 
 # Pré-requisitos
 
 * Sessão gráfica configurada.
-* Central de notificações instalada.
+* SwayNC instalado.
 
 ---
 
@@ -38,60 +35,54 @@ A implementação adotada pelo projeto utiliza o **Sway Notification Center (Swa
 
 Ao concluir este playbook:
 
-* a central de notificações estará integrada à sessão;
-* o comportamento das notificações seguirá os padrões definidos pelo projeto;
-* a interface estará alinhada com a identidade visual da workstation.
+* o SwayNC iniciará com a sessão;
+* notificações serão exibidas e armazenadas no histórico;
+* o controle da central estará disponível por atalho global;
+* não haverá outro daemon de notificações concorrente.
 
 ---
 
 # Procedimento
 
-## 1. Organizar a configuração
+## 1. Configurar o comportamento
 
-Estruture os arquivos de configuração conforme a ADR-0005.
+Utilize `~/.config/swaync/config.json` para comportamento, posição, histórico e timeouts.
 
-Separe aparência, comportamento e integrações sempre que possível.
+Não concentre tema visual definitivo neste playbook.
 
----
+## 2. Integrar ao autostart
 
-## 2. Configurar o comportamento
+Adicione uma única entrada do SwayNC em:
 
-Defina a política de exibição das notificações.
+```text
+~/.config/hypr/conf.d/50-autostart.conf
+```
 
-Considere:
+## 3. Integrar aos keybindings
 
-* posição na tela;
-* tempo de permanência;
-* agrupamento;
-* persistência;
-* prioridade.
+Adicione o atalho global em:
 
----
+```text
+~/.config/hypr/conf.d/70-keybindings.conf
+```
 
-## 3. Configurar a interface
+A baseline utiliza:
 
-Defina a organização visual da central de notificações.
+```text
+SUPER + N → swaync-client -t
+```
 
-Considere elementos como:
+## 4. Validar conflitos
 
-* histórico;
-* painel de notificações;
-* controles rápidos, quando utilizados;
-* indicadores visuais.
+Confirme que nenhum outro daemon, como `dunst`, `mako` ou `fnott`, está configurado para iniciar simultaneamente.
 
----
+## 5. Validar o fluxo
 
-## 4. Integrar à sessão gráfica
+Teste com:
 
-Confirme que a central de notificações inicia automaticamente e se integra corretamente aos demais componentes do desktop.
-
----
-
-## 5. Validar o fluxo de notificações
-
-Execute notificações de teste provenientes do sistema e de aplicações.
-
-Confirme que são apresentadas, armazenadas e descartadas conforme a política definida.
+```text
+notify-send "linux-workstation" "SwayNC notification test"
+```
 
 ---
 
@@ -99,43 +90,16 @@ Confirme que são apresentadas, armazenadas e descartadas conforme a política d
 
 Confirme que:
 
-* a central inicia automaticamente;
-* notificações são exibidas corretamente;
-* o histórico está acessível;
-* notificações podem ser descartadas;
-* a interface permanece consistente durante toda a sessão.
-
----
-
-# Problemas comuns
-
-## Notificações não aparecem
-
-Confirme que não existe outro daemon de notificações ativo e que a sessão inicializou corretamente a central.
-
----
-
-## Histórico indisponível
-
-Revise a configuração da central de notificações e confirme que o recurso está habilitado.
-
----
-
-## Problemas de renderização
-
-Verifique a stack tipográfica, o tema utilizado e a integração com a sessão gráfica.
-
----
-
-## Comportamento inconsistente
-
-Revise a política de notificações antes de prosseguir.
+* SwayNC inicia automaticamente;
+* `notify-send` produz uma notificação;
+* o histórico fica acessível;
+* `SUPER + N` abre e fecha a central;
+* existe uma única entrada em `50-autostart.conf`;
+* não existe daemon concorrente.
 
 ---
 
 # Próximo playbook
-
-Após validar a central de notificações, prossiga para:
 
 ```text
 17-configure-terminal-emulator.md
@@ -145,12 +109,13 @@ Após validar a central de notificações, prossiga para:
 
 # Referências
 
-* Documentação oficial do Sway Notification Center
+* Documentação oficial do SwayNC
 * Desktop Notifications Specification
-* ADR-0005 — Modularize Configuration by Capability
+* ADR-0005 — Modularizar configurações por capacidade
+* ADR-0006 — Separação entre instalação e configuração
 
 ---
 
 # Lições aprendidas
 
-Registrar aqui alterações na política de notificações, integrações adicionadas, ajustes de interface ou observações relevantes identificadas durante a evolução da workstation.
+A integração do SwayNC possui duas responsabilidades distintas no Hyprland: inicialização em `50-autostart.conf` e controle por usuário em `70-keybindings.conf`. Essas responsabilidades não devem ser misturadas nem duplicadas.
