@@ -1,0 +1,162 @@
+---
+schema_version: "1.0"
+
+phase:
+  id: 03-desktop
+  name: Desktop
+  description: >
+    Instalação, configuração e validação do ambiente gráfico da Linux Workstation
+    para o perfil Dell Latitude E5470.
+  status: draft
+
+profile:
+  id: dell-latitude-e5470
+  manifest: ../profile.yaml
+
+execution:
+  order:
+    - 01-install-graphics-stack
+    - 02-install-compositor
+    - 03-install-status-bar
+    - 04-install-screen-locker
+    - 05-install-idle-manager
+    - 06-install-application-launcher
+    - 07-install-notification-center
+    - 08-install-terminal-emulator
+    - 09-install-file-manager
+    - 10-install-font-stack
+    - 11-install-session-login
+    - 12-configure-desktop-session
+    - 13-configure-status-bar
+    - 14-configure-session-lock
+    - 15-configure-session-lifecycle
+    - 16-configure-application-launcher
+    - 17-configure-notification-center
+    - 18-configure-terminal-emulator
+    - 19-configure-file-manager
+    - 20-configure-appearance
+    - 21-configure-session-login
+    - 22-desktop-validation
+
+  stop_on_error: true
+  validate_after_each_step: true
+
+steps:
+  01-install-graphics-stack:
+    mode: script
+    destructive: false
+    playbook: ../../../playbooks/03-desktop/01-install-graphics-stack.md
+    entrypoint: 01-install-graphics-stack/run.sh
+  02-install-compositor:
+    mode: script
+    destructive: false
+    playbook: ../../../playbooks/03-desktop/02-install-compositor.md
+    entrypoint: 02-install-compositor/run.sh
+  03-install-status-bar:
+    mode: script
+    destructive: false
+    playbook: ../../../playbooks/03-desktop/03-install-status-bar.md
+    entrypoint: 03-install-status-bar/run.sh
+  04-install-screen-locker:
+    mode: script
+    destructive: false
+    playbook: ../../../playbooks/03-desktop/04-install-screen-locker.md
+    entrypoint: 04-install-screen-locker/run.sh
+  05-install-idle-manager:
+    mode: script
+    destructive: false
+    playbook: ../../../playbooks/03-desktop/05-install-idle-manager.md
+    entrypoint: 05-install-idle-manager/run.sh
+  06-install-application-launcher:
+    mode: script
+    destructive: false
+    playbook: ../../../playbooks/03-desktop/06-install-application-launcher.md
+    entrypoint: 06-install-application-launcher/run.sh
+  07-install-notification-center:
+    mode: script
+    destructive: false
+    playbook: ../../../playbooks/03-desktop/07-install-notification-center.md
+    entrypoint: 07-install-notification-center/run.sh
+  08-install-terminal-emulator:
+    mode: script
+    destructive: false
+    playbook: ../../../playbooks/03-desktop/08-install-terminal-emulator.md
+    entrypoint: 08-install-terminal-emulator/run.sh
+  09-install-file-manager:
+    mode: script
+    destructive: false
+    playbook: ../../../playbooks/03-desktop/09-install-file-manager.md
+    entrypoint: 09-install-file-manager/run.sh
+  10-install-font-stack:
+    mode: script
+    destructive: false
+    playbook: ../../../playbooks/03-desktop/10-install-font-stack.md
+    entrypoint: 10-install-font-stack/run.sh
+  11-install-session-login:
+    mode: script
+    destructive: false
+    playbook: ../../../playbooks/03-desktop/11-install-session-login.md
+    entrypoint: 11-install-session-login/run.sh
+  12-configure-desktop-session:
+    mode: script
+    destructive: false
+    playbook: ../../../playbooks/03-desktop/12-configure-desktop-session.md
+    entrypoint: 12-configure-desktop-session/run.sh
+  13-configure-status-bar:
+    mode: script
+    destructive: false
+    playbook: ../../../playbooks/03-desktop/13-configure-status-bar.md
+    entrypoint: 13-configure-status-bar/run.sh
+  14-configure-session-lock:
+    mode: script
+    destructive: false
+    playbook: ../../../playbooks/03-desktop/14-configure-session-lock.md
+    entrypoint: 14-configure-session-lock/run.sh
+  15-configure-session-lifecycle:
+    mode: script
+    destructive: false
+    playbook: ../../../playbooks/03-desktop/15-configure-session-lifecycle.md
+    entrypoint: 15-configure-session-lifecycle/run.sh
+  16-configure-application-launcher:
+    mode: script
+    destructive: false
+    playbook: ../../../playbooks/03-desktop/16-configure-application-launcher.md
+    entrypoint: 16-configure-application-launcher/run.sh
+  17-configure-notification-center:
+    mode: script
+    destructive: false
+    playbook: ../../../playbooks/03-desktop/17-configure-notification-center.md
+    entrypoint: 17-configure-notification-center/run.sh
+  18-configure-terminal-emulator:
+    mode: script
+    destructive: false
+    playbook: ../../../playbooks/03-desktop/18-configure-terminal-emulator.md
+    entrypoint: 18-configure-terminal-emulator/run.sh
+  19-configure-file-manager:
+    mode: script
+    destructive: false
+    playbook: ../../../playbooks/03-desktop/19-configure-file-manager.md
+    entrypoint: 19-configure-file-manager/run.sh
+  20-configure-appearance:
+    mode: script
+    destructive: false
+    playbook: ../../../playbooks/03-desktop/20-configure-appearance.md
+    entrypoint: 20-configure-appearance/run.sh
+  21-configure-session-login:
+    mode: script
+    destructive: false
+    playbook: ../../../playbooks/03-desktop/21-configure-session-login.md
+    entrypoint: 21-configure-session-login/run.sh
+  22-desktop-validation:
+    mode: validation
+    destructive: false
+    playbook: ../../../playbooks/03-desktop/22-desktop-validation.md
+    entrypoint: 22-desktop-validation/run.sh
+
+validation:
+  final_step: 22-desktop-validation
+  required_before_next_phase: true
+
+metadata:
+  created_at: 2026-08-12
+  last_review: 2026-08-12
