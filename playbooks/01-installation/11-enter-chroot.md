@@ -1,110 +1,45 @@
 ---
-
-title: Entrar no ambiente chroot
-version: 1.0
+title: Entrar no chroot
+version: 1.1
 status: Draft
 author: Rafael
-last_review: 2026-07-31
+last_review: 2026-08-13
 related:
-
-* architecture.md
-* ADR-0002
-* ADR-0003
-* ADR-0004
-
+  - ADR-0009
+  - 10-generate-fstab.md
+  - 12-configure-time.md
 ---
 
-# 10 — Entrar no ambiente chroot
+# 11 — Entrar no chroot
 
 ## Objetivo
 
-Entrar no sistema recém-instalado utilizando o ambiente `arch-chroot`.
+Validar o sistema recém-instalado e fazer a transição do ambiente live para o root em `/mnt` usando `arch-chroot`.
 
-Ao final deste playbook, todos os comandos serão executados diretamente no sistema instalado.
+## Execução interativa
 
----
+```bash
+sudo profiles/dell-latitude-e5470/01-installation/11-enter-chroot/run.sh
+```
 
-# Pré-requisitos
+O script valida o target Arch, `fstab`, shell e todos os mounts definidos em `system/storage/btrfs-layout.tsv`, além da ESP em `/boot`. Para abrir um shell interativo exige confirmação `CHROOT`.
 
-* Sistema base instalado.
-* Arquivo `fstab` gerado e revisado.
-* Todos os sistemas de arquivos permanecem montados.
+## Execução de comando
 
----
+Também é possível executar diretamente um comando no target:
 
-# Resultado esperado
+```bash
+sudo .../11-enter-chroot/run.sh -- pacman -Q
+```
 
-Ao concluir este playbook:
+Nesse modo não há confirmação `CHROOT`, pois o comando é fornecido explicitamente na linha de comando.
 
-* o ambiente `chroot` estará ativo;
-* o diretório raiz (`/`) corresponderá ao sistema instalado;
-* as próximas configurações serão aplicadas diretamente ao sistema definitivo.
+## Contexto dos próximos passos
 
----
+Os passos 12–17 devem ser executados **dentro do sistema instalado**. O repositório precisa estar acessível no chroot para que os scripts encontrem `scripts/lib/` e os artefatos de `system/`.
 
-# Procedimento
-
-## 1. Entrar no ambiente chroot
-
-Acesse o sistema instalado utilizando a ferramenta recomendada pelo Arch Linux.
-
----
-
-## 2. Confirmar o ambiente
-
-Verifique se o diretório raiz corresponde ao sistema instalado.
-
-Confirme também que os diretórios esperados estão acessíveis.
-
----
-
-# Verificação
-
-Confirme que:
-
-* o ambiente `chroot` foi iniciado com sucesso;
-* os sistemas de arquivos permanecem montados;
-* o diretório `/etc` pertence ao sistema instalado.
-
----
-
-# Problemas comuns
-
-## Falha ao iniciar o chroot
-
-Verifique se todos os sistemas de arquivos necessários continuam montados.
-
----
-
-## Diretórios ausentes
-
-Confirme se a instalação do sistema base foi concluída corretamente.
-
----
-
-## Alterações sendo realizadas no ambiente live
-
-Antes de executar qualquer configuração, confirme que o ambiente `chroot` está ativo.
-
----
-
-# Próximo playbook
-
-Após confirmar o acesso ao sistema instalado, prossiga para:
+## Próximo playbook
 
 ```text
 12-configure-time.md
 ```
-
----
-
-# Referências
-
-* Arch Wiki — Installation Guide
-* Arch Wiki — arch-chroot
-
----
-
-# Lições aprendidas
-
-Registrar aqui dificuldades encontradas ao acessar o ambiente `chroot`, ajustes necessários ou observações relevantes para futuras instalações.
