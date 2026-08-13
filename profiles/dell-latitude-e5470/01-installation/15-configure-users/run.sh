@@ -122,7 +122,11 @@ validate_account() {
   [[ "$(getent passwd "$USERNAME" | cut -d: -f6)" == "/home/$USERNAME" ]] || die "User home directory is incorrect."
   [[ "$(getent passwd "$USERNAME" | cut -d: -f7)" == "$LOGIN_SHELL" ]] || die "User login shell is incorrect."
   [[ "$(stat -c '%U:%G' "/home/$USERNAME")" == "$USERNAME:$USERNAME" ]] || die "User home ownership is incorrect."
-  id -nG "$USERNAME" | tr ' ' '\n' | grep -Fxq wheel || die "User is not a member of the wheel group."
+
+  local groups
+  groups=" $(id -nG "$USERNAME") "
+  [[ "$groups" == *" wheel "* ]] || die "User is not a member of the wheel group."
+
   [[ "$(passwd --status "$USERNAME" | awk '{print $2}')" == "P" ]] || die "User password was not configured successfully."
   if [[ "$CREATE_ROOT_PASSWORD" == true ]]; then
     [[ "$(passwd --status root | awk '{print $2}')" == "P" ]] || die "Root password was not configured successfully."
@@ -142,7 +146,7 @@ show_result() {
 
 main() {
   require_root
-  require_commands awk cmp cut getent grep id install passwd stat su tr useradd usermod visudo
+  require_commands awk cmp cut getent grep id install passwd stat su useradd usermod visudo
   parse_arguments "$@"
   validate_execution_context
   validate_account_inputs
