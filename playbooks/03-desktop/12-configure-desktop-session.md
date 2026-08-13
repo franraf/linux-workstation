@@ -1,9 +1,9 @@
 ---
 title: Configurar sessão gráfica
-version: 1.2
+version: 2.0
 status: Draft
 author: Rafael
-last_review: 2026-08-12
+last_review: 2026-08-13
 related:
 
 * architecture.md
@@ -12,6 +12,8 @@ related:
 * ADR-0005
 * ADR-0006
 * ADR-0008
+* ADR-0009
+* ADR-0010
 
 ---
 
@@ -19,7 +21,7 @@ related:
 
 ## Objetivo
 
-Configurar a sessão gráfica da workstation com Hyprland, estabelecendo os parâmetros globais, a estrutura modular da configuração e os pontos de integração utilizados pelas capacidades posteriores do desktop.
+Configurar a sessão gráfica da workstation com Hyprland, estabelecendo a configuração Lua canônica, a estrutura modular e os pontos de integração utilizados pelas capacidades posteriores do desktop.
 
 Este é o primeiro playbook da etapa de configuração da fase `03-desktop`. Todos os componentes necessários já devem estar instalados pelos playbooks `01` a `11`.
 
@@ -31,6 +33,7 @@ Este é o primeiro playbook da etapa de configuração da fase `03-desktop`. Tod
 * Stack gráfica instalada e validada.
 * Hyprland instalado.
 * Usuário normal disponível para executar a sessão.
+* Artefatos compartilhados disponíveis em `system/hyprland/`.
 
 ---
 
@@ -38,76 +41,124 @@ Este é o primeiro playbook da etapa de configuração da fase `03-desktop`. Tod
 
 Ao concluir este playbook:
 
-* `~/.config/hypr/hyprland.conf` será o ponto de entrada da configuração;
-* a configuração estará modularizada em `~/.config/hypr/conf.d/`;
+* `~/.config/hypr/hyprland.lua` será o ponto de entrada canônico;
+* a configuração estará modularizada em `~/.config/hypr/modules/`;
 * ambiente, monitor, input, comportamento geral e autostart possuirão responsabilidades separadas;
+* não haverá dependência operacional da configuração Hyprlang `.conf` anterior;
 * a sessão poderá ser iniciada com `start-hyprland`;
 * a estrutura estará preparada para os playbooks seguintes.
 
 ---
 
+# Fonte da configuração
+
+A configuração não deverá ser gerada como grandes heredocs dentro do script do perfil.
+
+Os arquivos canônicos deverão residir em:
+
+```text
+system/hyprland/
+├── hyprland.lua
+└── modules/
+    ├── 10-environment.lua
+    ├── 20-monitor.lua
+    ├── 30-input.lua
+    ├── 40-general.lua
+    └── 50-autostart.lua
+```
+
+Capacidades posteriores adicionarão:
+
+```text
+60-session-lock.lua
+70-keybindings.lua
+80-appearance.lua
+```
+
+O perfil é responsável por instalar ou selecionar os artefatos apropriados, conforme ADR-0009.
+
+---
+
 # Procedimento
 
-## 1. Criar o ponto de entrada
+## 1. Criar o ponto de entrada Lua
 
-Utilize `~/.config/hypr/hyprland.conf` como arquivo principal da sessão.
+Utilize:
 
-O arquivo principal deverá atuar apenas como agregador dos módulos, conforme a ADR-0005.
+```text
+~/.config/hypr/hyprland.lua
+```
 
-## 2. Organizar os fragments do Hyprland
+como arquivo principal da sessão.
 
-A estrutura base adotada pela fase desktop é:
+O arquivo principal deverá atuar como agregador dos módulos utilizando `require()`, conforme ADR-0010.
+
+Exemplo conceitual:
+
+```lua
+require("modules.10-environment")
+require("modules.20-monitor")
+require("modules.30-input")
+require("modules.40-general")
+require("modules.50-autostart")
+```
+
+## 2. Organizar os módulos do Hyprland
+
+A estrutura base adotada será:
 
 ```text
 ~/.config/hypr/
-├── hyprland.conf
-└── conf.d/
-    ├── 10-environment.conf
-    ├── 20-monitor.conf
-    ├── 30-input.conf
-    ├── 40-general.conf
-    └── 50-autostart.conf
+├── hyprland.lua
+└── modules/
+    ├── 10-environment.lua
+    ├── 20-monitor.lua
+    ├── 30-input.lua
+    ├── 40-general.lua
+    └── 50-autostart.lua
 ```
 
-Capacidades posteriores poderão adicionar:
-
-```text
-60-session-lock.conf
-70-keybindings.conf
-80-appearance.conf
-```
-
-A numeração define a ordem de carregamento e não deve ser reutilizada para responsabilidades diferentes.
+A numeração expressa ordem lógica e responsabilidade, mas o carregamento é explicitamente controlado pelo arquivo principal.
 
 ## 3. Configurar o ambiente
 
-Utilize `10-environment.conf` para variáveis de ambiente da sessão Wayland.
+Utilize `10-environment.lua` para variáveis necessárias à sessão Wayland por meio das APIs Lua suportadas pelo Hyprland.
 
-## 4. Configurar monitor e input
+Variáveis não relacionadas exclusivamente ao Hyprland deverão ser avaliadas antes de serem colocadas neste módulo.
 
-Utilize `20-monitor.conf` e `30-input.conf`.
+## 4. Configurar monitor
 
-No Hyprland atualmente validado pelo projeto, a opção de tap do touchpad utiliza:
+Utilize `20-monitor.lua` para a baseline de outputs.
 
-```text
-tap-to-click
-```
+Particularidades realmente específicas de hardware poderão ser fornecidas pelo perfil sem duplicar a configuração compartilhada inteira.
 
-Não utilizar `tap_to_click` sem validar suporte na versão instalada.
+## 5. Configurar input
 
-## 5. Configurar comportamento geral
+Utilize `30-input.lua` para teclado, mouse e touchpad.
 
-Utilize `40-general.conf` para opções gerais do compositor.
+A configuração deverá utilizar as opções suportadas pela versão alvo do Hyprland e ser validada pelo compositor em execução.
 
-`dwindle:pseudotile` não faz parte da baseline validada e não deverá ser gerado.
+## 6. Configurar comportamento geral
 
-## 6. Preparar o autostart
+Utilize `40-general.lua` para opções gerais e layout.
 
-Utilize exclusivamente `50-autostart.conf` para processos que devem iniciar com a sessão.
+Não transportar automaticamente opções legadas apenas porque existiam na configuração Hyprlang anterior. Cada opção migrada deverá existir na API/configuração Lua da versão alvo.
 
-Cada playbook posterior adicionará apenas o componente de sua responsabilidade.
+## 7. Preparar autostart
 
-## 7. Validar a configuração
+Utilize `50-autostart.lua` como ponto central de integração dos processos iniciados com a sessão.
+
+Na API Lua atual, autostart deverá preferir o evento `hyprland.start` e `hl.exec_cmd()` em vez de reproduzir mecanicamente `exec-once` da sintaxe legada.
+
+Cada playbook posterior deverá adicionar somente componentes de sua responsabilidade.
+
+## 8. Remover ambiguidade com configuração legada
+
+Após instalar e validar a configuração Lua, arquivos antigos que possam competir como ponto de entrada não deverão permanecer ativos.
+
+Não manter `hyprland.conf` e `hyprland.lua` como duas fontes da verdade.
+
+## 9. Validar a configuração
 
 Inicie o Hyprland como usuário normal com:
 
@@ -121,7 +172,7 @@ Dentro da sessão, valide com:
 hyprctl configerrors
 ```
 
-O resultado esperado é `ok` ou ausência de erros, conforme a versão instalada.
+O resultado esperado é ausência de erros de configuração.
 
 ---
 
@@ -129,8 +180,10 @@ O resultado esperado é `ok` ou ausência de erros, conforme a versão instalada
 
 Confirme que:
 
-* `hyprland.conf` carrega os fragments esperados;
+* `hyprland.lua` é o ponto de entrada utilizado;
+* os módulos esperados são carregados com `require()`;
 * os arquivos pertencem ao usuário da sessão;
+* não existe uma segunda configuração Hyprland ativa competindo com a Lua;
 * `start-hyprland` inicia o compositor sem erro crítico;
 * `hyprctl configerrors` não apresenta erros;
 * monitor e dispositivos de entrada são reconhecidos.
@@ -139,13 +192,21 @@ Confirme que:
 
 # Problemas comuns
 
-## O Hyprland carrega outro arquivo de configuração
+## Hyprland utiliza uma configuração diferente
 
-Verifique os logs de inicialização e confirme qual arquivo foi selecionado. Arquivos alternativos antigos, como `hyprland.lua`, não deverão permanecer ativos quando a baseline utiliza `hyprland.conf`.
+Confirme o arquivo efetivamente carregado e verifique `HYPRLAND_CONFIG` ou uso de `--config` quando aplicável.
 
-## Opção de configuração inexistente
+## Erro em módulo Lua
 
-Confirme a opção diretamente com `hyprctl getoption` e consulte a documentação correspondente à versão instalada antes de alterar a baseline.
+Identifique qual arquivo carregado por `require()` apresentou erro. Corrija o módulo específico e valide novamente.
+
+## Configuração Hyprlang antiga interfere na migração
+
+Remova ou desative a configuração legada após confirmar que a versão Lua está instalada corretamente. Não mantenha ambas como fontes canônicas.
+
+## API ou opção Lua inexistente
+
+Consulte a documentação correspondente à versão instalada do Hyprland. Não traduza mecanicamente nomes da sintaxe Hyprlang para Lua sem validar a API atual.
 
 ---
 
@@ -159,14 +220,15 @@ Confirme a opção diretamente com `hyprctl getoption` e consulte a documentaç�
 
 # Referências
 
-* Documentação oficial do Hyprland
-* Arch Wiki — Hyprland
+* Documentação oficial do Hyprland — configuração Lua
 * ADR-0005 — Modularizar configurações por capacidade
 * ADR-0006 — Separação entre instalação e configuração
 * ADR-0008 — Autenticação e inicialização da sessão gráfica
+* ADR-0009 — Artefatos compartilhados e perfis de hardware
+* ADR-0010 — Configuração do Hyprland em Lua
 
 ---
 
 # Lições aprendidas
 
-Durante a validação com Hyprland 0.56.2, opções aparentemente equivalentes apresentaram diferenças de compatibilidade. A configuração deve ser validada pelo compositor em execução, e correções encontradas durante a instalação precisam retornar ao repositório para evitar regressões.
+A primeira baseline foi validada em Hyprlang, mas a versão atual do Hyprland adotada pelo projeto já utiliza Lua como configuração canônica. A migração deve preservar comportamento validado sem carregar automaticamente opções legadas ou manter duas fontes da verdade.
