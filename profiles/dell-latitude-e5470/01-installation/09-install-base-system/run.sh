@@ -75,6 +75,15 @@ validate_mount_tree() {
   require_filesystem_type "$TARGET_ROOT/boot" vfat
 }
 
+package_declared() {
+  local expected="$1"
+  local package
+  for package in "${PACKAGES[@]}"; do
+    [[ "$package" == "$expected" ]] && return 0
+  done
+  return 1
+}
+
 validate_required_packages() {
   local required_packages=(
     base linux linux-firmware intel-ucode btrfs-progs cryptsetup networkmanager sudo
@@ -82,7 +91,7 @@ validate_required_packages() {
   local required_package
 
   for required_package in "${required_packages[@]}"; do
-    printf '%s\n' "${PACKAGES[@]}" | grep -Fxq "$required_package" ||
+    package_declared "$required_package" ||
       die "Required package is missing from package file: $required_package"
   done
 }
@@ -151,7 +160,7 @@ show_result() {
 
 main() {
   require_root
-  require_commands arch-chroot awk findmnt grep pacstrap readlink sed xargs
+  require_commands arch-chroot awk findmnt pacman pacstrap readlink sed xargs
   parse_arguments "$@"
   canonicalize_paths
   validate_mount_tree
