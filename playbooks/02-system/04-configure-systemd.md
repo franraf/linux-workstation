@@ -1,123 +1,52 @@
 ---
-
-title: Configurar o systemd
-version: 1.0
+title: Configurar systemd
+version: 1.2
 status: Draft
 author: Rafael
-last_review: 2026-07-31
+last_review: 2026-08-13
 related:
 
 * architecture.md
-* ADR-0002
-* ADR-0003
-* ADR-0004
+* ADR-0009
 
 ---
 
-# 04 — Configurar o systemd
+# 04 — Configurar systemd
 
 ## Objetivo
 
-Revisar e configurar os componentes fundamentais do `systemd` utilizados pela workstation, estabelecendo a base para os serviços do sistema.
+Aplicar a baseline global do gerenciador systemd sem manter os valores de configuração dentro do script.
 
-Ao final deste playbook, o sistema estará preparado para utilizar os recursos do `systemd` conforme os padrões definidos pelo projeto.
+## Fonte canônica
 
----
+```text
+system/systemd/10-linux-workstation.conf
+```
 
-# Pré-requisitos
+Destino:
 
-* Sistema atualizado.
-* Pacman configurado.
-* Microcode instalado.
+```text
+/etc/systemd/system.conf.d/10-linux-workstation.conf
+```
 
----
+## Execução
 
-# Resultado esperado
+```bash
+sudo ./run.sh
+```
 
-Ao concluir este playbook:
+## Resultado esperado
 
-* a configuração global do `systemd` estará revisada;
-* os componentes fundamentais do sistema estarão alinhados com a arquitetura do projeto;
-* a workstation estará pronta para receber configurações específicas de serviços do `systemd`.
+* a fonte versionada estará instalada com ownership `root:root`;
+* `systemd-analyze cat-config systemd/system.conf` aceitará a configuração;
+* o manager systemd refletirá a baseline definida pelo repositório.
 
----
+## Regra arquitetural
 
-# Procedimento
+O `run.sh` deve orquestrar instalação, reload e validação. Valores como timeouts e watchdog pertencem ao arquivo em `system/`, não ao Bash.
 
-## 1. Revisar a configuração global
-
-Analise a configuração padrão do `systemd`.
-
-Identifique ajustes necessários conforme os padrões do projeto.
-
----
-
-## 2. Validar componentes básicos
-
-Confirme que os componentes essenciais do `systemd` estão presentes e operacionais.
-
----
-
-## 3. Revisar a estratégia de serviços
-
-Confirme que a política de gerenciamento de serviços adotada pela workstation está consistente com a arquitetura.
-
----
-
-## 4. Registrar decisões
-
-Documente qualquer alteração que modifique o comportamento padrão do sistema.
-
----
-
-# Verificação
-
-Confirme que:
-
-* o `systemd` está funcionando normalmente;
-* não existem falhas críticas reportadas;
-* os serviços essenciais iniciam corretamente.
-
----
-
-# Problemas comuns
-
-## Serviço não inicializa
-
-Verifique dependências, configuração e registros do sistema.
-
----
-
-## Configuração inconsistente
-
-Compare as alterações realizadas com os padrões definidos pelo projeto.
-
----
-
-## Alterações não documentadas
-
-Registre qualquer personalização realizada antes de prosseguir.
-
----
-
-# Próximo playbook
-
-Após revisar a configuração do `systemd`, prossiga para:
+## Próximo playbook
 
 ```text
 05-configure-time-sync.md
 ```
-
----
-
-# Referências
-
-* Arch Wiki — systemd
-* Arch Wiki — systemd/FAQ
-* Arch Wiki — General recommendations
-
----
-
-# Lições aprendidas
-
-Registrar aqui decisões relacionadas ao `systemd`, mudanças de configuração ou observações relevantes para futuras instalações e manutenções.
