@@ -50,8 +50,7 @@ validate_configuration() {
   grep -q '^include behavior.conf$' "$kitty_directory/kitty.conf" || die "Kitty behavior module is not included."
   grep -q '^include keybindings.conf$' "$kitty_directory/kitty.conf" || die "Kitty keybindings module is not included."
   grep -q '^font_family JetBrainsMono Nerd Font$' "$kitty_directory/behavior.conf" || die "Expected Kitty font is not configured."
-  grep -q 'hl.bind("SUPER", "RETURN"' "$keybindings" || die "SUPER+RETURN terminal binding is missing."
-  grep -q '"kitty"' "$keybindings" || die "Terminal binding does not invoke Kitty."
+  grep -Fq 'hl.bind("SUPER + RETURN", hl.dsp.exec_cmd("kitty"))' "$keybindings" || die "SUPER+RETURN terminal binding is missing."
 }
 
 show_result() {
