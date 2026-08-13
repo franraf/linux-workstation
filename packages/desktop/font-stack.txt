@@ -1,0 +1,8 @@
+# Base interface and document fonts
+ttf-dejavu
+noto-fonts
+noto-fonts-cjk
+noto-fonts-emoji
+
+# Monospace and development fonts
+ttf-jetbrains-mono-nerd
