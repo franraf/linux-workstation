@@ -1,130 +1,84 @@
 ---
-
 title: Instalar o sistema base
-version: 1.0
+version: 1.1
 status: Draft
 author: Rafael
-last_review: 2026-07-31
+last_review: 2026-08-13
 related:
-
-* architecture.md
-* ADR-0002
-* ADR-0003
-* ADR-0004
-
+  - architecture.md
+  - ADR-0002
+  - ADR-0003
+  - ADR-0004
+  - ADR-0009
 ---
 
-# 08 — Instalar o sistema base
+# 09 — Instalar o sistema base
 
 ## Objetivo
 
-Instalar o sistema base do Arch Linux sobre a estrutura de armazenamento preparada nos playbooks anteriores.
+Instalar o sistema base do Arch Linux sobre a estrutura de armazenamento preparada nos passos anteriores.
 
-Ao final deste playbook, existirá um sistema operacional mínimo instalado no disco, pronto para configuração.
+A seleção de pacotes é declarativa e não pertence ao profile. Para este perfil Intel, a fonte canônica é:
 
----
+```text
+packages/installation/base-system-intel.txt
+```
 
-# Pré-requisitos
+O script do profile apenas orquestra a instalação dessa lista no target root.
 
-* Sistemas de arquivos montados conforme o playbook anterior.
-* Conectividade com a Internet.
-* Relógio do sistema sincronizado.
-* Repositórios oficiais acessíveis.
+## Pré-requisitos
 
----
+- sistemas de arquivos montados conforme o playbook 08;
+- `/mnt` apontando para o subvolume Btrfs `@`;
+- ESP montada em `/mnt/boot` como `vfat`;
+- conectividade com a Internet;
+- relógio do ambiente live sincronizado;
+- repositórios oficiais acessíveis.
 
-# Resultado esperado
+## Resultado esperado
 
-Ao concluir este playbook:
+Ao concluir:
 
-* o sistema base estará instalado em `/mnt`;
-* o gerenciador de pacotes estará disponível no sistema instalado;
-* os pacotes essenciais definidos pela arquitetura estarão presentes.
+- o sistema base estará instalado em `/mnt`;
+- o target será identificado como Arch Linux;
+- os pacotes declarados estarão instalados no target;
+- a estrutura de mounts preparada anteriormente permanecerá intacta.
 
----
+## Procedimento
 
-# Procedimento
+Execute a partir do ambiente live:
 
-## 1. Verificar a conectividade
+```bash
+sudo profiles/dell-latitude-e5470/01-installation/09-install-base-system/run.sh
+```
 
-Confirme que o ambiente live possui acesso à Internet.
+Por padrão o script usa:
 
-Caso utilize sincronização automática de horário, confirme também que o relógio do sistema está correto.
+```text
+target root:    /mnt
+package source: packages/installation/base-system-intel.txt
+```
 
----
+O target root e a fonte de pacotes podem ser sobrescritos explicitamente com `--root` e `--package-file` para testes controlados.
 
-## 2. Selecionar os pacotes
+Antes do `pacstrap`, o script valida o mount tree, a ESP, os nomes e a disponibilidade dos pacotes e exige confirmação textual `INSTALL`.
 
-Defina o conjunto mínimo de pacotes necessários para inicialização do sistema.
+## Verificação
 
-A seleção deverá seguir a arquitetura do projeto.
+O passo só é considerado concluído quando:
 
----
+- `/mnt/etc/os-release` identifica Arch Linux;
+- binários fundamentais como `bash`, `pacman`, `systemctl`, `cryptsetup` e `btrfs` existem no target;
+- todos os pacotes declarados respondem a `pacman -Q` dentro de `arch-chroot /mnt`.
 
-## 3. Instalar o sistema base
+Não é responsabilidade deste passo configurar locale, timezone, usuários, initramfs ou bootloader.
 
-Instale o sistema no diretório `/mnt`.
-
-A instalação deverá ser realizada exclusivamente utilizando os repositórios oficiais do Arch Linux.
-
----
-
-## 4. Aguardar a conclusão
-
-Aguarde o término da instalação.
-
-Antes de prosseguir, confirme que não houve erros durante o processo.
-
----
-
-# Verificação
-
-Confirme que:
-
-* todos os pacotes foram instalados com sucesso;
-* não existem mensagens de erro na instalação;
-* a estrutura básica do sistema foi criada em `/mnt`;
-* o sistema está pronto para receber as configurações iniciais.
-
----
-
-# Problemas comuns
-
-## Falha na conexão
-
-Verifique a conectividade antes de repetir a instalação.
-
----
-
-## Erro ao acessar os repositórios
-
-Confirme a configuração de rede e a disponibilidade dos espelhos utilizados.
-
----
-
-## Espaço insuficiente
-
-Verifique o particionamento e o espaço disponível no sistema de arquivos.
-
----
-
-# Próximo playbook
-
-Após validar a instalação do sistema base, prossiga para:
+## Próximo playbook
 
 ```text
 10-generate-fstab.md
 ```
 
----
+## Lições aprendidas
 
-# Referências
-
-* Arch Wiki — Installation Guide
-* Arch Wiki — pacstrap
-
----
-
-# Lições aprendidas
-
-Registrar aqui ajustes na seleção de pacotes, mudanças na composição do sistema base ou observações relevantes para futuras instalações.
+A lista de pacotes deixou de residir dentro do profile. Conforme ADR-0009, dados declarativos ficam em `packages/`, enquanto o profile preserva apenas a orquestração e as validações específicas da instalação.
