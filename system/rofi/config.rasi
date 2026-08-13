@@ -1,0 +1,8 @@
+configuration {
+    modi: "drun,run";
+    show-icons: true;
+    display-drun: "Applications";
+    display-run: "Run";
+
+    /* Keep Rofi's built-in navigation bindings unchanged. */
+}
