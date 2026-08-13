@@ -9,6 +9,7 @@ readonly PACKAGE_FILE="${REPO_ROOT}/packages/desktop/graphics-intel-amd.txt"
 
 source "${REPO_ROOT}/scripts/lib/logging.sh"
 source "${REPO_ROOT}/scripts/lib/packages.sh"
+source "${REPO_ROOT}/scripts/lib/requirements.sh"
 
 setup_error_trap "$SCRIPT_NAME"
 
@@ -25,25 +26,6 @@ Installs and validates the graphics stack for the Dell Latitude E5470.
 Package source:
   ${PACKAGE_FILE}
 EOF
-}
-
-require_root() {
-  [[ $EUID -eq 0 ]] || die "This script must be executed as root."
-}
-
-require_commands() {
-  local commands=(awk grep lspci lsmod pacman sed)
-  local command_name
-
-  for command_name in "${commands[@]}"; do
-    command -v "$command_name" >/dev/null 2>&1 || die "Required command not found: $command_name"
-  done
-}
-
-validate_execution_context() {
-  [[ -f /etc/os-release ]] || die "The current root does not contain /etc/os-release."
-  grep -q '^ID=arch$' /etc/os-release || die "This script must run on Arch Linux."
-  [[ -d /run/systemd/system ]] || die "systemd is not running as PID 1."
 }
 
 validate_hardware() {
@@ -91,12 +73,7 @@ validate_kernel_drivers() {
 }
 
 validate_graphics_tools() {
-  local commands=(glxinfo vainfo vulkaninfo)
-  local command_name
-
-  for command_name in "${commands[@]}"; do
-    command -v "$command_name" >/dev/null 2>&1 || die "Expected graphics validation command is unavailable: $command_name"
-  done
+  require_commands glxinfo vainfo vulkaninfo
 
   log_info "Checking OpenGL renderer."
   glxinfo -B 2>/dev/null | sed -n '/OpenGL vendor string:/p;/OpenGL renderer string:/p;/OpenGL core profile version string:/p' || true
@@ -124,8 +101,8 @@ main() {
   (($# == 0)) || die "Unknown argument: $1"
 
   require_root
-  require_commands
-  validate_execution_context
+  require_commands awk grep lspci lsmod pacman sed
+  require_arch_systemd
   validate_hardware
 
   load_package_file "$PACKAGE_FILE"
