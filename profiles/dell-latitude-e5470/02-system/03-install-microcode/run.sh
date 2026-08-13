@@ -3,211 +3,65 @@
 set -Eeuo pipefail
 
 readonly SCRIPT_NAME="$(basename "$0")"
+readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
 readonly MICROCODE_PACKAGE="intel-ucode"
 readonly MICROCODE_IMAGE="/boot/intel-ucode.img"
 
-log() {
-  printf '[INFO] %s\n' "$*"
-}
+source "${REPO_ROOT}/scripts/lib/logging.sh"
+source "${REPO_ROOT}/scripts/lib/requirements.sh"
 
-warn() {
-  printf '[WARN] %s\n' "$*" >&2
-}
+setup_error_trap "$SCRIPT_NAME"
 
-die() {
-  printf '[ERROR] %s\n' "$*" >&2
-  exit 1
-}
-
-on_error() {
-  local exit_code=$?
-  local line_number=$1
-
-  printf '[ERROR] %s failed at line %s with exit code %s.\n' \
-    "$SCRIPT_NAME" \
-    "$line_number" \
-    "$exit_code" >&2
-
-  exit "$exit_code"
-}
-
-trap 'on_error "$LINENO"' ERR
-
-usage() {
-  cat <<EOF
-Usage:
-  sudo ./$SCRIPT_NAME
-
-This script installs and validates Intel CPU microcode support.
-
-Package:
-  ${MICROCODE_PACKAGE}
-
-Expected boot image:
-  ${MICROCODE_IMAGE}
-EOF
-}
-
-require_root() {
-  [[ $EUID -eq 0 ]] ||
-    die "This script must be executed as root."
-}
-
-require_commands() {
-  local commands=(
-    grep
-    pacman
-    stat
-    awk
-  )
-
-  local command_name
-
-  for command_name in "${commands[@]}"; do
-    command -v "$command_name" >/dev/null 2>&1 ||
-      die "Required command not found: $command_name"
-  done
-}
-
-parse_arguments() {
-  while (($# > 0)); do
-    case "$1" in
-      --help | -h)
-        usage
-        exit 0
-        ;;
-
-      *)
-        die "Unknown argument: $1"
-        ;;
-    esac
-  done
-}
-
-validate_execution_context() {
-  [[ -f /etc/os-release ]] ||
-    die "The current root does not contain /etc/os-release."
-
-  grep -q '^ID=arch$' /etc/os-release ||
-    die "This script must run on Arch Linux."
-
-  [[ -d /boot ]] ||
-    die "/boot is unavailable."
-}
+usage() { printf 'Usage:\n  sudo ./%s\n' "$SCRIPT_NAME"; }
 
 validate_cpu_vendor() {
   local vendor
-
-  vendor="$(
-    awk -F: '
-      $1 ~ /^[[:space:]]*vendor_id[[:space:]]*$/ {
-        gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2)
-        print $2
-        exit
-      }
-    ' /proc/cpuinfo
-  )"
-
-  [[ -n "$vendor" ]] ||
-    die "Unable to determine CPU vendor."
-
-  [[ "$vendor" == "GenuineIntel" ]] ||
-    die "Expected an Intel CPU, found vendor: ${vendor:-unknown}"
+  vendor="$(awk -F: '$1 ~ /^[[:space:]]*vendor_id[[:space:]]*$/ {gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print $2; exit}' /proc/cpuinfo)"
+  [[ "$vendor" == "GenuineIntel" ]] || die "Expected an Intel CPU, found vendor: ${vendor:-unknown}"
 }
 
 show_plan() {
-  cat <<EOF
-
-Microcode configuration
------------------------
-
-CPU vendor: Intel
-Package:    ${MICROCODE_PACKAGE}
-Image:      ${MICROCODE_IMAGE}
-
-The package will be installed if missing and validated afterwards.
-EOF
+  printf '\nMicrocode configuration\n-----------------------\n\nPackage: %s\nImage:   %s\n' "$MICROCODE_PACKAGE" "$MICROCODE_IMAGE"
 }
 
 confirm_installation() {
   local confirmation
-
   printf '\nType MICROCODE to continue: '
   read -r confirmation
-
-  [[ "$confirmation" == "MICROCODE" ]] ||
-    die "Microcode installation was not authorized."
+  [[ "$confirmation" == "MICROCODE" ]] || die "Microcode installation was not authorized."
 }
 
 install_microcode() {
   if pacman -Q "$MICROCODE_PACKAGE" >/dev/null 2>&1; then
-    log "${MICROCODE_PACKAGE} is already installed."
-    return
+    log_info "${MICROCODE_PACKAGE} is already installed."
+    return 0
   fi
-
-  log "Installing ${MICROCODE_PACKAGE}."
-
-  pacman \
-    --sync \
-    --needed \
-    "$MICROCODE_PACKAGE"
+  pacman -S --needed "$MICROCODE_PACKAGE"
 }
 
-validate_package() {
-  pacman -Q "$MICROCODE_PACKAGE" >/dev/null 2>&1 ||
-    die "${MICROCODE_PACKAGE} is not installed."
-}
-
-validate_microcode_image() {
-  [[ -f "$MICROCODE_IMAGE" ]] ||
-    die "Microcode image is missing: $MICROCODE_IMAGE"
-
-  [[ -s "$MICROCODE_IMAGE" ]] ||
-    die "Microcode image is empty: $MICROCODE_IMAGE"
-
-  [[ "$(stat -c '%U:%G' "$MICROCODE_IMAGE")" == "root:root" ]] ||
-    warn "Unexpected ownership for $MICROCODE_IMAGE."
-}
-
-validate_boot_entry_reference() {
-  local entries_directory="/boot/loader/entries"
-
-  [[ -d "$entries_directory" ]] ||
-    die "systemd-boot entry directory is missing."
-
-  if ! grep -Rqs \
-    "initrd[[:space:]]\+${MICROCODE_IMAGE#/boot}" \
-    "$entries_directory"; then
-    die "No systemd-boot entry references ${MICROCODE_IMAGE#/boot}."
-  fi
+validate_microcode() {
+  pacman -Q "$MICROCODE_PACKAGE" >/dev/null 2>&1 || die "${MICROCODE_PACKAGE} is not installed."
+  [[ -s "$MICROCODE_IMAGE" ]] || die "Microcode image is missing or empty: $MICROCODE_IMAGE"
+  grep -Rqs "initrd[[:space:]]\+${MICROCODE_IMAGE#/boot}" /boot/loader/entries || die "No systemd-boot entry references ${MICROCODE_IMAGE#/boot}."
 }
 
 show_result() {
-  printf '\nIntel microcode support validated successfully.\n\n'
-
-  printf 'Package:\n'
-  printf '  %s\n' "$(pacman -Q "$MICROCODE_PACKAGE")"
-
-  printf '\nImage:\n'
-  printf '  %s\n' "$MICROCODE_IMAGE"
-
-  printf '\nNext step:\n'
-  printf '  04-configure-systemd\n'
+  printf '\nIntel microcode support validated successfully.\n\nPackage:\n  %s\n\nNext step:\n  04-configure-systemd\n' "$(pacman -Q "$MICROCODE_PACKAGE")"
 }
 
 main() {
+  [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]] && { usage; exit 0; }
+  (($# == 0)) || die "Unknown argument: $1"
   require_root
-  require_commands
-  parse_arguments "$@"
-
-  validate_execution_context
+  require_commands awk grep pacman
+  require_arch_systemd
+  [[ -d /boot ]] || die "/boot is unavailable."
   validate_cpu_vendor
   show_plan
   confirm_installation
   install_microcode
-  validate_package
-  validate_microcode_image
-  validate_boot_entry_reference
+  validate_microcode
   show_result
 }
 
