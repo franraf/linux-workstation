@@ -1,124 +1,65 @@
 ---
-
-title: Instalar Idle Manager
-version: 1.0
+title: Instalar idle manager
+version: 1.1
 status: Draft
 author: Rafael
-last_review: 2026-07-31
+last_review: 2026-08-12
 related:
 
 * architecture.md
 * ADR-0002
-* ADR-0003
 * ADR-0004
+* ADR-0006
+* ADR-0007
+* ADR-0009
 
 ---
 
-# 05 — Instalar Idle Manager
+# 05 — Instalar idle manager
 
 ## Objetivo
 
-Instalar o Hypridle como gerenciador de inatividade da sessão gráfica.
+Instalar o Hypridle como gerenciador de inatividade da sessão, sem definir políticas automáticas nesta etapa.
 
-Ao final deste playbook, a workstation possuirá um componente capaz de monitorar o estado da sessão e executar ações relacionadas à inatividade.
+## Pré-requisitos
 
----
+* `02-install-compositor` concluído;
+* `04-install-screen-locker` concluído.
 
-# Pré-requisitos
+## Fonte declarativa
 
-* Stack gráfica instalada.
-* Hyprland instalado.
-* Hyprlock instalado.
+```text
+packages/desktop/idle-manager.txt
+```
 
----
+Baseline:
 
-# Resultado esperado
+```text
+hypridle
+```
 
-Ao concluir este playbook:
+## Procedimento
 
-* o Hypridle estará instalado;
-* suas dependências obrigatórias estarão disponíveis;
-* o componente poderá ser iniciado durante uma sessão Hyprland.
+1. Validar Hyprland e Hyprlock como pré-requisitos.
+2. Carregar e validar a lista declarativa.
+3. Instalar somente os pacotes ausentes.
+4. Confirmar o executável `hypridle`.
+5. Confirmar que o binário responde sem erro a uma consulta não interativa.
 
----
-
-# Procedimento
-
-## 1. Revisar os componentes necessários
-
-Confirme as dependências obrigatórias para utilização do Hypridle.
-
----
-
-## 2. Instalar o Hypridle
-
-Instale o componente utilizando os repositórios definidos pelo projeto.
-
----
-
-## 3. Validar a instalação
-
-Confirme que os arquivos esperados foram instalados corretamente.
-
----
-
-## 4. Executar um teste funcional
-
-Inicie o Hypridle durante uma sessão de teste.
-
-O objetivo é apenas confirmar que o componente inicia corretamente.
-
-Não configure ações automáticas nesta etapa.
-
----
-
-# Verificação
+## Verificação
 
 Confirme que:
 
-* o Hypridle está instalado;
-* o componente inicia corretamente;
-* não existem erros críticos durante sua execução.
+* o pacote `hypridle` está instalado;
+* o executável está disponível;
+* a instalação pode ser validada sem iniciar uma política de inatividade.
 
----
+## Fora de escopo
 
-# Problemas comuns
+Não iniciar o daemon como requisito desta etapa e não criar `hypridle.conf`. Tempos de lock, DPMS e demais políticas pertencem à configuração do ciclo de vida da sessão.
 
-## O componente não inicia
-
-Revise as dependências e confirme que a sessão Hyprland está operacional.
-
----
-
-## Erros relacionados à sessão
-
-Confirme que o ambiente gráfico foi iniciado corretamente e que o Hyprland está em execução.
-
----
-
-## Dependências ausentes
-
-Revise a instalação antes de prosseguir.
-
----
-
-# Próximo playbook
-
-Após validar a instalação do Hypridle, prossiga para:
+## Próximo playbook
 
 ```text
 06-install-application-launcher.md
 ```
-
----
-
-# Referências
-
-* Documentação oficial do Hypridle
-* Documentação oficial do Hyprland
-
----
-
-# Lições aprendidas
-
-Registrar aqui incompatibilidades, dependências adicionais ou observações relevantes identificadas durante a instalação do Hypridle.
