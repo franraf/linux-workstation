@@ -9,6 +9,7 @@ readonly PACKAGE_FILE="${REPO_ROOT}/packages/desktop/compositor.txt"
 
 source "${REPO_ROOT}/scripts/lib/logging.sh"
 source "${REPO_ROOT}/scripts/lib/packages.sh"
+source "${REPO_ROOT}/scripts/lib/requirements.sh"
 
 setup_error_trap "$SCRIPT_NAME"
 
@@ -27,30 +28,11 @@ Package source:
 EOF
 }
 
-require_root() {
-  [[ $EUID -eq 0 ]] || die "This script must be executed as root."
-}
-
-require_commands() {
-  local commands=(awk grep pacman sed)
-  local command_name
-
-  for command_name in "${commands[@]}"; do
-    command -v "$command_name" >/dev/null 2>&1 || die "Required command not found: $command_name"
-  done
-}
-
-validate_execution_context() {
-  [[ -f /etc/os-release ]] || die "The current root does not contain /etc/os-release."
-  grep -q '^ID=arch$' /etc/os-release || die "This script must run on Arch Linux."
-  [[ -d /run/systemd/system ]] || die "systemd is not running as PID 1."
-}
-
 validate_graphics_prerequisites() {
   log_info "Validating graphics prerequisites."
 
-  pacman -Q mesa >/dev/null 2>&1 || die "Mesa is not installed. Run 01-install-graphics-stack first."
-  pacman -Q wayland >/dev/null 2>&1 || die "Wayland is not installed. Run 01-install-graphics-stack first."
+  require_package_installed mesa "Run 01-install-graphics-stack first."
+  require_package_installed wayland "Run 01-install-graphics-stack first."
 }
 
 show_plan() {
@@ -81,8 +63,7 @@ confirm_installation() {
 validate_compositor() {
   log_info "Validating Hyprland installation."
 
-  command -v Hyprland >/dev/null 2>&1 || die "Hyprland executable was not found after installation."
-  command -v start-hyprland >/dev/null 2>&1 || die "start-hyprland executable was not found after installation."
+  require_commands Hyprland start-hyprland
 
   local version_output
   version_output="$(Hyprland --version 2>&1)" || die "Hyprland did not return version information."
@@ -109,8 +90,8 @@ main() {
   (($# == 0)) || die "Unknown argument: $1"
 
   require_root
-  require_commands
-  validate_execution_context
+  require_commands awk grep pacman sed
+  require_arch_systemd
   validate_graphics_prerequisites
 
   load_package_file "$PACKAGE_FILE"
