@@ -44,9 +44,9 @@ check_command zsh
 check_command starship
 current_shell="$(getent passwd "$USER" | cut -d: -f7)"
 [[ "$current_shell" == "$(command -v zsh)" ]] && pass "Zsh is the login shell" || fail "Login shell is not Zsh: $current_shell"
-[[ -f "${HOME}/.zshenv" ]] && pass "~/.zshenv exists" || fail "~/.zshenv is missing"
-[[ -f "${HOME}/.config/zsh/zshrc" ]] && pass "Zsh entrypoint exists" || fail "Zsh entrypoint is missing"
-[[ -f "${HOME}/.config/starship/starship.toml" ]] && pass "Starship configuration exists" || fail "Starship configuration is missing"
+cmp -s "${REPO_ROOT}/system/development/zsh/zshenv" "${HOME}/.zshenv" && pass "~/.zshenv matches canonical source" || fail "~/.zshenv differs from canonical source"
+cmp -s "${REPO_ROOT}/system/development/zsh/zshrc" "${HOME}/.config/zsh/.zshrc" && pass "Zsh entrypoint matches canonical source" || fail "Zsh entrypoint is missing or differs from canonical source"
+cmp -s "${REPO_ROOT}/system/development/starship/starship.toml" "${HOME}/.config/starship/starship.toml" && pass "Starship configuration matches canonical source" || fail "Starship configuration is missing or differs from canonical source"
 zsh -lic 'true' >/dev/null 2>&1 && pass "Interactive Zsh starts without error" || fail "Interactive Zsh startup failed"
 
 section "Visual Studio Code"
