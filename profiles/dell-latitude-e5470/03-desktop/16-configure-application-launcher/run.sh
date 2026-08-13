@@ -10,6 +10,7 @@ readonly KEYBINDINGS_SOURCE="${REPO_ROOT}/system/hyprland/modules/70-keybindings
 
 source "${REPO_ROOT}/scripts/lib/logging.sh"
 source "${REPO_ROOT}/scripts/lib/requirements.sh"
+source "${REPO_ROOT}/scripts/lib/user-config.sh"
 
 setup_error_trap "$SCRIPT_NAME"
 
@@ -22,37 +23,26 @@ Installs the shared Rofi configuration and canonical Hyprland launcher binding.
 EOF
 }
 
-resolve_user_home() {
-  getent passwd "$1" | cut -d: -f6
-}
-
-validate_user() {
-  local username="$1"
-  id "$username" >/dev/null 2>&1 || die "User does not exist: $username"
-  [[ "$username" != "root" ]] || die "Rofi configuration must target a normal user."
-}
-
 install_configuration() {
-  local username="$1"
-  local user_home="$2"
-  local rofi_directory="${user_home}/.config/rofi"
-  local hypr_directory="${user_home}/.config/hypr"
+  local rofi_directory hypr_directory
+  rofi_directory="$(user_config_path rofi)"
+  hypr_directory="$(user_config_path hypr)"
 
-  log_info "Installing Rofi configuration for ${username}."
-
-  install -d -m 0755 -o "$username" -g "$username" "$rofi_directory" "$hypr_directory" "$hypr_directory/modules"
-  install -m 0644 -o "$username" -g "$username" "$ROFI_SOURCE" "$rofi_directory/config.rasi"
-  install -m 0644 -o "$username" -g "$username" "$KEYBINDINGS_SOURCE" "$hypr_directory/modules/70-keybindings.lua"
+  log_info "Installing Rofi configuration for ${TARGET_USER}."
+  install_user_directory "$rofi_directory"
+  install_user_directory "$hypr_directory"
+  install_user_directory "${hypr_directory}/modules"
+  install_user_file "$ROFI_SOURCE" "${rofi_directory}/config.rasi"
+  install_user_file "$KEYBINDINGS_SOURCE" "${hypr_directory}/modules/70-keybindings.lua"
 }
 
 validate_configuration() {
-  local user_home="$1"
-  local rofi_config="${user_home}/.config/rofi/config.rasi"
-  local keybindings="${user_home}/.config/hypr/modules/70-keybindings.lua"
+  local rofi_config keybindings
+  rofi_config="$(user_config_path rofi/config.rasi)"
+  keybindings="$(user_config_path hypr/modules/70-keybindings.lua)"
 
   [[ -s "$rofi_config" ]] || die "Rofi configuration was not installed."
   [[ -s "$keybindings" ]] || die "Hyprland keybindings module was not installed."
-
   grep -q 'modi: "drun,run"' "$rofi_config" || die "Rofi drun/run modes are not configured."
   grep -q 'hl.bind("SUPER", "SPACE"' "$keybindings" || die "SUPER+SPACE launcher binding is missing."
   grep -q 'rofi -show drun' "$keybindings" || die "Launcher binding does not invoke Rofi drun mode."
@@ -63,59 +53,41 @@ validate_configuration() {
 }
 
 validate_effective_bindings() {
-  local username="$1"
   local binding_output
-
   log_info "Checking Rofi built-in navigation bindings."
-  binding_output="$(runuser -u "$username" -- rofi -list-keybindings 2>/dev/null)" || \
-    die "Could not query Rofi keybindings."
-
+  binding_output="$(runuser -u "$TARGET_USER" -- rofi -list-keybindings 2>/dev/null)" || die "Could not query Rofi keybindings."
   grep -q 'kb-row-left' <<<"$binding_output" || die "Rofi kb-row-left binding is unavailable."
   grep -q 'kb-row-right' <<<"$binding_output" || die "Rofi kb-row-right binding is unavailable."
 }
 
 show_result() {
-  local username="$1"
-  local user_home="$2"
-
   printf '\nRofi application launcher configured successfully.\n\n'
-  printf 'User:\n  %s\n\n' "$username"
+  printf 'User:\n  %s\n\n' "$TARGET_USER"
   printf 'Modes:\n  drun, run\n\n'
   printf 'Binding:\n  SUPER + SPACE -> rofi -show drun\n\n'
-  printf 'Configuration:\n  %s/.config/rofi/config.rasi\n\n' "$user_home"
   printf 'Built-in row navigation bindings were preserved.\n'
-  printf 'Graphical launcher behavior must be validated from the Hyprland session.\n'
   printf '\nNext step:\n  17-configure-notification-center\n'
 }
 
 main() {
-  if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
-    usage
-    exit 0
-  fi
-
+  if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then usage; exit 0; fi
   (($# == 1)) || die "Expected exactly one argument: username"
 
-  local username="$1"
-  local user_home
-
   require_root
-  require_commands cut getent grep id install runuser
+  require_commands grep runuser
+  require_user_config_commands
   require_arch_systemd
   require_package_installed rofi "Run 06-install-application-launcher first."
   require_package_installed hyprland "Run 02-install-compositor first."
-
-  validate_user "$username"
-  user_home="$(resolve_user_home "$username")"
-  [[ -n "$user_home" && -d "$user_home" ]] || die "Could not resolve a valid home directory for ${username}."
+  resolve_normal_user "$1"
 
   [[ -s "$ROFI_SOURCE" ]] || die "Shared Rofi configuration is missing."
   [[ -s "$KEYBINDINGS_SOURCE" ]] || die "Shared Hyprland keybindings module is missing."
 
-  install_configuration "$username" "$user_home"
-  validate_configuration "$user_home"
-  validate_effective_bindings "$username"
-  show_result "$username" "$user_home"
+  install_configuration
+  validate_configuration
+  validate_effective_bindings
+  show_result
 }
 
 main "$@"
