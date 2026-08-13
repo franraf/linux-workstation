@@ -1,6 +1,6 @@
 ---
 title: Validar desktop
-version: 1.2
+version: 1.3
 status: Draft
 author: Rafael
 last_review: 2026-08-12
@@ -22,6 +22,14 @@ related:
 Validar que todas as capacidades da fase `03-desktop` estão operacionais, integradas e coerentes com a arquitetura antes de iniciar `04-development`.
 
 Este playbook é um gate de fase. Ele não deve corrigir configuração automaticamente; falhas devem direcionar o mantenedor ao playbook responsável.
+
+A fase segue a sequência estrutural:
+
+```text
+01–11  instalar todas as capacidades
+12–21  configurar todas as capacidades
+22     validar a integração final
+```
 
 ---
 
@@ -51,7 +59,7 @@ Ao concluir este playbook:
 
 ## 1. Validar autenticação e inicialização da sessão
 
-Reinicie a workstation e confirme o fluxo definido pela ADR-0008:
+Reinicie a workstation e confirme:
 
 ```text
 boot
@@ -67,7 +75,7 @@ start-hyprland
 Hyprland
 ```
 
-Confirme que não existe autologin da conta pessoal e que a sessão é executada como o usuário autenticado.
+Confirme que não existe autologin da conta pessoal.
 
 ## 2. Validar a configuração do Hyprland
 
@@ -81,9 +89,9 @@ hyprctl devices
 hyprctl binds
 ```
 
-`hyprctl configerrors` deverá retornar `ok` ou ausência de erros, conforme a versão instalada.
+`hyprctl configerrors` deverá retornar `ok` ou ausência de erros.
 
-Confirme que o arquivo principal carrega os fragments esperados:
+Confirme os fragments:
 
 ```text
 10-environment.conf
@@ -98,63 +106,35 @@ Confirme que o arquivo principal carrega os fragments esperados:
 
 ## 3. Validar componentes de autostart
 
-Confirme a execução dos componentes configurados em `50-autostart.conf`, incluindo quando aplicável:
-
-```text
-Waybar
-Hypridle
-SwayNC
-mecanismo de wallpaper
-```
-
-Não devem existir processos duplicados decorrentes de entradas concorrentes.
+Confirme Waybar, Hypridle, SwayNC e mecanismo de wallpaper quando aplicável, sem processos duplicados.
 
 ## 4. Validar Waybar
 
-Confirme que:
-
-* a barra ocupa corretamente o output;
-* workspaces ficam à esquerda;
-* janela ativa fica ao centro;
-* status do sistema fica à direita;
-* não existem erros de parsing JSONC.
+Confirme largura correta, workspaces à esquerda, janela ativa ao centro, status à direita e ausência de erros JSONC.
 
 ## 5. Validar bloqueio e ciclo de vida
 
-Teste Hyprlock manualmente e confirme autenticação e retorno à sessão.
-
-Valide os eventos definidos pelo Hypridle, incluindo bloqueio automático, gerenciamento do monitor, suspensão e retomada.
+Teste Hyprlock, Hypridle, suspensão e retomada.
 
 ## 6. Validar launcher e notificações
 
-Confirme que:
-
-* Rofi abre sem bindings duplicados;
-* aplicações podem ser localizadas e iniciadas;
-* SwayNC recebe notificações;
-* o histórico e a central estão acessíveis.
+Confirme que Rofi abre sem bindings duplicados e que SwayNC recebe notificações e mantém histórico.
 
 ## 7. Validar aplicações fundamentais
 
-Teste Kitty e Thunar e confirme os atalhos globais configurados em `70-keybindings.conf`.
+Teste Kitty e Thunar e os atalhos globais configurados em `70-keybindings.conf`.
 
 ## 8. Validar aparência
 
 Revise Hyprland, Waybar, Hyprlock, Rofi, SwayNC, Kitty, Thunar e aplicações GTK em conjunto.
 
-Confirme tema, ícones, cursor, tipografia, wallpaper, contraste e legibilidade.
-
 ## 9. Revisar logs
 
 Analise logs da sessão e dos serviços relacionados, incluindo `greetd`.
 
-Erros críticos ou recorrentes deverão ser investigados antes de avançar.
-
 ## 10. Registrar o resultado
 
-Registre o resultado objetivo da validação e as pendências conhecidas.
-
-Warnings aceitos devem ser documentados. Falhas obrigatórias impedem o avanço.
+Registre pendências conhecidas. Falhas obrigatórias impedem o avanço.
 
 ---
 
@@ -193,7 +173,7 @@ Compare `rofi -list-keybindings` com `~/.config/rofi/config.rasi` e remova redef
 
 ## Sessão inicia sem autenticação
 
-Revise `20-install-session-login.md` e `21-configure-session-login.md`, remova autologin e elimine inicialização automática via perfil do shell.
+Revise `11-install-session-login.md` e `21-configure-session-login.md`, remova autologin e elimine inicialização automática via perfil do shell.
 
 ---
 
@@ -220,4 +200,4 @@ Somente após aprovação deste gate:
 
 # Lições aprendidas
 
-A validação final deve usar o estado real da sessão, e não apenas a existência de arquivos. Erros de compatibilidade do Hyprland, parsing da Waybar, bindings do Rofi e autenticação da sessão só podem ser considerados resolvidos após validação integrada.
+A validação final deve usar o estado real da sessão. A fase deve manter a ordem arquitetural `instalar tudo → configurar tudo → validar tudo` para reduzir dependências circulares e tornar a automação previsível.
