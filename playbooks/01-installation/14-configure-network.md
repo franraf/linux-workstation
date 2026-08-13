@@ -1,130 +1,57 @@
 ---
-
 title: Configurar rede
-version: 1.0
+version: 1.1
 status: Draft
 author: Rafael
-last_review: 2026-07-31
+last_review: 2026-08-13
 related:
-
-* architecture.md
-* ADR-0002
-* ADR-0003
-* ADR-0004
-
+  - ADR-0009
+  - 13-configure-localization.md
+  - 15-configure-users.md
 ---
 
-# 13 — Configurar rede
+# 14 — Configurar rede
 
 ## Objetivo
 
-Configurar a identificação do sistema na rede e preparar a infraestrutura básica de conectividade.
+Configurar a identidade local da máquina e habilitar NetworkManager para o primeiro boot.
 
-Ao final deste playbook, o sistema possuirá um nome de host configurado, resolução local funcional e estará preparado para gerenciar conexões de rede após o primeiro boot.
+O hostname padrão é:
 
----
-
-# Pré-requisitos
-
-* Ambiente `arch-chroot` ativo.
-* Data, hora e localização configuradas.
-
----
-
-# Resultado esperado
-
-Ao concluir este playbook:
-
-* o hostname estará configurado;
-* o arquivo de resolução local estará consistente;
-* os serviços de rede previstos pela arquitetura estarão preparados para utilização.
-
----
-
-# Procedimento
-
-## 1. Definir o hostname
-
-Configure o nome da máquina conforme o perfil da instalação.
-
----
-
-## 2. Configurar a resolução local
-
-Atualize o arquivo de resolução de nomes local.
-
-Confirme que o hostname definido está corretamente associado às entradas de loopback.
-
----
-
-## 3. Instalar os componentes de rede
-
-Instale os componentes previstos pela arquitetura para gerenciamento de conexões.
-
----
-
-## 4. Habilitar os serviços necessários
-
-Configure os serviços para inicialização automática após o primeiro boot.
-
----
-
-## 5. Revisar a configuração
-
-Confirme que todos os arquivos foram atualizados corretamente.
-
----
-
-# Verificação
-
-Confirme que:
-
-* o hostname está configurado;
-* a resolução local está consistente;
-* os serviços de rede encontram-se habilitados;
-* não existem inconsistências entre o hostname e os arquivos de configuração.
-
----
-
-# Problemas comuns
-
-## Hostname incorreto
-
-Revise a configuração e confirme que o nome corresponde ao perfil da instalação.
-
----
-
-## Falha na resolução local
-
-Verifique o conteúdo do arquivo de resolução de nomes e confirme que as entradas obrigatórias estão presentes.
-
----
-
-## Serviço não habilitado
-
-Confirme que o componente foi instalado antes da habilitação.
-
----
-
-# Próximo playbook
-
-Após validar a configuração de rede, prossiga para:
-
-```text id="m1aw2g"
-15-configure-users.md
+```text
+linux-workstation
 ```
 
----
+O `/etc/hosts` é renderizado a partir de:
 
-# Referências
+```text
+system/network/hosts.template
+```
 
-* Arch Wiki — Network configuration
-* Arch Wiki — NetworkManager
-* Arch Wiki — Hostname
-* Arch Wiki — Hosts
+## Execução
 
----
+Dentro do chroot:
 
-# Lições aprendidas
+```bash
+profiles/dell-latitude-e5470/01-installation/14-configure-network/run.sh
+```
 
-Registrar aqui ajustes específicos de rede, alterações na configuração do hostname ou observações relevantes encontradas durante futuras instalações.
+Outro hostname pode ser informado com `--hostname`. O script valida o formato do nome, exige que `networkmanager` já esteja instalado e solicita confirmação `NETWORK`.
+
+## Alterações
+
+- grava `/etc/hostname`;
+- renderiza `/etc/hosts` com entradas IPv4/IPv6 de localhost e `127.0.1.1` para o hostname;
+- habilita `NetworkManager.service` para o primeiro boot.
+
+Nenhum SSID, senha Wi-Fi ou profile de conexão é criado pelo projeto nesta etapa.
+
+## Verificação
+
+O passo só passa quando os arquivos contêm o hostname esperado, o NetworkManager está habilitado e não existem profiles inesperados em `/etc/NetworkManager/system-connections`.
+
+## Próximo playbook
+
+```text
+15-configure-users.md
+```
