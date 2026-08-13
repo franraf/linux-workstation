@@ -1,34 +1,48 @@
+---
+title: Playbooks
+version: 1.1
+status: Stable
+author: Rafael
+last_review: 2026-08-12
+related:
+
+* ADR-0002
+* ADR-0003
+* ADR-0004
+* ADR-0006
+* ADR-0007
+* docs/architecture.md
+* docs/standards.md
+
+---
+
 # Playbooks
 
 ## Objetivo
 
-Os playbooks descrevem os procedimentos operacionais do projeto **linux-workstation**.
+Os playbooks descrevem os procedimentos operacionais do projeto `linux-workstation`.
 
-Eles documentam, de forma reproduzível, todas as etapas necessárias para instalar, configurar, manter e recuperar uma workstation baseada em Arch Linux.
+Eles documentam, de forma reproduzível, as etapas necessárias para instalar, configurar, validar, manter e recuperar a workstation.
 
-Os playbooks são escritos para serem executados por pessoas. A automação é consequência dessa documentação, nunca seu substituto.
+Os playbooks são escritos para execução humana. A automação é consequência dessa documentação, nunca seu substituto.
 
 ---
 
 # Filosofia
 
-Os playbooks seguem os princípios definidos pelos ADRs do projeto.
-
-Em especial:
+Os playbooks seguem os princípios definidos pelos ADRs do projeto, em especial:
 
 * documentação antes da implementação;
 * automação depois do entendimento;
 * mudanças pequenas e verificáveis;
-* procedimentos reproduzíveis;
-* validação ao final de cada etapa.
-
-Sempre que um procedimento for automatizado, sua versão manual continuará documentada.
+* responsabilidade única;
+* separação entre instalação e configuração quando tecnicamente apropriado;
+* listas declarativas para conjuntos de pacotes;
+* validação antes de avançar.
 
 ---
 
 # Organização
-
-Os playbooks são organizados por fase do ciclo de vida da workstation.
 
 ```text
 playbooks/
@@ -41,85 +55,29 @@ playbooks/
 └── 06-recovery/
 ```
 
-Cada diretório possui uma responsabilidade específica.
-
 ## 01-installation
 
-Procedimentos para instalação inicial do sistema operacional.
-
-Exemplos:
-
-* preparação da mídia de instalação;
-* configuração da UEFI;
-* particionamento;
-* criptografia;
-* criação do sistema de arquivos;
-* instalação do Arch Linux;
-* configuração inicial;
-* instalação do bootloader.
+Instalação inicial do Arch Linux: mídia, firmware, armazenamento, LUKS2, Btrfs, sistema base, configuração inicial, initramfs, bootloader e primeiro boot.
 
 ## 02-system
 
-Configuração dos componentes fundamentais do sistema.
-
-Exemplos:
-
-* NetworkManager;
-* PipeWire;
-* BlueZ;
-* Snapper;
-* fstrim;
-* OpenSSH;
-* ferramentas essenciais.
+Linha de base operacional do sistema: atualização, Pacman, microcode, systemd, horário, journald, zram, TRIM, serviços, SSH, pacotes base e validação.
 
 ## 03-desktop
 
-Construção do ambiente gráfico.
-
-Exemplos:
-
-* Hyprland;
-* Waybar;
-* Kitty;
-* Rofi;
-* Hyprlock;
-* Hypridle;
-* Thunar.
+Construção do ambiente gráfico: stack gráfica, Hyprland, Waybar, Hyprlock, Hypridle, Rofi, SwayNC, Kitty, Thunar, fontes, configuração da sessão, aparência, autenticação gráfica e validação final.
 
 ## 04-development
 
-Preparação da workstation para desenvolvimento de software.
-
-Exemplos:
-
-* Docker;
-* Docker Compose;
-* Visual Studio Code;
-* Dev Containers;
-* chezmoi.
+Preparação para desenvolvimento: Git, shell, editor, contêineres, ferramentas CLI, ferramentas de IA e validação integrada.
 
 ## 05-maintenance
 
-Procedimentos recorrentes de manutenção.
-
-Exemplos:
-
-* atualização do sistema;
-* limpeza de caches;
-* gerenciamento de snapshots;
-* verificações de integridade;
-* manutenção preventiva.
+Reservado para procedimentos recorrentes de manutenção. A fase ainda não possui playbooks implementados.
 
 ## 06-recovery
 
-Procedimentos para recuperação do sistema.
-
-Exemplos:
-
-* recuperação do boot;
-* restauração de snapshots;
-* desbloqueio manual do LUKS;
-* recuperação via ambiente live.
+Reservado para procedimentos de recuperação. A fase ainda não possui playbooks implementados.
 
 ---
 
@@ -127,118 +85,161 @@ Exemplos:
 
 Os playbooks deverão ser executados na ordem indicada pela numeração dos diretórios e dos arquivos.
 
-A numeração representa a sequência recomendada de execução, não uma dependência técnica obrigatória.
-
-Quando um playbook depender de outro, essa dependência deverá ser explicitamente indicada no documento.
+A numeração representa a sequência operacional recomendada. Dependências específicas devem permanecer explícitas no documento.
 
 ---
 
 # Estrutura dos playbooks
 
-Todo playbook deverá possuir, quando aplicável, as seguintes seções:
+Todo playbook deverá possuir, quando aplicável:
 
 1. Objetivo
 2. Pré-requisitos
-3. Procedimento
-4. Verificação
-5. Problemas comuns
-6. Próximo playbook
-7. Referências
-8. Lições aprendidas
+3. Resultado esperado
+4. Procedimento
+5. Verificação
+6. Problemas comuns
+7. Próximo playbook
+8. Referências
+9. Lições aprendidas
 
-A ordem poderá ser adaptada quando necessário, desde que a consistência entre os documentos seja preservada.
+---
+
+# Separação entre instalação e configuração
+
+Quando uma capacidade possuir separação técnica natural entre disponibilizar seus pacotes e definir seu comportamento, os playbooks deverão refletir essa divisão conforme a ADR-0006.
+
+Playbooks de configuração não devem instalar silenciosamente dependências ausentes.
+
+---
+
+# Pacotes declarativos
+
+Conjuntos de pacotes deverão utilizar listas declarativas quando apropriado, conforme a ADR-0007.
+
+Os arquivos de pacotes definem **o que** instalar. Scripts e procedimentos definem **como** instalar e validar.
+
+---
+
+# Operações destrutivas
+
+Operações destrutivas devem seguir `docs/standards.md`.
+
+Antes de operações como particionamento, formatação ou `cryptsetup luksFormat`, o usuário deverá confirmar explicitamente digitando:
+
+```text
+ERASE
+```
 
 ---
 
 # Validação
 
-Nenhum playbook é considerado concluído apenas porque todos os comandos foram executados.
+Nenhum playbook é considerado concluído apenas porque os comandos terminaram sem erro.
 
-Ao final de cada procedimento deverá existir uma forma objetiva de verificar o resultado.
+Ao final de cada procedimento deverá existir uma verificação objetiva do estado resultante.
 
-A validação pode incluir:
-
-* comandos de inspeção;
-* análise de arquivos gerados;
-* confirmação do estado do sistema;
-* execução de scripts de teste;
-* reinicialização controlada.
-
----
-
-# Tratamento de problemas
-
-Caso ocorra uma falha durante a execução de um playbook:
-
-1. interrompa o procedimento;
-2. identifique a causa do problema;
-3. corrija a documentação, se necessário;
-4. registre a solução em `docs/troubleshooting.md`, quando aplicável;
-5. atualize as lições aprendidas do playbook correspondente.
-
-O objetivo é que cada incidente torne a documentação mais completa.
+Falhas encontradas durante validação devem corrigir a fonte versionada — playbook, script, configuração ou teste — e não apenas o estado local da máquina.
 
 ---
 
 # Relação com automações
 
-Os scripts presentes em `scripts/` deverão implementar procedimentos já descritos pelos playbooks.
+Scripts em `scripts/` deverão implementar procedimentos documentados e compreendidos.
 
-Nenhum script deverá existir sem que o procedimento manual correspondente esteja documentado e compreendido.
-
-Sempre que houver divergência entre um script e um playbook, o playbook deverá ser revisado e ambos deverão voltar a representar o mesmo processo.
+Sempre que houver divergência entre script e playbook, ambos deverão ser revisados até voltarem a representar o mesmo processo.
 
 ---
 
 # Perfis de hardware
 
-Os playbooks descrevem o fluxo geral do projeto.
-
-Quando um procedimento depender de características específicas de um equipamento, essas particularidades deverão ser documentadas em `profiles/<hardware>/`.
-
-Assim, o mesmo playbook poderá ser reutilizado por diferentes perfis de hardware.
+Particularidades específicas de hardware pertencem a `profiles/<hardware>/` e não devem ser incorporadas silenciosamente ao fluxo genérico.
 
 ---
 
-# Convenções
+# Sequência atual
 
-Os playbooks seguem as convenções definidas em:
+## 01-installation
 
-* `docs/standards.md`
-* `docs/architecture.md`
-* `docs/adr/`
+```text
+01-prepare-install-media.md
+02-configure-firmware.md
+03-partition-disk.md
+04-create-luks.md
+05-create-btrfs.md
+06-create-subvolumes.md
+07-format-efi.md
+08-mount-filesystems.md
+09-install-base-system.md
+10-generate-fstab.md
+11-enter-chroot.md
+12-configure-time.md
+13-configure-localization.md
+14-configure-network.md
+15-configure-users.md
+16-configure-initramfs.md
+17-install-bootloader.md
+18-first-boot.md
+```
 
-Mudanças estruturais na organização dos playbooks deverão ser registradas por meio de um novo ADR.
+## 02-system
 
----
+```text
+01-update-system.md
+02-configure-pacman.md
+03-install-microcode.md
+04-configure-systemd.md
+05-configure-time-sync.md
+06-configure-journald.md
+07-configure-zram.md
+08-configure-trim.md
+09-configure-system-services.md
+10-configure-ssh.md
+11-install-base-packages.md
+12-system-validation.md
+```
 
-# Estado atual
+## 03-desktop
 
-Atualmente, os diretórios de playbooks representam a estrutura planejada do projeto.
+```text
+01-install-graphics-stack.md
+02-install-compositor.md
+03-install-status-bar.md
+04-install-screen-locker.md
+05-install-idle-manager.md
+06-install-application-launcher.md
+07-install-notification-center.md
+08-install-terminal-emulator.md
+09-install-file-manager.md
+10-install-font-stack.md
+11-configure-desktop-session.md
+12-configure-status-bar.md
+13-configure-session-lock.md
+14-configure-session-lifecycle.md
+15-configure-application-launcher.md
+16-configure-notification-center.md
+17-configure-terminal-emulator.md
+18-configure-file-manager.md
+19-configure-appearance.md
+20-install-session-login.md
+21-configure-session-login.md
+22-desktop-validation.md
+```
 
-Os procedimentos serão adicionados e validados progressivamente durante a construção da workstation.
+## 04-development
 
----
-
-# Próximos passos
-
-A sequência inicial prevista para a instalação é:
-
-1. `01-prepare-install-media.md`
-2. `02-configure-firmware.md`
-3. `03-partition-disk.md`
-4. `04-create-luks.md`
-5. `05-create-btrfs.md`
-6. `06-mount-filesystems.md`
-7. `07-install-base-system.md`
-8. `08-configure-system.md`
-9. `09-install-bootloader.md`
-10. `10-first-boot.md`
-
-Cada etapa deverá ser concluída e validada antes do início da próxima.
+```text
+01-version-control.md
+02-shell-environment.md
+03-code-editor.md
+04-container-platform.md
+05-cli-tools.md
+06-ai-tooling.md
+07-development-validation.md
+```
 
 ---
 
 # Lições aprendidas
 
-Os playbooks constituem a documentação operacional do projeto. Sua principal função é garantir que uma instalação possa ser reproduzida de forma previsível, auditável e independente da memória do mantenedor.
+O índice deve refletir os arquivos reais do repositório. Listas planejadas que divergem da implementação reduzem a confiabilidade da documentação como fonte da verdade.
