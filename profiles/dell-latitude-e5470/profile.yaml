@@ -153,6 +153,8 @@ system:
     official_repositories_only: true
     aur_enabled: false
     parallel_downloads: 5
+    upstream_exceptions:
+      - visual-studio-code
 
   services:
     network: NetworkManager
@@ -222,6 +224,7 @@ development:
 
   editor:
     implementation: visual-studio-code
+    distribution: microsoft-upstream
     configuration_source: dotfiles/vscode
 
   containers:
@@ -230,6 +233,12 @@ development:
     buildx: true
     dev_containers: true
     data_subvolume: "@docker"
+
+  ai_tooling:
+    implementation: openai-codex
+    package: openai-codex
+    authentication: interactive
+    secrets_in_repository: false
 
   host_policy:
     install_project_runtimes: false
@@ -309,3 +318,4 @@ metadata:
     - docs/standards.md
     - docs/adr/0004-playbook-granularity.md
     - docs/adr/0005-modularize-configuration-by-capability.md
+    - docs/adr/0011-upstream-distribution-exception.md
