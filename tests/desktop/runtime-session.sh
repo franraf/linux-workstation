@@ -21,7 +21,12 @@ hyprctl binds >/dev/null 2>&1 || fail "could not query bindings"
 pass "Hyprland runtime queries"
 
 for process in waybar hypridle swaync; do
-  count="$(pgrep -x "$process" | wc -l)"
+  pids="$(pgrep -x "$process" || true)"
+  if [[ -z "$pids" ]]; then
+    count=0
+  else
+    count="$(printf '%s\n' "$pids" | wc -l)"
+  fi
   [[ "$count" -eq 1 ]] || fail "expected exactly one ${process} process, found ${count}"
 done
 pass "session autostart processes"
