@@ -3,243 +3,67 @@
 set -Eeuo pipefail
 
 readonly SCRIPT_NAME="$(basename "$0")"
+readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
+readonly SOURCE_FILE="${REPO_ROOT}/system/systemd/10-linux-workstation.conf"
+readonly CONFIG_FILE="/etc/systemd/system.conf.d/10-linux-workstation.conf"
 
-readonly CONFIG_DIRECTORY="/etc/systemd/system.conf.d"
-readonly CONFIG_FILE="${CONFIG_DIRECTORY}/10-linux-workstation.conf"
+source "${REPO_ROOT}/scripts/lib/logging.sh"
+source "${REPO_ROOT}/scripts/lib/requirements.sh"
+source "${REPO_ROOT}/scripts/lib/system-config.sh"
 
-readonly DEFAULT_TIMEOUT_START="90s"
-readonly DEFAULT_TIMEOUT_STOP="90s"
-readonly DEFAULT_TIMEOUT_ABORT="90s"
-readonly DEFAULT_RUNTIME_WATCHDOG="0"
-readonly DEFAULT_REBOOT_WATCHDOG="10min"
-
-log() {
-  printf '[INFO] %s\n' "$*"
-}
-
-die() {
-  printf '[ERROR] %s\n' "$*" >&2
-  exit 1
-}
-
-on_error() {
-  local exit_code=$?
-  local line_number=$1
-
-  printf '[ERROR] %s failed at line %s with exit code %s.\n' \
-    "$SCRIPT_NAME" \
-    "$line_number" \
-    "$exit_code" >&2
-
-  exit "$exit_code"
-}
-
-trap 'on_error "$LINENO"' ERR
+setup_error_trap "$SCRIPT_NAME"
 
 usage() {
   cat <<EOF
 Usage:
   sudo ./$SCRIPT_NAME
 
-This script configures global systemd manager defaults.
+Canonical source:
+  ${SOURCE_FILE}
 
-Configuration file:
-
+Destination:
   ${CONFIG_FILE}
-
-Managed settings:
-
-  DefaultTimeoutStartSec=${DEFAULT_TIMEOUT_START}
-  DefaultTimeoutStopSec=${DEFAULT_TIMEOUT_STOP}
-  DefaultTimeoutAbortSec=${DEFAULT_TIMEOUT_ABORT}
-  RuntimeWatchdogSec=${DEFAULT_RUNTIME_WATCHDOG}
-  RebootWatchdogSec=${DEFAULT_REBOOT_WATCHDOG}
 EOF
-}
-
-require_root() {
-  [[ $EUID -eq 0 ]] ||
-    die "This script must be executed as root."
-}
-
-require_commands() {
-  local commands=(
-    grep
-    install
-    mktemp
-    systemd-analyze
-    systemctl
-  )
-
-  local command_name
-
-  for command_name in "${commands[@]}"; do
-    command -v "$command_name" >/dev/null 2>&1 ||
-      die "Required command not found: $command_name"
-  done
 }
 
 parse_arguments() {
   while (($# > 0)); do
     case "$1" in
-      --help | -h)
-        usage
-        exit 0
-        ;;
-
-      *)
-        die "Unknown argument: $1"
-        ;;
+      --help|-h) usage; exit 0 ;;
+      *) die "Unknown argument: $1" ;;
     esac
   done
 }
 
-validate_execution_context() {
-  [[ -f /etc/os-release ]] ||
-    die "The current root does not contain /etc/os-release."
-
-  grep -q '^ID=arch$' /etc/os-release ||
-    die "This script must run on Arch Linux."
-
-  [[ -d /run/systemd/system ]] ||
-    die "systemd is not running as PID 1."
-}
-
-show_plan() {
-  cat <<EOF
-
-systemd configuration
----------------------
-
-Configuration file:
-  ${CONFIG_FILE}
-
-Settings:
-  DefaultTimeoutStartSec=${DEFAULT_TIMEOUT_START}
-  DefaultTimeoutStopSec=${DEFAULT_TIMEOUT_STOP}
-  DefaultTimeoutAbortSec=${DEFAULT_TIMEOUT_ABORT}
-  RuntimeWatchdogSec=${DEFAULT_RUNTIME_WATCHDOG}
-  RebootWatchdogSec=${DEFAULT_REBOOT_WATCHDOG}
-EOF
-}
-
 confirm_configuration() {
   local confirmation
-
   printf '\nType SYSTEMD to apply the configuration: '
   read -r confirmation
-
-  [[ "$confirmation" == "SYSTEMD" ]] ||
-    die "systemd configuration was not authorized."
-}
-
-write_configuration() {
-  local temporary_file
-
-  temporary_file="$(mktemp)"
-  trap 'rm -f "$temporary_file"' RETURN
-
-  cat >"$temporary_file" <<EOF
-# Managed by linux-workstation.
-# Profile: dell-latitude-e5470
-
-[Manager]
-DefaultTimeoutStartSec=${DEFAULT_TIMEOUT_START}
-DefaultTimeoutStopSec=${DEFAULT_TIMEOUT_STOP}
-DefaultTimeoutAbortSec=${DEFAULT_TIMEOUT_ABORT}
-RuntimeWatchdogSec=${DEFAULT_RUNTIME_WATCHDOG}
-RebootWatchdogSec=${DEFAULT_REBOOT_WATCHDOG}
-EOF
-
-  install \
-    --directory \
-    --owner root \
-    --group root \
-    --mode 0755 \
-    "$CONFIG_DIRECTORY"
-
-  install \
-    --owner root \
-    --group root \
-    --mode 0644 \
-    "$temporary_file" \
-    "$CONFIG_FILE"
-
-  rm -f "$temporary_file"
-  trap - RETURN
-}
-
-validate_configuration_file() {
-  [[ -s "$CONFIG_FILE" ]] ||
-    die "systemd configuration file was not created."
-
-  systemd-analyze \
-    cat-config systemd/system.conf >/dev/null ||
-    die "systemd could not parse the manager configuration."
-}
-
-reload_systemd_manager() {
-  log "Reloading systemd manager configuration."
-
-  systemctl daemon-reexec
-}
-
-validate_effective_configuration() {
-  local effective_config
-
-  effective_config="$(
-    systemd-analyze cat-config systemd/system.conf
-  )"
-
-  grep -Fq \
-    "DefaultTimeoutStartSec=${DEFAULT_TIMEOUT_START}" \
-    <<<"$effective_config" ||
-    die "DefaultTimeoutStartSec is not effective."
-
-  grep -Fq \
-    "DefaultTimeoutStopSec=${DEFAULT_TIMEOUT_STOP}" \
-    <<<"$effective_config" ||
-    die "DefaultTimeoutStopSec is not effective."
-
-  grep -Fq \
-    "DefaultTimeoutAbortSec=${DEFAULT_TIMEOUT_ABORT}" \
-    <<<"$effective_config" ||
-    die "DefaultTimeoutAbortSec is not effective."
-
-  grep -Fq \
-    "RuntimeWatchdogSec=${DEFAULT_RUNTIME_WATCHDOG}" \
-    <<<"$effective_config" ||
-    die "RuntimeWatchdogSec is not effective."
-
-  grep -Fq \
-    "RebootWatchdogSec=${DEFAULT_REBOOT_WATCHDOG}" \
-    <<<"$effective_config" ||
-    die "RebootWatchdogSec is not effective."
-}
-
-show_result() {
-  printf '\nsystemd configured successfully.\n\n'
-
-  printf 'Configuration:\n'
-  printf '  %s\n' "$CONFIG_FILE"
-
-  printf '\nNext step:\n'
-  printf '  05-configure-time-sync\n'
+  [[ "$confirmation" == "SYSTEMD" ]] || die "systemd configuration was not authorized."
 }
 
 main() {
   require_root
-  require_commands
+  require_commands cmp systemctl systemd-analyze
+  require_arch_systemd
+  require_system_config_commands
   parse_arguments "$@"
 
-  validate_execution_context
-  show_plan
+  [[ -f "$SOURCE_FILE" ]] || die "Canonical systemd configuration is missing: $SOURCE_FILE"
+
+  printf '\nsystemd configuration\n---------------------\n\nSource:\n  %s\n\nDestination:\n  %s\n' "$SOURCE_FILE" "$CONFIG_FILE"
   confirm_configuration
-  write_configuration
-  validate_configuration_file
-  reload_systemd_manager
-  validate_effective_configuration
-  show_result
+
+  install_system_file "$SOURCE_FILE" "$CONFIG_FILE"
+  validate_system_file_matches "$SOURCE_FILE" "$CONFIG_FILE"
+
+  systemd-analyze cat-config systemd/system.conf >/dev/null || die "systemd could not parse the manager configuration."
+
+  log_info "Reloading systemd manager configuration."
+  systemctl daemon-reexec
+
+  printf '\nsystemd configured successfully.\n\nNext step:\n  05-configure-time-sync\n'
 }
 
 main "$@"
