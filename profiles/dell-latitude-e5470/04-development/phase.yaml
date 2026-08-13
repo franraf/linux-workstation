@@ -19,6 +19,7 @@ execution:
     - 02-shell-environment
     - 03-code-editor
     - 04-container-platform
+    - 05-cli-tools
   stop_on_error: true
   validate_after_each_step: true
 
@@ -47,8 +48,13 @@ steps:
     playbook: ../../../playbooks/04-development/04-container-platform.md
     entrypoint: 04-container-platform/run.sh
 
+  05-cli-tools:
+    mode: script
+    destructive: false
+    playbook: ../../../playbooks/04-development/05-cli-tools.md
+    entrypoint: 05-cli-tools/run.sh
+
 planned_order:
-  - 05-cli-tools
   - 06-ai-tooling
   - 07-development-validation
 
