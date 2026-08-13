@@ -1,15 +1,14 @@
 ---
 title: Editor de código
-version: 1.1
+version: 1.2
 status: Draft
 author: Rafael
-last_review: 2026-08-12
+last_review: 2026-08-13
 related:
 
 * architecture.md
-* ADR-0002
-* ADR-0004
 * ADR-0005
+* ADR-0011
 
 ---
 
@@ -17,134 +16,104 @@ related:
 
 ## Objetivo
 
-Adicionar à workstation um editor de código integrado ao Git, ao terminal e ao modelo de configuração versionada do projeto.
+Instalar e configurar o build oficial Microsoft Visual Studio Code, integrado ao Git, ao Zsh e ao modelo de configuração versionada do projeto.
 
-A implementação adotada utiliza o Visual Studio Code.
+A integração completa com Dev Containers será validada apenas depois da plataforma de contêineres ser configurada no playbook seguinte.
 
-A integração completa com Dev Containers será validada somente após a plataforma de contêineres ser configurada no playbook seguinte.
+## Política de distribuição
 
----
+O Arch Linux fornece `code`, que corresponde ao Code - OSS. A implementação selecionada pela arquitetura é o build oficial Microsoft Visual Studio Code.
 
-# Pré-requisitos
+Conforme a ADR-0011, este playbook utiliza a distribuição Linux x64 oficial da Microsoft diretamente do endpoint upstream, sem habilitar o AUR.
 
-* Ambiente de shell configurado.
-* Controle de versão concluído.
-* Sessão gráfica operacional.
-
----
-
-# Resultado esperado
-
-Ao concluir este playbook:
-
-* o editor estará instalado e iniciará normalmente;
-* configurações e extensões previstas estarão versionadas e aplicadas;
-* Git e terminal integrado estarão funcionais;
-* o editor estará preparado para a integração com Dev Containers, ainda não considerada validada nesta etapa.
-
----
-
-# Estrutura da configuração
-
-Mantenha configurações reproduzíveis nos dotfiles, utilizando a estrutura nativa do editor.
-
-Exemplo:
+O aplicativo é instalado em:
 
 ```text
-dotfiles/
-└── vscode/
-    ├── settings.json
-    ├── keybindings.json
-    ├── extensions.txt
-    └── snippets/
+/opt/visual-studio-code
 ```
 
----
+O comando estável é exposto em:
 
-# Procedimento
+```text
+/usr/local/bin/code
+```
 
-## 1. Instalar o editor
+O Pacman continua responsável somente pelas dependências de runtime declaradas em:
 
-Instale a implementação definida pela arquitetura.
+```text
+packages/development/code-editor-runtime.txt
+```
 
-## 2. Restaurar a configuração
+## Fontes canônicas
 
-Aplique preferências, atalhos, snippets e demais arquivos versionados.
+Configuração do usuário:
 
-## 3. Instalar as extensões declaradas
+```text
+dotfiles/vscode/
+├── settings.json
+├── keybindings.json
+└── extensions.txt
+```
 
-Utilize a lista versionada como fonte da verdade. Evite extensões permanentes fora desse controle sem justificativa.
+Integração do sistema:
 
-A extensão necessária para Dev Containers pode ser instalada agora, mas seu funcionamento completo depende da plataforma do próximo playbook.
+```text
+system/development/vscode/
+└── code.desktop
+```
 
-## 4. Configurar integrações disponíveis
+## Procedimento
 
-Valide nesta etapa:
+Execute como root preservando o usuário de destino via `sudo`:
 
-* Git;
-* shell;
-* terminal integrado;
-* edição e salvamento de arquivos.
+```bash
+sudo ./03-code-editor/run.sh
+```
 
-## 5. Validar a experiência local
+O script:
 
-Abra um projeto local de teste e confirme edição, terminal integrado e operações de Git.
+1. valida o sistema e o usuário normal de destino;
+2. instala dependências de runtime ausentes pelos repositórios oficiais;
+3. apresenta a origem upstream e solicita confirmação `VSCODE`;
+4. baixa a versão Stable mais recente pelo endpoint oficial Microsoft;
+5. valida a estrutura mínima do arquivo baixado antes de substituir a instalação anterior;
+6. instala o aplicativo em `/opt/visual-studio-code`;
+7. cria o comando `/usr/local/bin/code` e o launcher desktop;
+8. aplica `settings.json` e `keybindings.json` ao usuário;
+9. instala as extensões declaradas;
+10. valida versão, arquivos canônicos e extensões.
 
-Não exija a criação de um Dev Container nesta etapa.
+## Dev Containers
 
----
+A extensão `ms-vscode-remote.remote-containers` é instalada nesta etapa porque pertence à configuração permanente do editor.
 
-# Verificação
+A presença da extensão não significa que Dev Containers já esteja funcional. A capacidade depende do Docker e será testada em `04-container-platform` e no gate `07-development-validation`.
+
+## Verificação
 
 Confirme que:
 
-* o editor inicia corretamente;
-* a configuração versionada foi aplicada;
-* as extensões declaradas estão instaladas;
-* Git funciona no editor;
-* o terminal integrado funciona;
-* não existem erros críticos durante o uso local.
+* `code --version` retorna uma versão;
+* `/usr/local/bin/code` aponta para a instalação em `/opt`;
+* o launcher gráfico abre o Visual Studio Code;
+* `settings.json` e `keybindings.json` correspondem às fontes versionadas;
+* todas as extensões declaradas estão instaladas;
+* o terminal integrado utiliza Zsh;
+* operações Git locais funcionam no editor.
 
-A validação de Dev Containers pertence a `04-container-platform.md` e ao gate `07-development-validation.md`.
+## Atualizações
 
----
+Executar novamente este playbook baixa a versão Stable mais recente e substitui a instalação upstream de maneira controlada. Pacman não administra os binários do Visual Studio Code.
 
-# Problemas comuns
-
-## Editor não inicia
-
-Confirme instalação e sessão gráfica.
-
-## Configuração não aplicada
-
-Revise a origem versionada dos arquivos e o mecanismo de restauração.
-
-## Extensões ausentes
-
-Compare o estado instalado com a lista versionada.
-
-## Dev Containers indisponíveis
-
-Isso não é falha deste playbook enquanto a plataforma de contêineres ainda não foi configurada.
-
----
-
-# Próximo playbook
+## Próximo playbook
 
 ```text
 04-container-platform.md
 ```
 
----
+## Referências
 
-# Referências
-
-* Documentação oficial do Visual Studio Code
+* ADR-0011 — Allow upstream distribution for selected host tools
+* Documentação oficial do Visual Studio Code — Linux
+* Visual Studio Code FAQ — download endpoints
 * Development Containers Specification
-* ADR-0005 — Modularizar configurações por capacidade
-
----
-
-# Lições aprendidas
-
-Uma etapa não deve validar uma capacidade que depende explicitamente de um playbook posterior. A integração com Dev Containers só é verificável após a plataforma de contêineres estar operacional.
