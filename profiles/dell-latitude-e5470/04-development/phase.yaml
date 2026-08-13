@@ -20,6 +20,7 @@ execution:
     - 03-code-editor
     - 04-container-platform
     - 05-cli-tools
+    - 06-ai-tooling
   stop_on_error: true
   validate_after_each_step: true
 
@@ -54,8 +55,13 @@ steps:
     playbook: ../../../playbooks/04-development/05-cli-tools.md
     entrypoint: 05-cli-tools/run.sh
 
+  06-ai-tooling:
+    mode: interactive-script
+    destructive: false
+    playbook: ../../../playbooks/04-development/06-ai-tooling.md
+    entrypoint: 06-ai-tooling/run.sh
+
 planned_order:
-  - 06-ai-tooling
   - 07-development-validation
 
 validation:
