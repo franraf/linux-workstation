@@ -35,13 +35,12 @@ require_file "${REPO_ROOT}/system/systemd/journald/10-linux-workstation.conf"
 require_file "${REPO_ROOT}/system/systemd/zram/10-linux-workstation.conf"
 require_file "${REPO_ROOT}/system/openssh/10-linux-workstation.conf"
 require_file "${REPO_ROOT}/tests/system/runtime-state.sh"
+require_file "${REPO_ROOT}/tests/repository/phase-consistency.sh"
 bash -n "${REPO_ROOT}/tests/system/runtime-state.sh" || fail "Runtime validator syntax failed"
-pass "Bash syntax: tests/system/runtime-state.sh"
+bash -n "${REPO_ROOT}/tests/repository/phase-consistency.sh" || fail "Cross-phase validator syntax failed"
+pass "Validation script syntax"
 
-if head -n 1 "${PROFILE_ROOT}/phase.yaml" | grep -q '^```'; then
-  fail "02-system/phase.yaml is wrapped in a Markdown code fence"
-fi
-pass "02-system/phase.yaml is a plain YAML document"
+bash "${REPO_ROOT}/tests/repository/phase-consistency.sh"
 
 local_package_file="${PROFILE_ROOT}/11-install-base-packages/packages.txt"
 if [[ -e "$local_package_file" ]]; then
