@@ -15,6 +15,12 @@ hl.bind("SUPER + Q", hl.dsp.window.close({}))
 hl.bind("SUPER + F", hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" }))
 hl.bind("SUPER + V", hl.dsp.window.float({ action = "toggle" }))
 
+-- Directional window focus
+hl.bind("SUPER + LEFT", hl.dsp.focus({ window = "l" }))
+hl.bind("SUPER + RIGHT", hl.dsp.focus({ window = "r" }))
+hl.bind("SUPER + UP", hl.dsp.focus({ window = "u" }))
+hl.bind("SUPER + DOWN", hl.dsp.focus({ window = "d" }))
+
 -- Workspace navigation
 for workspace = 1, 9 do
   hl.bind("SUPER + " .. workspace, hl.dsp.focus({ workspace = tostring(workspace) }))
