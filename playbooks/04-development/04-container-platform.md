@@ -1,15 +1,13 @@
 ---
-
 title: Plataforma de contêineres
-version: 1.0
+version: 1.1
 status: Draft
 author: Rafael
-last_review: 2026-07-31
+last_review: 2026-08-12
 related:
 
 * architecture.md
 * ADR-0002
-* ADR-0003
 * ADR-0004
 * ADR-0005
 
@@ -21,9 +19,7 @@ related:
 
 Adicionar à workstation uma plataforma de contêineres para execução de ambientes de desenvolvimento isolados, reproduzíveis e portáveis.
 
-Ao final deste playbook, a workstation estará preparada para executar projetos utilizando contêineres de desenvolvimento, mantendo a máquina hospedeira livre de dependências específicas de linguagem.
-
-A implementação adotada pelo projeto utiliza o **Docker Engine**.
+A implementação adotada utiliza Docker Engine, Docker Compose e Buildx.
 
 ---
 
@@ -31,7 +27,7 @@ A implementação adotada pelo projeto utiliza o **Docker Engine**.
 
 * Ambiente de shell configurado.
 * Editor de código configurado.
-* Capacidade de controle de versão concluída.
+* Controle de versão concluído.
 
 ---
 
@@ -39,30 +35,27 @@ A implementação adotada pelo projeto utiliza o **Docker Engine**.
 
 Ao concluir este playbook:
 
-* a plataforma de contêineres estará instalada;
-* o usuário poderá executar contêineres sem privilégios administrativos;
-* o editor estará integrado aos Dev Containers;
-* a workstation estará preparada para desenvolvimento isolado.
+* a plataforma de contêineres estará instalada e operacional;
+* o usuário autorizado poderá executar contêineres conforme a política definida pelo projeto;
+* Compose e Buildx estarão disponíveis;
+* a integração com Dev Containers poderá ser validada de ponta a ponta.
 
 ---
 
 # Estrutura da configuração
 
-Mantenha a configuração reproduzível junto aos dotfiles da workstation.
+Mantenha apenas configuração reproduzível e apropriada ao escopo da workstation.
 
-Estrutura recomendada:
+Exemplo:
 
 ```text
 dotfiles/
-
-docker/
-├── daemon.json
-└── README.md
+└── docker/
+    ├── daemon.json
+    └── README.md
 ```
 
-Sempre que possível, utilize os mecanismos nativos da plataforma para configuração.
-
-Evite personalizações locais não documentadas.
+Dados do Docker permanecem separados da configuração versionada.
 
 ---
 
@@ -70,63 +63,27 @@ Evite personalizações locais não documentadas.
 
 ## 1. Instalar a plataforma
 
-Instale os componentes definidos pela arquitetura.
-
-Considere:
-
-* Docker Engine;
-* Docker Compose;
-* Docker Buildx.
-
----
+Instale Docker Engine, Docker Compose e Buildx conforme a arquitetura.
 
 ## 2. Configurar a plataforma
 
-Configure a plataforma conforme os padrões do projeto.
+Defina inicialização do serviço, permissões do usuário, armazenamento e opções do daemon somente quando necessárias.
 
-Considere:
-
-* inicialização automática;
-* permissões do usuário;
-* diretório de armazenamento;
-* configurações do daemon;
-* recursos experimentais, quando adotados.
-
----
-
-## 3. Configurar o ambiente de desenvolvimento
-
-Confirme que a plataforma suporta o fluxo de desenvolvimento adotado pela workstation.
-
-Considere:
-
-* Dev Containers;
-* BuildKit;
-* Compose;
-* integração com o editor.
-
----
-
-## 4. Integrar com a workstation
-
-Confirme a integração com:
-
-* editor de código;
-* ambiente de shell;
-* controle de versão.
-
----
-
-## 5. Validar a plataforma
-
-Execute operações básicas.
+## 3. Validar operações básicas
 
 Confirme que é possível:
 
-* iniciar um contêiner;
+* executar um contêiner;
 * construir uma imagem;
-* executar um projeto com Compose;
-* abrir um projeto em um Dev Container.
+* executar um projeto com Compose.
+
+## 4. Integrar com o editor
+
+Com a plataforma agora operacional, abra um projeto preparado para Dev Containers e confirme que o editor consegue criar ou reutilizar o ambiente e conectar-se ao contêiner.
+
+## 5. Validar o isolamento
+
+Confirme que dependências específicas de linguagens e projetos permanecem preferencialmente dentro dos ambientes de desenvolvimento, conforme a arquitetura.
 
 ---
 
@@ -134,12 +91,12 @@ Confirme que é possível:
 
 Confirme que:
 
-* a plataforma inicia corretamente;
-* o usuário executa contêineres sem privilégios administrativos;
-* Compose funciona corretamente;
+* o serviço da plataforma está operacional;
+* Docker executa um contêiner de teste;
+* Compose funciona;
 * Buildx está disponível;
 * Dev Containers funcionam no editor;
-* não existem erros durante a operação.
+* não existem erros críticos durante a operação.
 
 ---
 
@@ -147,40 +104,26 @@ Confirme que:
 
 ## Serviço indisponível
 
-Confirme que a plataforma está instalada e inicializada corretamente.
-
----
+Confirme instalação, habilitação e logs do serviço.
 
 ## Permissões insuficientes
 
-Revise a configuração do usuário e confirme sua participação nos grupos necessários.
-
----
+Revise a política de acesso definida pelo projeto antes de alterar grupos ou privilégios.
 
 ## Dev Containers não iniciam
 
-Confirme a integração entre a plataforma de contêineres e o editor de código.
-
----
-
-## Falhas na construção de imagens
-
-Revise a configuração do BuildKit e valide a sintaxe dos arquivos utilizados pelo projeto.
-
----
+Separe o diagnóstico entre plataforma Docker, extensão/editor e configuração do projeto.
 
 ## Configuração divergente
 
-Compare a configuração local com os arquivos versionados em `dotfiles/docker/`.
+Compare o estado local com os arquivos versionados antes de realizar ajustes manuais.
 
 ---
 
 # Próximo playbook
 
-Após validar a plataforma de contêineres, prossiga para:
-
 ```text
-05-cli-tooling.md
+05-cli-tools.md
 ```
 
 ---
@@ -191,10 +134,10 @@ Após validar a plataforma de contêineres, prossiga para:
 * Docker Compose
 * Docker Buildx
 * Development Containers Specification
-* ADR-0005 — Modularize Configuration by Capability
+* ADR-0005 — Modularizar configurações por capacidade
 
 ---
 
 # Lições aprendidas
 
-Registrar aqui melhorias na plataforma, ajustes de configuração, novas integrações ou observações relevantes identificadas durante sua evolução.
+A validação de Dev Containers pertence naturalmente à etapa em que a plataforma de contêineres já está disponível. O playbook do editor prepara a integração, e este playbook a valida.
