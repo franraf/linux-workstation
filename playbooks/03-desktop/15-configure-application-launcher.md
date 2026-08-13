@@ -1,17 +1,16 @@
 ---
-
 title: Configurar lançador de aplicações
-version: 1.0
+version: 1.1
 status: Draft
 author: Rafael
-last_review: 2026-07-31
+last_review: 2026-08-12
 related:
 
 * architecture.md
 * ADR-0002
-* ADR-0003
 * ADR-0004
 * ADR-0005
+* ADR-0006
 
 ---
 
@@ -19,18 +18,14 @@ related:
 
 ## Objetivo
 
-Configurar o lançador de aplicações da workstation, definindo sua integração com a sessão gráfica e a experiência de utilização.
-
-Ao final deste playbook, o usuário poderá localizar e iniciar aplicações de forma rápida, consistente e integrada ao ambiente gráfico.
-
-A implementação adotada pelo projeto utiliza o **Rofi**.
+Configurar o Rofi como lançador de aplicações da workstation, integrando-o à sessão gráfica sem introduzir conflitos de teclado ou responsabilidades visuais que pertencem à etapa de aparência.
 
 ---
 
 # Pré-requisitos
 
 * Sessão gráfica configurada.
-* Lançador de aplicações instalado.
+* Rofi instalado.
 
 ---
 
@@ -38,9 +33,11 @@ A implementação adotada pelo projeto utiliza o **Rofi**.
 
 Ao concluir este playbook:
 
-* o lançador estará integrado à sessão gráfica;
-* os modos de operação previstos pelo projeto estarão disponíveis;
-* a experiência de utilização seguirá os padrões definidos pela arquitetura.
+* o Rofi estará disponível sob demanda;
+* os modos `drun` e `run` estarão funcionais;
+* aplicações poderão ser localizadas por arquivos `.desktop`;
+* o atalho global estará registrado no fragmento canônico de keybindings;
+* não existirão bindings internos duplicados.
 
 ---
 
@@ -48,51 +45,67 @@ Ao concluir este playbook:
 
 ## 1. Organizar a configuração
 
-Estruture os arquivos de configuração conforme a ADR-0005.
+Utilize `~/.config/rofi/config.rasi` para comportamento do launcher.
 
-Separe aparência, comportamento e modos de operação sempre que possível.
+A identidade visual final deverá ser tratada em `19-configure-appearance.md`.
 
----
+## 2. Configurar modos
 
-## 2. Configurar o comportamento
+Habilite os modos necessários:
 
-Defina como o lançador deverá operar.
+```text
+drun
+run
+```
 
-Considere:
+O modo `drun` será a interface principal para aplicações instaladas.
 
-* pesquisa de aplicações;
-* pesquisa de comandos;
-* pesquisa de arquivos;
-* modos adicionais suportados pela implementação.
+## 3. Preservar bindings internos válidos
 
----
+Evite redefinir atalhos padrão do Rofi para ações incompatíveis.
 
-## 3. Configurar a integração
+Não configurar simultaneamente:
 
-Integre o lançador à sessão gráfica.
+```text
+kb-row-left = Left,Control+b
+kb-row-right = Right,Control+f
+```
 
-Defina como ele será invocado e como interagirá com os demais componentes do desktop.
+porque `Left`, `Right`, `Control+b` e `Control+f` já podem estar associados à edição do texto de pesquisa.
 
----
+Antes de adicionar novos bindings, utilize:
 
-## 4. Configurar a experiência do usuário
+```text
+rofi -list-keybindings
+```
 
-Defina os padrões relacionados à utilização do lançador.
+para verificar conflitos.
 
-Considere aspectos como:
+## 4. Integrar ao Hyprland
 
-* posicionamento;
-* navegação;
-* comportamento durante a pesquisa;
-* interação com teclado.
+Registre o atalho no fragmento canônico:
 
----
+```text
+~/.config/hypr/conf.d/70-keybindings.conf
+```
 
-## 5. Validar a operação
+A baseline utiliza:
 
-Execute testes utilizando os modos previstos pela arquitetura.
+```text
+SUPER + SPACE → rofi -show drun
+```
 
-Confirme que aplicações podem ser localizadas e iniciadas corretamente.
+O arquivo `70-keybindings.conf` deve permanecer compartilhado pelas capacidades que adicionam atalhos globais; não crie fragments concorrentes para a mesma responsabilidade.
+
+## 5. Validar
+
+Execute:
+
+```text
+rofi -show drun
+```
+
+Confirme que o launcher abre sem mensagens de bindings duplicados e que aplicações podem ser iniciadas.
 
 ---
 
@@ -100,43 +113,33 @@ Confirme que aplicações podem ser localizadas e iniciadas corretamente.
 
 Confirme que:
 
-* o lançador inicia corretamente;
-* aplicações podem ser pesquisadas;
-* aplicações podem ser executadas;
-* a integração com a sessão gráfica funciona normalmente;
-* não existem erros durante sua execução.
+* `rofi -show drun` abre sem erro;
+* aplicações são listadas;
+* pesquisa e navegação por teclado funcionam;
+* Enter executa a aplicação selecionada;
+* Escape fecha o launcher;
+* `SUPER + SPACE` funciona dentro do Hyprland;
+* o Rofi não é iniciado como daemon no autostart.
 
 ---
 
 # Problemas comuns
 
-## O lançador não inicia
+## Binding duplicado
 
-Confirme que a sessão gráfica está operacional e que o componente foi instalado corretamente.
-
----
+Compare `~/.config/rofi/config.rasi` com a saída de `rofi -list-keybindings` e remova redefinições conflitantes.
 
 ## Aplicações não aparecem
 
-Verifique a indexação dos arquivos `.desktop` e a configuração do componente.
+Confirme a existência e validade de arquivos `.desktop` nos diretórios XDG apropriados.
 
----
+## Atalho global não funciona
 
-## Atalho não funciona
-
-Revise a configuração da sessão gráfica e confirme que o atalho está registrado corretamente.
-
----
-
-## Erros de renderização
-
-Verifique a stack tipográfica e os recursos gráficos utilizados pelo componente.
+Confirme que `70-keybindings.conf` é carregado pelo `hyprland.conf` e que não existe outro uso de `SUPER + SPACE`.
 
 ---
 
 # Próximo playbook
-
-Após validar o lançador de aplicações, prossiga para:
 
 ```text
 16-configure-notification-center.md
@@ -147,11 +150,11 @@ Após validar o lançador de aplicações, prossiga para:
 # Referências
 
 * Documentação oficial do Rofi
-* Arch Wiki — Rofi
-* ADR-0005 — Modularize Configuration by Capability
+* ADR-0005 — Modularizar configurações por capacidade
+* ADR-0006 — Separação entre instalação e configuração
 
 ---
 
 # Lições aprendidas
 
-Registrar aqui alterações na experiência do usuário, novos modos de operação, integrações adicionadas ou observações relevantes identificadas durante a evolução do lançador de aplicações.
+Bindings que parecem convenientes podem colidir com atalhos internos já reservados pelo Rofi. A validação deve consultar os bindings efetivos do binário instalado antes de personalizá-los.
