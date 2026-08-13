@@ -3,281 +3,67 @@
 set -Eeuo pipefail
 
 readonly SCRIPT_NAME="$(basename "$0")"
-
-readonly CONFIG_DIRECTORY="/etc/systemd/timesyncd.conf.d"
-readonly CONFIG_FILE="${CONFIG_DIRECTORY}/10-linux-workstation.conf"
-
+readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
+readonly SOURCE_FILE="${REPO_ROOT}/system/systemd/timesyncd/10-linux-workstation.conf"
+readonly CONFIG_FILE="/etc/systemd/timesyncd.conf.d/10-linux-workstation.conf"
 readonly TIME_SYNC_SERVICE="systemd-timesyncd.service"
 
-readonly PRIMARY_NTP="time.cloudflare.com"
-readonly FALLBACK_NTP="0.arch.pool.ntp.org 1.arch.pool.ntp.org 2.arch.pool.ntp.org 3.arch.pool.ntp.org"
+source "${REPO_ROOT}/scripts/lib/logging.sh"
+source "${REPO_ROOT}/scripts/lib/requirements.sh"
+source "${REPO_ROOT}/scripts/lib/system-config.sh"
 
-log() {
-  printf '[INFO] %s\n' "$*"
-}
-
-warn() {
-  printf '[WARN] %s\n' "$*" >&2
-}
-
-die() {
-  printf '[ERROR] %s\n' "$*" >&2
-  exit 1
-}
-
-on_error() {
-  local exit_code=$?
-  local line_number=$1
-
-  printf '[ERROR] %s failed at line %s with exit code %s.\n' \
-    "$SCRIPT_NAME" \
-    "$line_number" \
-    "$exit_code" >&2
-
-  exit "$exit_code"
-}
-
-trap 'on_error "$LINENO"' ERR
+setup_error_trap "$SCRIPT_NAME"
 
 usage() {
-  cat <<EOF
-Usage:
-  sudo ./$SCRIPT_NAME
-
-This script configures system time synchronization using systemd-timesyncd.
-
-Configuration file:
-
-  ${CONFIG_FILE}
-
-Primary NTP:
-  ${PRIMARY_NTP}
-
-Fallback NTP:
-  ${FALLBACK_NTP}
-EOF
-}
-
-require_root() {
-  [[ $EUID -eq 0 ]] ||
-    die "This script must be executed as root."
-}
-
-require_commands() {
-  local commands=(
-    grep
-    install
-    mktemp
-    systemctl
-    timedatectl
-    sed
-  )
-
-  local command_name
-
-  for command_name in "${commands[@]}"; do
-    command -v "$command_name" >/dev/null 2>&1 ||
-      die "Required command not found: $command_name"
-  done
+  printf 'Usage:\n  sudo ./%s\n\nCanonical source:\n  %s\n' "$SCRIPT_NAME" "$SOURCE_FILE"
 }
 
 parse_arguments() {
   while (($# > 0)); do
     case "$1" in
-      --help | -h)
-        usage
-        exit 0
-        ;;
-
-      *)
-        die "Unknown argument: $1"
-        ;;
+      --help|-h) usage; exit 0 ;;
+      *) die "Unknown argument: $1" ;;
     esac
   done
 }
 
-validate_execution_context() {
-  [[ -f /etc/os-release ]] ||
-    die "The current root does not contain /etc/os-release."
-
-  grep -q '^ID=arch$' /etc/os-release ||
-    die "This script must run on Arch Linux."
-
-  [[ -d /run/systemd/system ]] ||
-    die "systemd is not running as PID 1."
-}
-
-validate_service_available() {
-  systemctl cat "$TIME_SYNC_SERVICE" >/dev/null 2>&1 ||
-    die "${TIME_SYNC_SERVICE} is unavailable."
-}
-
-show_plan() {
-  cat <<EOF
-
-Time synchronization
---------------------
-
-Implementation:
-  systemd-timesyncd
-
-Configuration:
-  ${CONFIG_FILE}
-
-Primary NTP:
-  ${PRIMARY_NTP}
-
-Fallback NTP:
-  ${FALLBACK_NTP}
-
-Service:
-  ${TIME_SYNC_SERVICE}
-EOF
-}
-
 confirm_configuration() {
   local confirmation
-
   printf '\nType TIMESYNC to apply the configuration: '
   read -r confirmation
-
-  [[ "$confirmation" == "TIMESYNC" ]] ||
-    die "Time synchronization configuration was not authorized."
-}
-
-write_configuration() {
-  local temporary_file
-
-  temporary_file="$(mktemp)"
-  trap 'rm -f "$temporary_file"' RETURN
-
-  cat >"$temporary_file" <<EOF
-# Managed by linux-workstation.
-# Profile: dell-latitude-e5470
-
-[Time]
-NTP=${PRIMARY_NTP}
-FallbackNTP=${FALLBACK_NTP}
-EOF
-
-  install \
-    --directory \
-    --owner root \
-    --group root \
-    --mode 0755 \
-    "$CONFIG_DIRECTORY"
-
-  install \
-    --owner root \
-    --group root \
-    --mode 0644 \
-    "$temporary_file" \
-    "$CONFIG_FILE"
-
-  rm -f "$temporary_file"
-  trap - RETURN
-}
-
-enable_service() {
-  log "Enabling ${TIME_SYNC_SERVICE}."
-
-  systemctl enable "$TIME_SYNC_SERVICE"
-}
-
-restart_service() {
-  log "Restarting ${TIME_SYNC_SERVICE}."
-
-  systemctl restart "$TIME_SYNC_SERVICE"
-}
-
-enable_ntp() {
-  log "Enabling network time synchronization."
-
-  timedatectl set-ntp true
-}
-
-validate_configuration_file() {
-  [[ -s "$CONFIG_FILE" ]] ||
-    die "Time synchronization configuration was not created."
-
-  grep -Fxq "NTP=${PRIMARY_NTP}" "$CONFIG_FILE" ||
-    die "Primary NTP configuration is incorrect."
-
-  grep -Fxq "FallbackNTP=${FALLBACK_NTP}" "$CONFIG_FILE" ||
-    die "Fallback NTP configuration is incorrect."
-}
-
-validate_service_state() {
-  systemctl is-enabled --quiet "$TIME_SYNC_SERVICE" ||
-    die "${TIME_SYNC_SERVICE} is not enabled."
-
-  systemctl is-active --quiet "$TIME_SYNC_SERVICE" ||
-    die "${TIME_SYNC_SERVICE} is not active."
-}
-
-validate_ntp_enabled() {
-  local ntp_state
-
-  ntp_state="$(
-    timedatectl show \
-      --property=NTP \
-      --value
-  )"
-
-  [[ "$ntp_state" == "yes" ]] ||
-    die "Network time synchronization is not enabled."
-}
-
-validate_synchronization_state() {
-  local synchronized
-
-  synchronized="$(
-    timedatectl show \
-      --property=NTPSynchronized \
-      --value
-  )"
-
-  if [[ "$synchronized" != "yes" ]]; then
-    warn "The system is not synchronized yet."
-    warn "This may be normal immediately after enabling timesyncd."
-  fi
-}
-
-show_result() {
-  printf '\nTime synchronization configured successfully.\n\n'
-
-  printf 'Service:\n'
-  printf '  %s\n' "$TIME_SYNC_SERVICE"
-
-  printf '\nConfiguration:\n'
-  printf '  %s\n' "$CONFIG_FILE"
-
-  printf '\nStatus:\n'
-  timedatectl status |
-    sed 's/^/  /'
-
-  printf '\nNext step:\n'
-  printf '  06-configure-journald\n'
+  [[ "$confirmation" == "TIMESYNC" ]] || die "Time synchronization configuration was not authorized."
 }
 
 main() {
   require_root
-  require_commands
+  require_commands cmp systemctl timedatectl
+  require_arch_systemd
+  require_system_config_commands
   parse_arguments "$@"
 
-  validate_execution_context
-  validate_service_available
-  show_plan
+  systemctl cat "$TIME_SYNC_SERVICE" >/dev/null 2>&1 || die "${TIME_SYNC_SERVICE} is unavailable."
+
+  printf '\nTime synchronization\n--------------------\n\nSource:\n  %s\n\nDestination:\n  %s\n' "$SOURCE_FILE" "$CONFIG_FILE"
   confirm_configuration
-  write_configuration
-  enable_service
-  enable_ntp
-  restart_service
-  validate_configuration_file
-  validate_service_state
-  validate_ntp_enabled
-  validate_synchronization_state
-  show_result
+
+  install_system_file "$SOURCE_FILE" "$CONFIG_FILE"
+  validate_system_file_matches "$SOURCE_FILE" "$CONFIG_FILE"
+
+  log_info "Enabling network time synchronization."
+  systemctl enable "$TIME_SYNC_SERVICE"
+  timedatectl set-ntp true
+  systemctl restart "$TIME_SYNC_SERVICE"
+
+  systemctl is-enabled --quiet "$TIME_SYNC_SERVICE" || die "${TIME_SYNC_SERVICE} is not enabled."
+  systemctl is-active --quiet "$TIME_SYNC_SERVICE" || die "${TIME_SYNC_SERVICE} is not active."
+  [[ "$(timedatectl show --property=NTP --value)" == "yes" ]] || die "Network time synchronization is not enabled."
+
+  if [[ "$(timedatectl show --property=NTPSynchronized --value)" != "yes" ]]; then
+    log_warn "The system is not synchronized yet; this may be normal immediately after enabling timesyncd."
+  fi
+
+  printf '\nTime synchronization configured successfully.\n\nNext step:\n  06-configure-journald\n'
 }
 
 main "$@"
