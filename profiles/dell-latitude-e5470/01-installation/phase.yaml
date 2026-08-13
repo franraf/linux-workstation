@@ -1,4 +1,3 @@
-```yaml
 ---
 schema_version: "1.0"
 
@@ -34,7 +33,6 @@ execution:
     - 16-configure-initramfs
     - 17-install-bootloader
     - 18-first-boot
-
   stop_on_error: true
   validate_after_each_step: true
 
@@ -87,7 +85,7 @@ steps:
     confirmation: ERASE
     playbook: ../../../playbooks/01-installation/07-format-efi.md
     entrypoint: 07-format-efi/run.sh
-  
+
   08-mount-filesystems:
     mode: script
     destructive: false
@@ -174,5 +172,4 @@ validation:
 
 metadata:
   created_at: 2026-07-31
-  last_review: 2026-07-31
-```
+  last_review: 2026-08-13
