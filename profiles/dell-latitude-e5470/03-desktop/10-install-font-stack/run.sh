@@ -60,23 +60,28 @@ rebuild_font_cache() {
   fc-cache -f >/dev/null || die "Failed to rebuild the font cache."
 }
 
-require_font_pattern() {
-  local pattern="$1"
-  local description="$2"
+require_font_family() {
+  local query="$1"
+  local expected="$2"
+  local description="$3"
+  local resolved
 
-  fc-match "$pattern" 2>/dev/null | grep -qi -- "$pattern" || \
-    die "Expected font was not resolved: ${description} (${pattern})."
+  resolved="$(fc-match -f '%{family}\n' "$query" 2>/dev/null)" || \
+    die "Fontconfig could not resolve ${description}: ${query}"
+
+  [[ "$resolved" == *"$expected"* ]] || \
+    die "Expected ${description} was not resolved. Query '${query}' returned '${resolved}'."
 }
 
 validate_font_stack() {
   log_info "Validating font stack."
 
-  require_commands fc-cache fc-list fc-match grep
+  require_commands fc-cache fc-match
 
-  fc-list | grep -qi 'DejaVu' || die "DejaVu fonts were not found by Fontconfig."
-  fc-list | grep -qi 'Noto Sans' || die "Noto Sans fonts were not found by Fontconfig."
-  fc-list | grep -qi 'Noto Color Emoji' || die "Noto Color Emoji was not found by Fontconfig."
-  fc-list | grep -qi 'JetBrainsMono Nerd Font' || die "JetBrainsMono Nerd Font was not found by Fontconfig."
+  require_font_family "DejaVu Sans" "DejaVu Sans" "DejaVu Sans"
+  require_font_family "Noto Sans" "Noto Sans" "Noto Sans"
+  require_font_family "Noto Color Emoji" "Noto Color Emoji" "Noto Color Emoji"
+  require_font_family "JetBrainsMono Nerd Font" "JetBrainsMono Nerd Font" "JetBrainsMono Nerd Font"
 
   fc-match sans-serif >/dev/null 2>&1 || die "Fontconfig could not resolve sans-serif."
   fc-match monospace >/dev/null 2>&1 || die "Fontconfig could not resolve monospace."
@@ -89,9 +94,9 @@ show_result() {
   pacman -Q "${PACKAGES[@]}" | sed 's/^/  /'
 
   printf '\nResolved generic fonts:\n'
-  printf '  sans-serif: %s\n' "$(fc-match -f '%{family}\n' sans-serif | head -n 1)"
-  printf '  monospace:  %s\n' "$(fc-match -f '%{family}\n' monospace | head -n 1)"
-  printf '  emoji:      %s\n' "$(fc-match -f '%{family}\n' emoji | head -n 1)"
+  printf '  sans-serif: %s\n' "$(fc-match -f '%{family}\n' sans-serif)"
+  printf '  monospace:  %s\n' "$(fc-match -f '%{family}\n' monospace)"
+  printf '  emoji:      %s\n' "$(fc-match -f '%{family}\n' emoji)"
 
   printf '\nVisual rendering will be validated after desktop configuration is complete.\n'
   printf '\nNext step:\n  11-install-session-login\n'
@@ -106,7 +111,7 @@ main() {
   (($# == 0)) || die "Unknown argument: $1"
 
   require_root
-  require_commands pacman sed fc-cache fc-list fc-match grep head
+  require_commands pacman sed fc-cache fc-match
   require_arch_systemd
   require_package_installed hyprland "Run 02-install-compositor first."
 
