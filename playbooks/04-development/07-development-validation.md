@@ -1,15 +1,12 @@
 ---
-
 title: Validar ambiente de desenvolvimento
-version: 1.0
+version: 1.1
 status: Draft
 author: Rafael
-last_review: 2026-07-31
+last_review: 2026-08-13
 related:
 
 * architecture.md
-* ADR-0002
-* ADR-0003
 * ADR-0004
 * ADR-0005
 
@@ -19,209 +16,87 @@ related:
 
 ## Objetivo
 
-Validar que a workstation possui todas as capacidades necessárias para o desenvolvimento de software conforme definido pela arquitetura do projeto.
+Executar o gate final da fase `04-development`, separando verificações automatizáveis de testes que dependem de credenciais, interface gráfica ou um projeto real.
 
-Ao final deste playbook, a workstation deverá oferecer um ambiente de desenvolvimento consistente, reproduzível e pronto para utilização.
+Este passo não deve instalar pacotes nem corrigir automaticamente uma capacidade que falhou.
 
----
+## Execução
 
-# Pré-requisitos
+Execute como usuário normal e dentro da sessão já renovada depois da configuração do grupo Docker:
 
-* Todos os playbooks da fase **04-development** concluídos.
+```bash
+./07-development-validation/run.sh
+```
 
----
+O orquestrador executa:
 
-# Resultado esperado
+```text
+tests/development/static-artifacts.sh
+tests/development/runtime-state.sh
+```
 
-Ao concluir este playbook:
+## Validação automatizada
 
-* todas as capacidades de desenvolvimento terão sido verificadas;
-* o fluxo completo de desenvolvimento estará funcional;
-* a workstation estará pronta para utilização em projetos reais.
+O gate verifica:
 
----
+* identidade e branch padrão do Git;
+* Zsh como shell de login e inicialização sem erro;
+* Starship e arquivos de configuração;
+* Visual Studio Code e suas fontes canônicas;
+* extensão Dev Containers;
+* Docker Engine acessível sem `sudo`;
+* Compose e Buildx;
+* pacote e executáveis das ferramentas CLI;
+* Codex CLI;
+* ausência esperada de runtimes/SDKs de projeto no host, reportando divergências como warnings para revisão.
 
-# Procedimento
+## Validações manuais obrigatórias
 
-## 1. Validar o controle de versão
+### GitHub
 
-Confirme que é possível:
+Utilize um repositório controlado e confirme autenticação SSH, `pull` e `push`.
 
-* clonar um repositório remoto;
-* criar uma branch;
-* realizar commits;
-* sincronizar alterações com o repositório remoto.
+### Visual Studio Code
 
----
+Abra o editor graficamente e confirme que o terminal integrado inicia em Zsh.
 
-## 2. Validar o ambiente de shell
+### Dev Containers
 
-Abra uma nova sessão de terminal.
+Abra um projeto real preparado para Dev Containers, construa/abra o ambiente e execute os testes do projeto dentro do contêiner.
 
-Confirme que:
+### Codex CLI
 
-* o shell inicia corretamente;
-* o prompt é carregado;
-* aliases e funções estão disponíveis;
-* as ferramentas auxiliares funcionam normalmente.
+Quando necessário, autentique:
 
----
+```bash
+codex --login
+```
 
-## 3. Validar o editor de código
+Depois utilize um repositório controlado para solicitar uma pequena tarefa e revise o diff antes de aceitar qualquer alteração.
 
-Abra um projeto de teste.
+## Política de host
 
-Confirme que:
+O host não deve receber runtimes e SDKs específicos apenas porque um projeto precisa deles. O gate sinaliza a presença de ferramentas excluídas pelo profile, incluindo Node.js, .NET, Terraform, kubectl, Helm e AWS CLI.
 
-* o editor inicia corretamente;
-* as configurações versionadas foram aplicadas;
-* as extensões previstas estão disponíveis;
-* Git está integrado ao editor.
+Uma divergência pode ser legítima no futuro, mas deve ser acompanhada de decisão arquitetural explícita.
 
----
+## Resultado esperado
 
-## 4. Validar a plataforma de contêineres
+A fase pode ser considerada validada somente quando:
 
-Confirme que é possível:
+* o gate automatizado termina sem falhas;
+* autenticação Git remota foi testada;
+* VS Code gráfico e terminal integrado funcionam;
+* um Dev Container real foi validado;
+* Codex foi autenticado e testado, quando essa capacidade for utilizada;
+* warnings do gate foram revisados.
 
-* iniciar um contêiner;
-* construir uma imagem;
-* executar um projeto utilizando Compose;
-* abrir um Dev Container no editor.
+## Próximos passos
 
----
+Com `04-development` validada, prossiga para a próxima fase definida pelo profile.
 
-## 5. Validar as ferramentas de linha de comando
+## Referências
 
-Execute operações utilizando as ferramentas previstas pela arquitetura.
-
-Considere:
-
-* pesquisa de arquivos;
-* busca textual;
-* manipulação de JSON e YAML;
-* gerenciamento de sessões;
-* inspeção de repositórios;
-* automação de tarefas.
-
----
-
-## 6. Validar as ferramentas de inteligência artificial
-
-Utilize um repositório de teste.
-
-Confirme que é possível:
-
-* solicitar análise de código;
-* revisar alterações;
-* gerar documentação;
-* propor melhorias;
-* executar o fluxo previsto pelo projeto sem exposição de informações sensíveis.
-
----
-
-## 7. Validar o fluxo completo
-
-Execute um fluxo representativo do dia a dia de desenvolvimento.
-
-Sugestão de sequência:
-
-1. Clonar um repositório.
-2. Abrir o projeto no editor.
-3. Inicializar o Dev Container.
-4. Editar um arquivo.
-5. Executar comandos pelo terminal integrado.
-6. Rodar testes.
-7. Revisar alterações.
-8. Criar um commit.
-9. Enviar as alterações ao repositório remoto.
-
-O objetivo é validar a integração entre todas as capacidades da workstation.
-
----
-
-## 8. Revisar registros e observações
-
-Documente:
-
-* limitações conhecidas;
-* ajustes pendentes;
-* melhorias futuras;
-* decisões tomadas durante a configuração.
-
----
-
-# Verificação
-
-Confirme que:
-
-* todas as capacidades previstas estão operacionais;
-* Git, Shell, Editor e Plataforma de Contêineres funcionam de forma integrada;
-* Dev Containers são utilizados como ambiente principal de desenvolvimento;
-* as ferramentas de linha de comando estão disponíveis;
-* as ferramentas de IA operam conforme os padrões definidos pelo projeto;
-* nenhuma linguagem ou SDK específico de projetos foi instalado diretamente na workstation sem justificativa arquitetural;
-* o fluxo completo de desenvolvimento foi executado com sucesso;
-* não existem erros críticos que impeçam o desenvolvimento de software.
-
----
-
-# Problemas comuns
-
-## Fluxo interrompido
-
-Retorne ao playbook correspondente à capacidade que apresentou falha antes de prosseguir.
-
----
-
-## Dev Container não inicia
-
-Revise a plataforma de contêineres, a integração com o editor e a configuração do projeto.
-
----
-
-## Integração entre ferramentas inconsistente
-
-Confirme que todas as configurações versionadas foram aplicadas corretamente.
-
----
-
-## Ferramentas indisponíveis
-
-Compare a workstation com os dotfiles e a documentação do projeto.
-
----
-
-## Dependências instaladas no host
-
-Revise se a dependência realmente pertence à workstation ou se deve ser movida para o Dev Container correspondente.
-
----
-
-# Próximos passos
-
-Com a fase **04-development** validada, a workstation está pronta para receber capacidades específicas de uso.
-
-As próximas fases poderão incluir, conforme a evolução do projeto:
-
-* aplicações de uso geral;
-* virtualização;
-* ferramentas de nuvem;
-* segurança;
-* manutenção;
-* outras especializações.
-
----
-
-# Referências
-
-* Architecture Overview
-* Playbooks da fase **04-development**
-* ADR-0004 — Single Responsibility Playbooks
+* Playbooks da fase `04-development`
+* ADR-0004 — Playbook Granularity
 * ADR-0005 — Modularize Configuration by Capability
-
----
-
-# Lições aprendidas
-
-Registrar aqui melhorias identificadas durante a validação, capacidades incorporadas ao fluxo de desenvolvimento ou observações relevantes para futuras instalações.
