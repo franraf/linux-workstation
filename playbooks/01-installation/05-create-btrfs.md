@@ -1,121 +1,55 @@
 ---
-title: Criar o sistema de arquivos Btrfs
+title: Criar filesystem Btrfs
 version: 1.1
 status: Draft
 author: Rafael
-last_review: 2026-08-12
+last_review: 2026-08-13
 related:
-
-* architecture.md
-* ADR-0002
-* ADR-0003
-* ADR-0004
-* standards.md
-
+  - ADR-0009
+  - 04-create-luks.md
+  - 06-create-subvolumes.md
 ---
 
-# 05 — Criar o sistema de arquivos Btrfs
+# 05 — Criar filesystem Btrfs
 
 ## Objetivo
 
-Criar o sistema de arquivos Btrfs sobre o volume criptografado preparado no playbook anterior.
-
----
-
-# Pré-requisitos
-
-* Volume LUKS2 criado e aberto.
-* Dispositivo mapeado disponível e identificado.
-
-> **Atenção:** a formatação remove permanentemente qualquer dado existente no volume selecionado.
-
----
-
-# Resultado esperado
-
-Ao concluir este playbook:
-
-* o dispositivo mapeado conterá Btrfs;
-* o sistema de arquivos estará pronto para montagem;
-* ainda não existirão subvolumes personalizados.
-
----
-
-# Procedimento
-
-## 1. Confirmar o dispositivo mapeado
-
-Verifique qual dispositivo corresponde ao volume criptografado aberto no playbook anterior e confirme que não está montado.
-
-## 2. Exigir confirmação destrutiva
-
-Imediatamente antes da formatação, solicite confirmação forte conforme `docs/standards.md`.
-
-O usuário deverá digitar exatamente:
+Criar o filesystem Btrfs dentro do mapper LUKS ativo. O alvo padrão é:
 
 ```text
-ERASE
+/dev/mapper/cryptroot
 ```
 
-Qualquer outra entrada deverá cancelar o procedimento.
+com label `linux-workstation`.
 
-## 3. Criar o sistema de arquivos
+Este passo apaga quaisquer assinaturas/filesystem existentes **dentro do mapper**.
 
-Somente após a confirmação, formate o dispositivo utilizando Btrfs.
+## Execução
 
-## 4. Confirmar a criação
+```bash
+sudo profiles/dell-latitude-e5470/01-installation/05-create-btrfs/run.sh
+```
 
-Verifique se a formatação foi concluída sem erros.
+Opcionalmente:
 
----
+```bash
+sudo .../05-create-btrfs/run.sh --device /dev/mapper/cryptroot --label linux-workstation
+```
 
-# Verificação
+O script exige um mapping `cryptsetup` ativo, não montado, sem filhos inesperados, gravável e com pelo menos 4 GiB. Antes do `mkfs.btrfs`, exige o caminho completo do mapper e `ERASE`.
 
-Confirme que:
+## Verificação
 
-* o sistema de arquivos é Btrfs;
-* o dispositivo correto foi alterado;
-* o volume permanece acessível;
-* não houve erro durante a formatação.
+O passo só passa quando o mapper apresenta:
 
----
+- `FSTYPE=btrfs`;
+- label esperado;
+- UUID de filesystem não vazio.
 
-# Problemas comuns
+A criação de subvolumes fica no próximo passo.
 
-## Dispositivo incorreto
-
-Não formate. Retorne à identificação do mapper.
-
-## Confirmação diferente de `ERASE`
-
-Cancele a operação.
-
-## Dispositivo ocupado
-
-Confirme que o volume não está montado ou em uso.
-
-## Ferramentas Btrfs indisponíveis
-
-Confirme a disponibilidade de `btrfs-progs` no ambiente live.
-
----
-
-# Próximo playbook
+## Próximo playbook
 
 ```text
 06-create-subvolumes.md
 ```
-
----
-
-# Referências
-
-* Arch Wiki — Btrfs
-* Arch Wiki — mkfs.btrfs
-* `docs/standards.md`
-
----
-
-# Lições aprendidas
-
-Formatações devem seguir a mesma política de confirmação forte aplicada ao particionamento e à criação do LUKS.
