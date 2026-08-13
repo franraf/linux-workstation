@@ -84,7 +84,8 @@ while IFS=$'\t' read -r subvolume mountpoint options; do
   actual="$(findmnt --noheadings --output FSTYPE --target "$mountpoint" 2>/dev/null | xargs)"
   [[ "$actual" == "btrfs" ]] && pass "$mountpoint uses btrfs" || fail "$mountpoint expected btrfs, found ${actual:-none}"
 done <"${REPO_ROOT}/system/storage/btrfs-layout.tsv"
-findmnt --noheadings --output FSTYPE --target /boot | grep -q '^vfat$' && pass "/boot uses vfat" || fail "/boot is not vfat"
+boot_filesystem="$(findmnt --noheadings --output FSTYPE --target /boot 2>/dev/null | xargs)"
+[[ "$boot_filesystem" == "vfat" ]] && pass "/boot uses vfat" || fail "/boot is not vfat"
 bootctl is-installed >/dev/null 2>&1 && pass "systemd-boot is installed" || fail "systemd-boot is not installed"
 
 section "Failed units"
