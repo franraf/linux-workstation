@@ -1,137 +1,67 @@
 ---
-
-title: Instalar Compositor
-version: 1.0
+title: Instalar compositor
+version: 1.1
 status: Draft
 author: Rafael
-last_review: 2026-07-31
+last_review: 2026-08-12
 related:
 
 * architecture.md
 * ADR-0002
-* ADR-0003
 * ADR-0004
+* ADR-0006
+* ADR-0007
+* ADR-0009
 
 ---
 
-# 02 — Instalar Compositor
+# 02 — Instalar compositor
 
 ## Objetivo
 
-Instalar o compositor Hyprland e seus componentes essenciais, preparando a workstation para iniciar uma sessão gráfica baseada em Wayland.
+Instalar o Hyprland e validar seus artefatos essenciais, sem configurar a sessão gráfica.
 
-Ao final deste playbook, o compositor estará instalado e apto para execução.
+## Pré-requisitos
 
----
+* `01-install-graphics-stack` concluído;
+* `mesa` e `wayland` instalados;
+* Pacman operacional.
 
-# Pré-requisitos
+## Fonte declarativa
 
-* Stack gráfica instalada e validada.
-* Sistema operacional funcional.
-* Hardware gráfico configurado.
+```text
+packages/desktop/compositor.txt
+```
 
----
+Baseline:
 
-# Resultado esperado
+```text
+hyprland
+```
 
-Ao concluir este playbook:
+## Procedimento
 
-* o Hyprland estará instalado;
-* suas dependências obrigatórias estarão disponíveis;
-* o compositor poderá ser iniciado sem erros críticos;
-* a workstation estará pronta para receber a configuração da sessão gráfica.
+1. Validar os pré-requisitos gráficos.
+2. Carregar e validar a lista declarativa.
+3. Instalar somente os pacotes ausentes.
+4. Confirmar os executáveis `Hyprland` e `start-hyprland`.
+5. Confirmar que `Hyprland --version` retorna informação válida.
 
----
-
-# Procedimento
-
-## 1. Revisar os componentes necessários
-
-Confirme os componentes obrigatórios para execução do Hyprland.
-
-Evite instalar ferramentas opcionais que pertençam a outros playbooks.
-
----
-
-## 2. Instalar o compositor
-
-Instale o Hyprland e seus componentes essenciais.
-
----
-
-## 3. Confirmar dependências
-
-Verifique se todas as dependências obrigatórias foram instaladas corretamente.
-
----
-
-## 4. Revisar a instalação
-
-Confirme que os arquivos esperados foram instalados.
-
-Não realize personalizações nesta etapa.
-
----
-
-## 5. Validar a execução
-
-Inicie uma sessão de teste do Hyprland.
-
-O objetivo é apenas confirmar que o compositor inicia corretamente.
-
-Não é necessário validar aparência ou produtividade neste momento.
-
----
-
-# Verificação
+## Verificação
 
 Confirme que:
 
-* o Hyprland está instalado;
-* o compositor inicia corretamente;
-* não existem erros críticos durante a inicialização;
-* o sistema permanece estável durante a sessão de teste.
+* o pacote `hyprland` está instalado;
+* `Hyprland` está disponível;
+* `start-hyprland` está disponível;
+* a versão do compositor pode ser consultada.
 
----
+## Fora de escopo
 
-# Problemas comuns
+Não iniciar uma sessão como requisito deste playbook e não criar `hyprland.conf`. Inicialização real e validação de configuração pertencem ao bloco de configuração e ao gate final.
 
-## Sessão não inicia
-
-Revise os componentes da stack gráfica e confirme que todas as dependências estão presentes.
-
----
-
-## Erros relacionados ao Wayland
-
-Confirme que o ambiente foi iniciado utilizando Wayland.
-
----
-
-## Falhas gráficas
-
-Revise a configuração da GPU e confirme que os drivers correspondem ao hardware utilizado.
-
----
-
-# Próximo playbook
-
-Após validar a instalação do Hyprland, prossiga para:
+## Próximo playbook
 
 ```text
 03-install-status-bar.md
 ```
-
----
-
-# Referências
-
-* Arch Wiki — Hyprland
-* Documentação oficial do Hyprland
-* Arch Wiki — Wayland
-
----
-
-# Lições aprendidas
-
-Registrar aqui problemas de compatibilidade, dependências adicionais ou observações relevantes identificadas durante a instalação do compositor.
