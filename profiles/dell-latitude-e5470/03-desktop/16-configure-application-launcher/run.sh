@@ -44,8 +44,7 @@ validate_configuration() {
   [[ -s "$rofi_config" ]] || die "Rofi configuration was not installed."
   [[ -s "$keybindings" ]] || die "Hyprland keybindings module was not installed."
   grep -q 'modi: "drun,run"' "$rofi_config" || die "Rofi drun/run modes are not configured."
-  grep -q 'hl.bind("SUPER", "SPACE"' "$keybindings" || die "SUPER+SPACE launcher binding is missing."
-  grep -q 'rofi -show drun' "$keybindings" || die "Launcher binding does not invoke Rofi drun mode."
+  grep -Fq 'hl.bind("SUPER + SPACE", hl.dsp.exec_cmd("rofi -show drun"))' "$keybindings" || die "SUPER+SPACE launcher binding is missing."
 
   if grep -Eq 'kb-row-(left|right)[[:space:]]*:' "$rofi_config"; then
     die "Rofi row navigation bindings must not be overridden by the shared configuration."
