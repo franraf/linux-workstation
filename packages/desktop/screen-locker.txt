@@ -1,0 +1,2 @@
+# Hyprlock screen locker
+hyprlock
