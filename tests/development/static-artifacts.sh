@@ -17,14 +17,14 @@ require_file() {
 
 bash "${REPO_ROOT}/tests/repository/phase-consistency.sh"
 
-for step in 01-version-control 02-shell-environment 03-code-editor; do
+for step in 01-version-control 02-shell-environment 03-code-editor 04-container-platform; do
   run_file="${PROFILE_ROOT}/${step}/run.sh"
   require_file "$run_file"
   bash -n "$run_file" || fail "Bash syntax failed: ${run_file#${REPO_ROOT}/}"
   pass "Bash syntax: ${run_file#${REPO_ROOT}/}"
 done
 
-for package_file in version-control shell code-editor-runtime; do
+for package_file in version-control shell code-editor-runtime container-platform; do
   require_file "${REPO_ROOT}/packages/development/${package_file}.txt"
 done
 
