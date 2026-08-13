@@ -1,0 +1,43 @@
+---
+schema_version: "1.0"
+
+phase:
+  id: 04-development
+  name: Development
+  description: >
+    Ferramentas e configuração do host para desenvolvimento, mantendo
+    runtimes e SDKs específicos de projeto fora da workstation.
+  status: in-progress
+
+profile:
+  id: dell-latitude-e5470
+  manifest: ../profile.yaml
+
+execution:
+  order:
+    - 01-version-control
+  stop_on_error: true
+  validate_after_each_step: true
+
+steps:
+  01-version-control:
+    mode: interactive-script
+    destructive: false
+    playbook: ../../../playbooks/04-development/01-version-control.md
+    entrypoint: 01-version-control/run.sh
+
+planned_order:
+  - 02-shell-environment
+  - 03-code-editor
+  - 04-container-platform
+  - 05-cli-tools
+  - 06-ai-tooling
+  - 07-development-validation
+
+validation:
+  final_step: 07-development-validation
+  required_before_next_phase: true
+
+metadata:
+  created_at: 2026-08-13
+  last_review: 2026-08-13
