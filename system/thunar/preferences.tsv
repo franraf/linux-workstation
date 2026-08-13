@@ -1,0 +1,6 @@
+# property	type	value
+/last-view	string	ThunarDetailsView
+/misc-remember-geometry	bool	true
+/misc-confirm-close-multiple-tabs	bool	true
+/misc-always-show-tabs	bool	false
+/misc-horizontal-wheel-navigates	bool	true
