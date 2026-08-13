@@ -1,0 +1,22 @@
+* {
+  font-family: "Noto Sans", sans-serif;
+  font-size: 13px;
+}
+
+.notification-row,
+.control-center {
+  background: #1a1b26;
+  color: #c0caf5;
+}
+
+.notification,
+.widget-title,
+.widget-dnd {
+  background: #24283b;
+  border: 1px solid #3b4048;
+  border-radius: 10px;
+}
+
+.notification:hover {
+  border-color: #7aa2f7;
+}
