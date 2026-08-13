@@ -1,0 +1,5 @@
+# Thunar file manager and desktop integration
+thunar
+gvfs
+tumbler
+thunar-volman
