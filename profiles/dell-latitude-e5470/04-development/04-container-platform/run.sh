@@ -40,6 +40,12 @@ parse_arguments() {
   [[ -n "$TARGET_USER_ARG" ]] || die "Target user could not be inferred. Use --user <username>."
 }
 
+user_has_docker_group() {
+  local groups
+  groups="$(id -nG "$TARGET_USER")"
+  [[ " $groups " == *" docker "* ]]
+}
+
 show_plan() {
   printf '\nContainer platform setup\n------------------------\n\n'
   printf 'Target user:\n  %s\n\n' "$TARGET_USER"
@@ -67,7 +73,7 @@ configure_service() {
 }
 
 grant_user_access() {
-  if id -nG "$TARGET_USER" | tr ' ' '\n' | grep -Fxq docker; then
+  if user_has_docker_group; then
     log_info "User ${TARGET_USER} is already a member of the docker group."
     return 0
   fi
@@ -79,7 +85,7 @@ grant_user_access() {
   [[ "$confirmation" == "DOCKER-GROUP" ]] || die "Docker group membership was not authorized."
 
   usermod -aG docker "$TARGET_USER"
-  id -nG "$TARGET_USER" | tr ' ' '\n' | grep -Fxq docker || die "User was not added to the docker group."
+  user_has_docker_group || die "User was not added to the docker group."
   log_warn "A new login session is required before ${TARGET_USER}'s existing shell and graphical session inherit docker group membership."
 }
 
@@ -106,7 +112,7 @@ validate_platform() {
 
 main() {
   require_root
-  require_commands awk findmnt id pacman sed systemctl tr usermod xargs
+  require_commands awk findmnt id pacman sed systemctl usermod xargs
   require_arch_systemd
   require_user_config_commands
   parse_arguments "$@"
