@@ -25,6 +25,11 @@ check_package_file() {
   done <"$file"
 }
 
+check_package() {
+  local package="$1"
+  pacman -Q "$package" >/dev/null 2>&1 && pass "Installed package: $package" || fail "Missing package: $package"
+}
+
 check_file_matches() {
   local source="$1"
   local destination="$2"
@@ -42,7 +47,9 @@ section "Execution context"
 section "Packages"
 check_package_file "${REPO_ROOT}/packages/system/base-workstation.txt"
 check_package_file "${REPO_ROOT}/packages/system/services.txt"
-pacman -Q intel-ucode >/dev/null 2>&1 && pass "intel-ucode is installed" || fail "intel-ucode is missing"
+check_package intel-ucode
+check_package zram-generator
+check_package openssh
 
 section "Canonical configuration"
 check_file_matches "${REPO_ROOT}/system/systemd/10-linux-workstation.conf" /etc/systemd/system.conf.d/10-linux-workstation.conf
