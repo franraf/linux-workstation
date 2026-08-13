@@ -124,7 +124,7 @@ validate_git() {
 
 main() {
   require_root
-  require_commands awk git install pacman sudo
+  require_commands awk install pacman sudo
   require_arch_systemd
   require_user_config_commands
   parse_arguments "$@"
@@ -135,11 +135,25 @@ main() {
   validate_packages_available
   discover_missing_packages
 
+  show_plan_without_identity=false
+  if ((${#MISSING_PACKAGES[@]} > 0)); then
+    printf '\nVersion control package installation\n------------------------------------\n\nPackages to install:\n'
+    printf '  - %s\n' "${MISSING_PACKAGES[@]}"
+    local package_confirmation
+    printf '\nType PACKAGES to install the missing package(s): '
+    read -r package_confirmation
+    [[ "$package_confirmation" == "PACKAGES" ]] || die "Version control package installation was not authorized."
+    install_missing_packages
+  else
+    log_info "All declared version control packages are already installed."
+  fi
+
+  validate_installed_packages
+  require_commands git
+
   resolve_git_identity
   show_plan
   confirm_changes
-  install_missing_packages
-  validate_installed_packages
   prepare_ssh_directory
   configure_git
   validate_git
