@@ -1,17 +1,16 @@
 ---
-
 title: Configurar barra de status
-version: 1.0
+version: 1.1
 status: Draft
 author: Rafael
-last_review: 2026-07-31
+last_review: 2026-08-12
 related:
 
 * architecture.md
 * ADR-0002
-* ADR-0003
 * ADR-0004
 * ADR-0005
+* ADR-0006
 
 ---
 
@@ -19,18 +18,16 @@ related:
 
 ## Objetivo
 
-Configurar a barra de status da sessão gráfica, definindo as informações apresentadas ao usuário e sua integração com os demais componentes da workstation.
+Configurar a Waybar como barra de status da sessão gráfica, mantendo sua configuração modular e distribuindo as informações de forma consistente entre as áreas esquerda, central e direita.
 
-Ao final deste playbook, a barra de status estará integrada à sessão gráfica e refletirá o estado operacional da workstation.
-
-A implementação adotada pelo projeto utiliza o **Waybar**.
+Este playbook configura a capacidade; a instalação da Waybar pertence ao playbook correspondente.
 
 ---
 
 # Pré-requisitos
 
 * Sessão gráfica configurada.
-* Barra de status instalada.
+* Waybar instalada.
 * Stack tipográfica instalada.
 
 ---
@@ -39,9 +36,11 @@ A implementação adotada pelo projeto utiliza o **Waybar**.
 
 Ao concluir este playbook:
 
-* a barra de status estará integrada à sessão;
-* os módulos previstos pelo projeto estarão configurados;
-* a organização da barra seguirá os padrões definidos pela arquitetura.
+* a Waybar iniciará com a sessão;
+* os módulos estarão separados em arquivos próprios;
+* a barra ocupará a largura disponível do output;
+* workspaces, janela ativa e status do sistema estarão distribuídos de forma previsível;
+* a configuração será validada antes de avançar.
 
 ---
 
@@ -49,48 +48,69 @@ Ao concluir este playbook:
 
 ## 1. Organizar a configuração
 
-Estruture a configuração da barra de status conforme a ADR-0005.
+Utilize a estrutura modular prevista pela ADR-0005:
 
-Mantenha módulos independentes e de fácil manutenção.
+```text
+~/.config/waybar/
+├── config.jsonc
+├── style.css
+└── modules/
+    ├── workspaces.jsonc
+    ├── window.jsonc
+    ├── clock.jsonc
+    ├── network.jsonc
+    ├── pulseaudio.jsonc
+    ├── battery.jsonc
+    └── tray.jsonc
+```
 
----
+Evite módulos duplicados ou arquivos sem referência no `include` principal.
 
-## 2. Definir a estrutura da barra
+## 2. Definir a distribuição da barra
 
-Configure a organização lógica da barra.
+A baseline adotada é:
 
-Considere:
+```text
+esquerda: workspaces
+centro:   janela ativa
+direita:  rede, áudio, bateria, relógio e tray
+```
 
-* área esquerda;
-* área central;
-* área direita;
-* agrupamento de módulos.
+A Waybar horizontal não deverá receber uma largura fixa arbitrária. Em particular, não utilizar valores como:
 
----
+```json
+"width": 4
+```
+
+A ausência de largura fixa permite que a barra utilize corretamente a largura do output.
 
 ## 3. Configurar os módulos
 
-Configure apenas os módulos previstos pela arquitetura da workstation.
+Configure apenas os módulos necessários e mantenha cada responsabilidade no arquivo correspondente.
 
-Evite adicionar módulos experimentais ou redundantes.
+Os arquivos JSONC deverão permanecer sintaticamente válidos após inclusão pelo `config.jsonc`.
 
----
+## 4. Integrar à sessão
 
-## 4. Integrar à sessão gráfica
+Adicione a Waybar ao fragmento canônico:
 
-Confirme que a barra inicia automaticamente como parte da sessão.
+```text
+~/.config/hypr/conf.d/50-autostart.conf
+```
 
----
+Não crie um segundo fragmento de autostart para a mesma responsabilidade.
 
-## 5. Validar a renderização
+## 5. Validar a execução
 
-Verifique a renderização de:
+Execute manualmente:
 
-* textos;
-* ícones;
-* espaçamento;
-* alinhamento;
-* atualização dinâmica dos módulos.
+```text
+waybar
+```
+
+antes de considerar a integração concluída.
+
+Erros de parsing devem ser corrigidos no módulo indicado pelo log.
 
 ---
 
@@ -98,43 +118,37 @@ Verifique a renderização de:
 
 Confirme que:
 
-* a barra inicia automaticamente;
-* todos os módulos esperados são exibidos;
-* os ícones são renderizados corretamente;
-* as informações apresentadas permanecem atualizadas;
-* não existem erros durante a execução.
+* `waybar` inicia sem erro de parsing;
+* a barra ocupa corretamente o output;
+* workspaces ficam à esquerda;
+* a janela ativa fica no centro;
+* rede, áudio, bateria, relógio e tray ficam à direita;
+* ícones e textos são renderizados corretamente;
+* existe uma única entrada de Waybar em `50-autostart.conf`.
 
 ---
 
 # Problemas comuns
 
-## Barra não inicia
+## Barra estreita ou concentrada
 
-Revise a configuração da sessão e confirme que o componente foi instalado corretamente.
+Verifique se `config.jsonc` possui uma largura fixa indevida. A barra horizontal deve usar a largura disponível do output.
 
----
+## Erro `Missing ',' or ']'`
 
-## Módulo indisponível
+Leia a sequência de arquivos incluídos no log e valide o último módulo processado. Corrija a estrutura JSONC antes de reiniciar a Waybar.
 
-Confirme que a dependência correspondente está instalada e configurada.
+## Módulo duplicado ou obsoleto
 
----
+Remova módulos que não são mais utilizados e confirme que o `include` principal referencia apenas arquivos existentes.
 
-## Ícones incorretos
+## Barra não inicia automaticamente
 
-Verifique a stack tipográfica e confirme a disponibilidade das fontes de ícones utilizadas.
-
----
-
-## Erros na configuração
-
-Valide a estrutura dos arquivos antes de reiniciar a sessão.
+Confirme que `50-autostart.conf` contém a entrada da Waybar e que a configuração principal do Hyprland carrega esse fragmento.
 
 ---
 
 # Próximo playbook
-
-Após validar a barra de status, prossiga para:
 
 ```text
 13-configure-session-lock.md
@@ -145,11 +159,11 @@ Após validar a barra de status, prossiga para:
 # Referências
 
 * Documentação oficial do Waybar
-* Arch Wiki — Wayland
-* ADR-0005 — Modularize Configuration by Capability
+* ADR-0005 — Modularizar configurações por capacidade
+* ADR-0006 — Separação entre instalação e configuração
 
 ---
 
 # Lições aprendidas
 
-Registrar aqui alterações na organização dos módulos, integrações adicionadas ou observações relevantes identificadas durante a evolução da barra de status.
+Uma largura fixa inadequada pode fazer a Waybar ocupar apenas uma pequena região do monitor mesmo quando os módulos estão corretamente distribuídos. A validação deve incluir tanto parsing quanto geometria e posicionamento visual.
