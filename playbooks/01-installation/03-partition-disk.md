@@ -1,16 +1,16 @@
 ---
-
 title: Particionar o disco
-version: 1.0
+version: 1.1
 status: Draft
 author: Rafael
-last_review: 2026-07-31
+last_review: 2026-08-12
 related:
 
 * architecture.md
 * ADR-0002
 * ADR-0003
 * ADR-0004
+* standards.md
 
 ---
 
@@ -50,7 +50,7 @@ Nenhum sistema de arquivos será criado nesta etapa.
 
 ## 1. Identificar os dispositivos de armazenamento
 
-Liste os discos disponíveis.
+Liste os discos disponíveis:
 
 ```bash
 lsblk -o NAME,SIZE,TYPE,MODEL
@@ -58,61 +58,43 @@ lsblk -o NAME,SIZE,TYPE,MODEL
 
 Confirme cuidadosamente qual será o disco utilizado na instalação.
 
----
-
 ## 2. Confirmar o dispositivo de destino
 
-Antes de modificar qualquer disco, confirme:
-
-* capacidade;
-* modelo;
-* ausência de dados importantes.
+Antes de modificar qualquer disco, confirme capacidade, modelo e ausência de dados importantes.
 
 Nunca prossiga em caso de dúvida.
 
----
+## 3. Exigir confirmação destrutiva
 
-## 3. Remover a tabela de partições existente
+Antes do primeiro comando que altere a tabela de partições, solicite confirmação explícita conforme `docs/standards.md`.
 
-Apague todas as partições existentes no disco de destino.
+O usuário deverá digitar exatamente:
 
-Este procedimento deverá resultar em um disco completamente vazio.
+```text
+ERASE
+```
 
----
+Qualquer outra entrada deverá cancelar o procedimento.
 
-## 4. Criar uma nova tabela GPT
+## 4. Remover a tabela de partições existente
+
+Somente após a confirmação forte, apague as partições existentes no disco de destino.
+
+## 5. Criar uma nova tabela GPT
 
 Inicialize o disco utilizando GPT.
 
-Esta é a única tabela de partições suportada pela arquitetura do projeto.
+## 6. Criar a EFI System Partition
 
----
+Crie uma ESP no início do disco com o tamanho definido pela arquitetura.
 
-## 5. Criar a EFI System Partition (ESP)
+## 7. Criar a partição do sistema
 
-Criar uma partição destinada ao firmware UEFI.
+Crie uma segunda partição ocupando o restante do disco para uso pelo LUKS2.
 
-Características:
+## 8. Gravar as alterações
 
-* tipo: EFI System Partition;
-* início do disco;
-* tamanho conforme definido pela arquitetura.
-
----
-
-## 6. Criar a partição do sistema
-
-Criar uma segunda partição ocupando o restante do disco.
-
-Esta partição será utilizada no próximo playbook para criação do volume criptografado LUKS2.
-
----
-
-## 7. Gravar as alterações
-
-Salvar a nova tabela de partições.
-
-Caso necessário, solicitar ao kernel a releitura da tabela.
+Salve a nova tabela de partições e, quando necessário, solicite ao kernel a releitura da tabela.
 
 ---
 
@@ -125,8 +107,6 @@ Confirme que:
 * existe exatamente uma partição destinada ao sistema;
 * não existem partições inesperadas.
 
-Exemplo de verificação:
-
 ```bash
 lsblk -f
 ```
@@ -137,27 +117,23 @@ lsblk -f
 
 ## Disco incorreto selecionado
 
-Interrompa imediatamente o procedimento.
+Interrompa imediatamente o procedimento. Não continue até identificar corretamente o dispositivo.
 
-Não continue até identificar corretamente o dispositivo.
+## Confirmação diferente de `ERASE`
 
----
+Cancele a operação. Confirmações genéricas como `y`, `yes` ou Enter não atendem ao padrão do projeto.
 
 ## A tabela antiga continua sendo exibida
 
 Solicite ao kernel a releitura da tabela de partições ou reinicie o ambiente live.
 
----
-
 ## O firmware não reconhece a ESP
 
-Verifique se a partição foi criada com o tipo correto e se está marcada como EFI System Partition.
+Verifique se a partição foi criada com o tipo correto.
 
 ---
 
 # Próximo playbook
-
-Após validar o particionamento, prossiga para:
 
 ```text
 04-create-luks.md
@@ -170,9 +146,10 @@ Após validar o particionamento, prossiga para:
 * Arch Wiki — Partitioning
 * Arch Wiki — GPT
 * Arch Wiki — EFI System Partition
+* `docs/standards.md`
 
 ---
 
 # Lições aprendidas
 
-Registrar particularidades encontradas durante o particionamento de diferentes modelos de hardware ou controladoras de armazenamento.
+Operações de armazenamento devem exigir confirmação forte imediatamente antes do primeiro efeito destrutivo, e não apenas um aviso textual no início do documento.
