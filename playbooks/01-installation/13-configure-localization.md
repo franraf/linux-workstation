@@ -1,130 +1,59 @@
 ---
-
 title: Configurar localização do sistema
-version: 1.0
+version: 1.1
 status: Draft
 author: Rafael
-last_review: 2026-07-31
+last_review: 2026-08-13
 related:
-
-* architecture.md
-* ADR-0002
-* ADR-0003
-* ADR-0004
-
+  - ADR-0009
+  - 12-configure-time.md
+  - 14-configure-network.md
 ---
 
-# 12 — Configurar localização do sistema
+# 13 — Configurar localização do sistema
 
 ## Objetivo
 
-Configurar os parâmetros de localização do sistema, incluindo locale, idioma das mensagens e layout de teclado do console.
+Configurar locales e keymap persistente do console dentro do sistema instalado.
 
-Ao final deste playbook, o sistema utilizará as definições de localização previstas para a instalação.
+A baseline é:
 
----
+```text
+locale primário:  pt_BR.UTF-8
+locale fallback:  en_US.UTF-8
+console keymap:   br-abnt2
+```
 
-# Pré-requisitos
+Os arquivos finais são renderizados a partir de:
 
-* Ambiente `arch-chroot` ativo.
-* Data e hora configuradas.
+```text
+system/localization/locale.conf.template
+system/localization/vconsole.conf.template
+```
 
----
+## Execução
 
-# Resultado esperado
+Dentro do chroot:
 
-Ao concluir este playbook:
+```bash
+profiles/dell-latitude-e5470/01-installation/13-configure-localization/run.sh
+```
 
-* os locales necessários estarão habilitados;
-* o locale padrão do sistema estará definido;
-* o layout de teclado do console estará configurado;
-* o sistema estará preparado para exibir mensagens e interpretar caracteres corretamente.
+Os três valores podem ser sobrescritos explicitamente por argumentos. O script valida se os locales existem em `/etc/locale.gen`, se o keymap existe e exige confirmação `LOCALE`.
 
----
+## Alterações
 
-# Procedimento
+- habilita os locales necessários em `/etc/locale.gen`;
+- executa `locale-gen`;
+- gera `/etc/locale.conf` a partir do template;
+- gera `/etc/vconsole.conf` a partir do template.
 
-## 1. Habilitar os locales necessários
+## Verificação
 
-Habilite os locales definidos para a instalação.
+O passo só passa quando os locales estão efetivamente gerados, as entradas de `locale.gen` estão habilitadas, `LANG` e `KEYMAP` correspondem ao solicitado e o locale primário usa UTF-8.
 
-Evite manter locales desnecessários habilitados.
-
----
-
-## 2. Gerar os locales
-
-Gere os arquivos de locale utilizando a ferramenta recomendada pelo Arch Linux.
-
----
-
-## 3. Definir o locale padrão
-
-Configure o locale padrão do sistema.
-
----
-
-## 4. Configurar o teclado do console
-
-Defina o layout de teclado utilizado no console virtual.
-
----
-
-## 5. Revisar a configuração
-
-Confirme que todos os arquivos necessários foram criados e atualizados.
-
----
-
-# Verificação
-
-Confirme que:
-
-* os locales foram gerados sem erros;
-* o locale padrão está configurado;
-* o layout do teclado corresponde ao esperado;
-* caracteres acentuados são interpretados corretamente.
-
----
-
-# Problemas comuns
-
-## Locale não disponível
-
-Verifique se o locale foi habilitado antes da geração.
-
----
-
-## Mensagens continuam em idioma inesperado
-
-Confirme se o locale padrão foi configurado corretamente.
-
----
-
-## Caracteres incorretos
-
-Revise a configuração do locale e do teclado do console.
-
----
-
-# Próximo playbook
-
-Após validar a configuração de localização, prossiga para:
+## Próximo playbook
 
 ```text
 14-configure-network.md
 ```
-
----
-
-# Referências
-
-* Arch Wiki — Localization
-* Arch Wiki — Locale
-* Arch Wiki — Console keyboard configuration
-
----
-
-# Lições aprendidas
-
-Registrar aqui ajustes específicos de locale, layout de teclado ou codificação utilizados em futuras instalações.
