@@ -1,15 +1,13 @@
 ---
-
 title: Editor de código
-version: 1.0
+version: 1.1
 status: Draft
 author: Rafael
-last_review: 2026-07-31
+last_review: 2026-08-12
 related:
 
 * architecture.md
 * ADR-0002
-* ADR-0003
 * ADR-0004
 * ADR-0005
 
@@ -19,18 +17,18 @@ related:
 
 ## Objetivo
 
-Adicionar à workstation um editor de código moderno, integrado e reproduzível para desenvolvimento de software.
+Adicionar à workstation um editor de código integrado ao Git, ao terminal e ao modelo de configuração versionada do projeto.
 
-Ao final deste playbook, a workstation oferecerá um ambiente de edição preparado para trabalhar com projetos locais e ambientes de desenvolvimento baseados em contêineres.
+A implementação adotada utiliza o Visual Studio Code.
 
-A implementação adotada pelo projeto utiliza o **Visual Studio Code**.
+A integração completa com Dev Containers será validada somente após a plataforma de contêineres ser configurada no playbook seguinte.
 
 ---
 
 # Pré-requisitos
 
 * Ambiente de shell configurado.
-* Capacidade de controle de versão concluída.
+* Controle de versão concluído.
 * Sessão gráfica operacional.
 
 ---
@@ -39,34 +37,27 @@ A implementação adotada pelo projeto utiliza o **Visual Studio Code**.
 
 Ao concluir este playbook:
 
-* o editor estará instalado;
-* a configuração estará versionada;
-* as extensões definidas pelo projeto estarão disponíveis;
-* a integração com Git, terminal e Dev Containers estará funcional.
+* o editor estará instalado e iniciará normalmente;
+* configurações e extensões previstas estarão versionadas e aplicadas;
+* Git e terminal integrado estarão funcionais;
+* o editor estará preparado para a integração com Dev Containers, ainda não considerada validada nesta etapa.
 
 ---
 
 # Estrutura da configuração
 
-A configuração do editor deverá ser mantida junto aos dotfiles da workstation.
+Mantenha configurações reproduzíveis nos dotfiles, utilizando a estrutura nativa do editor.
 
-Estrutura recomendada:
+Exemplo:
 
-```text id="yvn4e8"
+```text
 dotfiles/
-
-vscode/
-├── settings.json
-├── keybindings.json
-├── extensions.txt
-└── snippets/
+└── vscode/
+    ├── settings.json
+    ├── keybindings.json
+    ├── extensions.txt
+    └── snippets/
 ```
-
-Sempre que possível, mantenha cada tipo de configuração em seu próprio arquivo.
-
-Evite concentrar configurações de naturezas diferentes em um único recurso.
-
-A estrutura deverá permanecer compatível com o formato nativo suportado pelo editor.
 
 ---
 
@@ -74,85 +65,32 @@ A estrutura deverá permanecer compatível com o formato nativo suportado pelo e
 
 ## 1. Instalar o editor
 
-Instale o editor definido pela arquitetura da workstation.
-
----
+Instale a implementação definida pela arquitetura.
 
 ## 2. Restaurar a configuração
 
-Aplique os arquivos versionados da configuração.
+Aplique preferências, atalhos, snippets e demais arquivos versionados.
 
-Considere:
+## 3. Instalar as extensões declaradas
 
-* preferências globais;
-* atalhos;
-* snippets;
-* extensões.
+Utilize a lista versionada como fonte da verdade. Evite extensões permanentes fora desse controle sem justificativa.
 
-Confirme que a configuração aplicada corresponde à versão mantida no repositório.
+A extensão necessária para Dev Containers pode ser instalada agora, mas seu funcionamento completo depende da plataforma do próximo playbook.
 
----
+## 4. Configurar integrações disponíveis
 
-## 3. Configurar o ambiente
-
-Revise as configurações relacionadas à experiência de desenvolvimento.
-
-Considere:
-
-* fontes;
-* tema;
-* terminal integrado;
-* formatação;
-* salvamento automático;
-* comportamento da interface.
-
----
-
-## 4. Instalar as extensões
-
-Instale as extensões previstas pela arquitetura.
-
-Utilize a lista versionada no projeto como fonte única de verdade.
-
-Evite instalar extensões permanentes fora desse controle.
-
----
-
-## 5. Configurar integrações
-
-Confirme a integração do editor com:
+Valide nesta etapa:
 
 * Git;
-* ambiente de shell;
-* plataforma de contêineres;
-* terminal integrado.
+* shell;
+* terminal integrado;
+* edição e salvamento de arquivos.
 
----
+## 5. Validar a experiência local
 
-## 6. Validar Dev Containers
+Abra um projeto local de teste e confirme edição, terminal integrado e operações de Git.
 
-Abra um projeto preparado para desenvolvimento em contêiner.
-
-Confirme que o editor:
-
-* reconhece a configuração;
-* cria ou reutiliza o ambiente;
-* conecta-se corretamente ao contêiner;
-* disponibiliza todas as funcionalidades esperadas.
-
----
-
-## 7. Validar a experiência
-
-Abra um projeto de teste.
-
-Confirme que é possível:
-
-* editar arquivos;
-* utilizar o terminal integrado;
-* executar operações do Git;
-* iniciar um Dev Container;
-* trabalhar normalmente dentro do ambiente isolado.
+Não exija a criação de um Dev Container nesta etapa.
 
 ---
 
@@ -162,10 +100,12 @@ Confirme que:
 
 * o editor inicia corretamente;
 * a configuração versionada foi aplicada;
-* as extensões previstas estão instaladas;
-* Git está integrado;
-* Dev Containers funcionam corretamente;
-* não existem erros durante a utilização.
+* as extensões declaradas estão instaladas;
+* Git funciona no editor;
+* o terminal integrado funciona;
+* não existem erros críticos durante o uso local.
+
+A validação de Dev Containers pertence a `04-container-platform.md` e ao gate `07-development-validation.md`.
 
 ---
 
@@ -173,39 +113,25 @@ Confirme que:
 
 ## Editor não inicia
 
-Confirme que a instalação foi concluída corretamente e que a sessão gráfica está operacional.
-
----
+Confirme instalação e sessão gráfica.
 
 ## Configuração não aplicada
 
-Revise os arquivos presentes em `dotfiles/vscode/` e confirme que foram restaurados corretamente.
-
----
+Revise a origem versionada dos arquivos e o mecanismo de restauração.
 
 ## Extensões ausentes
 
-Compare as extensões instaladas com a lista versionada pelo projeto.
-
----
+Compare o estado instalado com a lista versionada.
 
 ## Dev Containers indisponíveis
 
-Confirme que a plataforma de contêineres está instalada e integrada ao editor.
-
----
-
-## Git não reconhecido
-
-Verifique a integração com a capacidade de controle de versão.
+Isso não é falha deste playbook enquanto a plataforma de contêineres ainda não foi configurada.
 
 ---
 
 # Próximo playbook
 
-Após validar o editor de código, prossiga para:
-
-```text id="glwjcu"
+```text
 04-container-platform.md
 ```
 
@@ -215,10 +141,10 @@ Após validar o editor de código, prossiga para:
 
 * Documentação oficial do Visual Studio Code
 * Development Containers Specification
-* ADR-0005 — Modularize Configuration by Capability
+* ADR-0005 — Modularizar configurações por capacidade
 
 ---
 
 # Lições aprendidas
 
-Registrar aqui novas extensões adotadas, melhorias na configuração do editor, integrações adicionadas ou observações relevantes identificadas durante sua evolução.
+Uma etapa não deve validar uma capacidade que depende explicitamente de um playbook posterior. A integração com Dev Containers só é verificável após a plataforma de contêineres estar operacional.
