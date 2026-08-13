@@ -1,6 +1,6 @@
 ---
 title: Playbooks
-version: 1.1
+version: 1.2
 status: Stable
 author: Rafael
 last_review: 2026-08-12
@@ -65,7 +65,25 @@ Linha de base operacional do sistema: atualização, Pacman, microcode, systemd,
 
 ## 03-desktop
 
-Construção do ambiente gráfico: stack gráfica, Hyprland, Waybar, Hyprlock, Hypridle, Rofi, SwayNC, Kitty, Thunar, fontes, configuração da sessão, aparência, autenticação gráfica e validação final.
+Construção do ambiente gráfico: stack gráfica, Hyprland, Waybar, Hyprlock, Hypridle, Rofi, SwayNC, Kitty, Thunar, fontes, autenticação gráfica, configuração da sessão, aparência e validação final.
+
+A fase `03-desktop` segue explicitamente:
+
+```text
+instalar todas as capacidades
+          ↓
+configurar todas as capacidades
+          ↓
+validar a integração final
+```
+
+Na numeração atual:
+
+```text
+01–11  instalação
+12–21  configuração
+22     validação
+```
 
 ## 04-development
 
@@ -86,6 +104,8 @@ Reservado para procedimentos de recuperação. A fase ainda não possui playbook
 Os playbooks deverão ser executados na ordem indicada pela numeração dos diretórios e dos arquivos.
 
 A numeração representa a sequência operacional recomendada. Dependências específicas devem permanecer explícitas no documento.
+
+Quando uma fase possuir múltiplas capacidades com instalação e configuração separadas, todas as instalações deverão ser concluídas antes do início das configurações, salvo decisão arquitetural explícita em contrário.
 
 ---
 
@@ -110,6 +130,16 @@ Todo playbook deverá possuir, quando aplicável:
 Quando uma capacidade possuir separação técnica natural entre disponibilizar seus pacotes e definir seu comportamento, os playbooks deverão refletir essa divisão conforme a ADR-0006.
 
 Playbooks de configuração não devem instalar silenciosamente dependências ausentes.
+
+Dentro de uma mesma fase, o padrão preferencial é:
+
+```text
+Instalações
+    ↓
+Configurações
+    ↓
+Validação da fase
+```
 
 ---
 
@@ -212,16 +242,16 @@ Particularidades específicas de hardware pertencem a `profiles/<hardware>/` e n
 08-install-terminal-emulator.md
 09-install-file-manager.md
 10-install-font-stack.md
-11-configure-desktop-session.md
-12-configure-status-bar.md
-13-configure-session-lock.md
-14-configure-session-lifecycle.md
-15-configure-application-launcher.md
-16-configure-notification-center.md
-17-configure-terminal-emulator.md
-18-configure-file-manager.md
-19-configure-appearance.md
-20-install-session-login.md
+11-install-session-login.md
+12-configure-desktop-session.md
+13-configure-status-bar.md
+14-configure-session-lock.md
+15-configure-session-lifecycle.md
+16-configure-application-launcher.md
+17-configure-notification-center.md
+18-configure-terminal-emulator.md
+19-configure-file-manager.md
+20-configure-appearance.md
 21-configure-session-login.md
 22-desktop-validation.md
 ```
@@ -242,4 +272,4 @@ Particularidades específicas de hardware pertencem a `profiles/<hardware>/` e n
 
 # Lições aprendidas
 
-O índice deve refletir os arquivos reais do repositório. Listas planejadas que divergem da implementação reduzem a confiabilidade da documentação como fonte da verdade.
+O índice deve refletir os arquivos reais do repositório. Além disso, agrupar todas as instalações antes das configurações torna o fluxo mais previsível, reduz dependências circulares e facilita a futura automação da fase.
