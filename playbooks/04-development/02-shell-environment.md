@@ -1,62 +1,59 @@
 ---
-
 title: Ambiente de shell
-version: 1.0
+version: 1.1
 status: Draft
 author: Rafael
-last_review: 2026-07-31
+last_review: 2026-08-13
 related:
-
-* architecture.md
-* ADR-0002
-* ADR-0003
-* ADR-0004
-* ADR-0005
-
+  - architecture.md
+  - ADR-0005
+  - ADR-0009
 ---
 
 # 02 — Ambiente de shell
 
 ## Objetivo
 
-Adicionar à workstation um ambiente de shell moderno, consistente e produtivo para administração do sistema e desenvolvimento de software.
+Configurar o shell principal do host com Zsh, Oh My Zsh e Starship, mantendo a configuração modular e separada de runtimes específicos de projeto.
 
-Ao final deste playbook, a workstation oferecerá uma interface de linha de comando modular, integrada e reproduzível.
+## Fontes canônicas
 
-A implementação adotada pelo projeto utiliza o **Zsh** como shell principal e o **Starship** como prompt.
-
----
-
-# Pré-requisitos
-
-* Capacidade de controle de versão concluída.
-* Emulador de terminal configurado.
-
----
-
-# Resultado esperado
-
-Ao concluir este playbook:
-
-* o Zsh estará configurado como shell principal do usuário;
-* o Starship estará integrado ao shell;
-* as ferramentas auxiliares da linha de comando estarão disponíveis;
-* a configuração seguirá uma organização modular conforme a ADR-0005;
-* o ambiente estará pronto para integração com as demais capacidades da workstation.
-
----
-
-# Estrutura da configuração
-
-Organize a configuração do ambiente de shell de forma modular.
-
-Estrutura recomendada:
+Pacotes:
 
 ```text
-~/.config/
+packages/development/shell.txt
+```
 
-zsh/
-├── zshrc
+Configuração:
+
+```text
+system/development/zsh/
+system/development/starship/starship.toml
+```
+
+Implementação do perfil:
+
+```text
+profiles/dell-latitude-e5470/04-development/02-shell-environment/run.sh
+```
+
+## Responsabilidade deste passo
+
+O passo instala e configura somente a camada de shell/prompt:
+
+* Zsh;
+* Oh My Zsh;
+* Starship;
+* estrutura modular de configuração.
+
+Ferramentas como `fzf`, `zoxide`, `eza`, `bat`, `ripgrep` e similares pertencem ao `05-cli-tools` e não são instaladas aqui.
+
+## Estrutura instalada
+
+```text
+~/.zshenv
+~/.config/zsh/
+├── .zshrc
 └── modules/
     ├── aliases.zsh
     ├── completion.zsh
@@ -65,168 +62,54 @@ zsh/
     ├── integrations.zsh
     └── prompt.zsh
 
-starship/
+~/.config/starship/
 └── starship.toml
+
+~/.local/share/
+└── oh-my-zsh/
 ```
 
-O arquivo `zshrc` deverá atuar apenas como ponto de entrada, carregando os módulos responsáveis por cada aspecto da configuração.
+`.zshenv` define `ZDOTDIR=~/.config/zsh`. O `.zshrc` é apenas o ponto de entrada e carrega os módulos versionados.
 
-Cada módulo deverá possuir uma única responsabilidade.
+Oh My Zsh é mantido como checkout Git do usuário em `~/.local/share/oh-my-zsh`; o script não executa atualização automática de um checkout existente. O diretório customizado é suportado pelo próprio Oh My Zsh. 
 
----
+## Execução
 
-# Procedimento
+A partir do diretório do passo:
 
-## 1. Instalar o ambiente
+```bash
+sudo ./run.sh
+```
 
-Instale:
+Ou, quando necessário:
 
-* Zsh;
-* Starship;
-* ferramentas auxiliares definidas pela arquitetura.
+```bash
+sudo ./run.sh --user rafael
+```
 
-Configure o Zsh como shell padrão do usuário.
+O script:
 
----
+1. instala `zsh` e `starship` a partir da lista declarativa;
+2. instala Oh My Zsh caso ainda não exista;
+3. preserva um backup `.pre-linux-workstation` quando encontra uma configuração local divergente;
+4. distribui os arquivos canônicos para o home do usuário;
+5. configura Zsh como shell padrão;
+6. abre uma inicialização não persistente de Zsh para validar a integração com Starship.
 
-## 2. Organizar a estrutura
+## Verificação
 
-Crie a estrutura de diretórios recomendada.
+Depois da execução, encerre a sessão do usuário e entre novamente. Confirme:
 
-Organize os módulos de forma lógica e independente.
+```bash
+getent passwd "$USER" | cut -d: -f7
+zsh --version
+starship --version
+```
 
-Evite arquivos monolíticos e duplicação de configurações.
+Abra um novo terminal e confirme que o shell inicia sem erros e que o prompt Starship aparece.
 
----
-
-## 3. Configurar o ambiente
-
-Configure os módulos responsáveis por:
-
-* variáveis de ambiente;
-* aliases;
-* funções;
-* autocompletar;
-* integrações;
-* inicialização do shell.
-
-Cada módulo deverá tratar exclusivamente de sua responsabilidade.
-
----
-
-## 4. Configurar o prompt
-
-Configure o Starship como prompt da workstation.
-
-Considere a exibição de:
-
-* diretório atual;
-* repositório Git;
-* branch ativa;
-* código de retorno do último comando;
-* duração de comandos;
-* indicadores relevantes ao desenvolvimento.
-
----
-
-## 5. Configurar ferramentas auxiliares
-
-Integre as ferramentas adotadas pelo projeto.
-
-Considere:
-
-* navegação entre diretórios;
-* pesquisa de histórico;
-* busca textual;
-* listagem de arquivos;
-* visualização de conteúdo.
-
----
-
-## 6. Integrar com a workstation
-
-Confirme a integração do ambiente de shell com:
-
-* Git;
-* emulador de terminal;
-* editor de código;
-* plataforma de contêineres.
-
----
-
-## 7. Validar a experiência
-
-Abra uma nova sessão de terminal.
-
-Confirme que:
-
-* o shell inicia corretamente;
-* o prompt é carregado;
-* todos os módulos são inicializados sem erros;
-* as ferramentas auxiliares estão disponíveis;
-* a navegação e a pesquisa funcionam corretamente.
-
----
-
-# Verificação
-
-Confirme que:
-
-* o shell padrão é o definido pelo projeto;
-* o Starship está ativo;
-* a estrutura modular foi criada;
-* os módulos possuem responsabilidades independentes;
-* aliases e funções estão disponíveis;
-* a integração com Git está operacional;
-* não existem erros durante a inicialização do shell.
-
----
-
-# Problemas comuns
-
-## Shell incorreto
-
-Confirme que o shell padrão do usuário foi atualizado corretamente.
-
----
-
-## Prompt não aparece
-
-Revise a configuração do Starship e confirme sua integração com o Zsh.
-
----
-
-## Módulos não carregam
-
-Revise o arquivo `zshrc` e confirme que todos os módulos são carregados corretamente.
-
----
-
-## Inicialização lenta
-
-Revise os módulos carregados durante a inicialização e elimine configurações desnecessárias.
-
----
-
-# Próximo playbook
-
-Após validar o ambiente de shell, prossiga para:
+## Próximo playbook
 
 ```text
 03-code-editor.md
 ```
-
----
-
-# Referências
-
-* Documentação oficial do Zsh
-* Documentação oficial do Starship
-* Arch Wiki — Zsh
-* ADR-0005 — Modularize Configuration by Capability
-
----
-
-# Lições aprendidas
-
-Registrar aqui melhorias na organização do ambiente de shell, novas integrações ou observações relevantes identificadas durante sua evolução.
