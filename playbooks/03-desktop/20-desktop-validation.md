@@ -1,17 +1,17 @@
 ---
-
 title: Validar desktop
-version: 1.0
+version: 1.1
 status: Draft
 author: Rafael
-last_review: 2026-07-31
+last_review: 2026-08-12
 related:
 
 * architecture.md
 * ADR-0002
-* ADR-0003
 * ADR-0004
 * ADR-0005
+* ADR-0006
+* ADR-0008
 
 ---
 
@@ -19,16 +19,17 @@ related:
 
 ## Objetivo
 
-Validar que o ambiente gráfico da workstation foi configurado corretamente e que todas as capacidades da fase **03-desktop** estão operacionais.
+Validar que todas as capacidades da fase `03-desktop` estão operacionais, integradas e coerentes com a arquitetura antes de iniciar `04-development`.
 
-Ao final deste playbook, a workstation deverá apresentar uma experiência gráfica consistente, integrada e pronta para utilização.
+Este playbook é um gate de fase. Ele não deve corrigir configuração automaticamente; falhas devem direcionar o mantenedor ao playbook responsável.
 
 ---
 
 # Pré-requisitos
 
-* Todos os playbooks da fase **03-desktop** concluídos.
-* Sessão gráfica inicializada normalmente.
+* Todos os playbooks anteriores da fase `03-desktop` concluídos.
+* Sessão gráfica autenticada e em execução.
+* Configurações aplicadas a partir do repositório.
 
 ---
 
@@ -36,154 +37,176 @@ Ao final deste playbook, a workstation deverá apresentar uma experiência gráf
 
 Ao concluir este playbook:
 
-* todas as capacidades do desktop terão sido verificadas;
-* os componentes estarão integrados corretamente;
-* a workstation estará pronta para a fase **04-development**.
+* autenticação e inicialização gráfica estarão validadas;
+* Hyprland não apresentará erros de configuração;
+* componentes de autostart estarão em execução;
+* atalhos globais estarão funcionais;
+* aparência e aplicações fundamentais estarão integradas;
+* nenhuma falha obrigatória impedirá o início da fase seguinte.
 
 ---
 
 # Procedimento
 
-## 1. Validar a inicialização da sessão
+## 1. Validar autenticação e inicialização da sessão
 
-Inicie uma nova sessão gráfica.
+Reinicie a workstation ou inicie uma sessão limpa.
 
-Confirme que o login ocorre normalmente e que a sessão permanece estável durante a utilização.
+Conforme a ADR-0008, confirme o fluxo:
 
----
+```text
+boot
+  ↓
+greetd
+  ↓
+tuigreet
+  ↓
+autenticação
+  ↓
+start-hyprland
+  ↓
+Hyprland
+```
 
-## 2. Validar os componentes da sessão
+Confirme que não existe autologin da conta pessoal.
 
-Confirme o funcionamento dos componentes fundamentais do desktop.
+## 2. Validar a configuração do Hyprland
 
-Verifique:
+Execute:
 
-* compositor;
-* barra de status;
-* bloqueio da sessão;
-* ciclo de vida da sessão;
-* lançador de aplicações;
-* central de notificações.
+```text
+hyprctl version
+hyprctl configerrors
+hyprctl monitors
+hyprctl devices
+hyprctl binds
+```
 
----
+`hyprctl configerrors` deverá retornar `ok` ou ausência de erros, conforme a versão instalada.
 
-## 3. Validar as aplicações fundamentais
+Confirme que o arquivo principal carrega os fragments esperados:
 
-Confirme que as aplicações essenciais do ambiente gráfico funcionam corretamente.
+```text
+10-environment.conf
+20-monitor.conf
+30-input.conf
+40-general.conf
+50-autostart.conf
+60-session-lock.conf
+70-keybindings.conf
+80-appearance.conf
+```
 
-Verifique:
+## 3. Validar componentes de autostart
 
-* emulador de terminal;
-* gerenciador de arquivos.
+Confirme a execução dos componentes configurados em `50-autostart.conf`, incluindo quando aplicável:
 
----
+```text
+Waybar
+Hypridle
+SwayNC
+mecanismo de wallpaper
+```
 
-## 4. Validar a identidade visual
+Não devem existir processos duplicados decorrentes de entradas concorrentes.
 
-Confirme que a identidade visual permanece consistente em toda a sessão.
+## 4. Validar Waybar
 
-Verifique:
+Confirme que:
 
-* temas;
-* ícones;
-* cursores;
-* tipografia;
-* escalas;
-* renderização.
+* a barra ocupa corretamente o output;
+* workspaces ficam à esquerda;
+* janela ativa fica ao centro;
+* status do sistema fica à direita;
+* não existem erros de parsing JSONC.
 
----
+## 5. Validar bloqueio e ciclo de vida
 
-## 5. Validar integrações
+Teste Hyprlock manualmente e confirme autenticação e retorno à sessão.
 
-Confirme que os componentes interagem corretamente entre si.
+Valide os eventos definidos pelo Hypridle, incluindo bloqueio automático, gerenciamento do monitor, suspensão e retomada.
 
-Considere, quando aplicável:
+## 6. Validar launcher e notificações
 
-* abertura do terminal pelo lançador;
-* abertura de arquivos pelo gerenciador;
-* notificações do sistema;
-* bloqueio automático da sessão;
-* restauração após desbloqueio.
+Confirme que:
 
----
+* Rofi abre sem bindings duplicados;
+* aplicações podem ser localizadas e iniciadas;
+* SwayNC recebe notificações;
+* o histórico e a central estão acessíveis.
 
-## 6. Validar desempenho
+## 7. Validar aplicações fundamentais
 
-Utilize a sessão normalmente durante alguns minutos.
+Teste:
 
-Observe:
+```text
+Kitty
+Thunar
+```
 
-* estabilidade;
-* consumo de recursos;
-* responsividade;
-* fluidez das animações;
-* ausência de falhas perceptíveis.
+Confirme os atalhos globais configurados em `70-keybindings.conf`.
 
----
+## 8. Validar aparência
 
-## 7. Revisar registros da sessão
+Revise Hyprland, Waybar, Hyprlock, Rofi, SwayNC, Kitty, Thunar e aplicações GTK em conjunto.
 
-Analise os registros relacionados ao ambiente gráfico.
+Confirme tema, ícones, cursor, tipografia, wallpaper, contraste e legibilidade.
 
-Confirme que não existem erros críticos, falhas recorrentes ou avisos que comprometam a operação da workstation.
+## 9. Revisar logs
 
----
+Analise logs da sessão e serviços relacionados.
 
-## 8. Registrar o estado do desktop
+Erros críticos ou recorrentes deverão ser investigados antes de avançar.
 
-Documente observações relevantes, limitações conhecidas ou ajustes futuros antes de iniciar a próxima fase do projeto.
+## 10. Registrar o resultado
+
+Registre o resultado objetivo da validação e as pendências conhecidas.
+
+Warnings aceitos devem ser documentados. Falhas obrigatórias impedem o avanço.
 
 ---
 
 # Verificação
 
-Confirme que:
+A fase poderá ser considerada concluída somente quando:
 
-* a sessão gráfica inicia corretamente;
-* todas as capacidades previstas estão disponíveis;
-* os componentes iniciam automaticamente quando esperado;
-* a identidade visual é consistente;
-* o ambiente permanece estável durante a utilização;
-* não existem erros críticos nos registros da sessão;
-* não existem pendências que impeçam o início da fase **04-development**.
+* o login exigir autenticação;
+* Hyprland iniciar normalmente;
+* `hyprctl configerrors` estiver limpo;
+* Waybar, Hypridle e SwayNC estiverem operacionais;
+* o wallpaper estiver carregado quando configurado;
+* Hyprlock funcionar;
+* Rofi não apresentar conflitos de bindings;
+* Kitty e Thunar funcionarem;
+* atalhos globais estiverem registrados uma única vez;
+* a aparência permanecer coerente;
+* não existirem erros críticos que impeçam uso normal.
 
 ---
 
 # Problemas comuns
 
-## Sessão instável
+## Hyprland apresenta erros de configuração
 
-Identifique o componente responsável e retorne ao playbook correspondente antes de prosseguir.
+Utilize `hyprctl configerrors` e `hyprctl getoption` para localizar a opção incompatível. Corrija o playbook e o script responsáveis, não apenas o arquivo local.
 
----
+## Waybar não aparece
 
-## Componente não inicia
+Execute `waybar` manualmente e corrija primeiro erros de parsing. Depois valide sua entrada em `50-autostart.conf`.
 
-Revise sua instalação, configuração e integração com a sessão gráfica.
+## Rofi exibe bindings duplicados
 
----
+Compare `rofi -list-keybindings` com `~/.config/rofi/config.rasi` e remova redefinições conflitantes na fonte versionada.
 
-## Aparência inconsistente
+## Sessão inicia sem autenticação
 
-Compare a configuração atual com a identidade visual definida pelo projeto.
-
----
-
-## Integrações incompletas
-
-Confirme que os componentes previstos foram corretamente registrados e inicializados pela sessão gráfica.
-
----
-
-## Problemas de desempenho
-
-Analise os registros do sistema, a utilização de recursos e a configuração do compositor antes de prosseguir.
+Revise a configuração de `greetd` e elimine autologin ou inicialização automática via perfil do shell.
 
 ---
 
 # Próximo playbook
 
-Com a fase **03-desktop** validada, prossiga para:
+Somente após aprovação deste gate:
 
 ```text
 04-development/
@@ -195,12 +218,13 @@ Com a fase **03-desktop** validada, prossiga para:
 # Referências
 
 * Architecture Overview
-* Playbooks da fase **03-desktop**
-* ADR-0004 — Single Responsibility Playbooks
-* ADR-0005 — Modularize Configuration by Capability
+* Playbooks da fase `03-desktop`
+* ADR-0005 — Modularizar configurações por capacidade
+* ADR-0006 — Separação entre instalação e configuração
+* ADR-0008 — Autenticação e inicialização da sessão gráfica
 
 ---
 
 # Lições aprendidas
 
-Registrar aqui inconsistências identificadas durante a validação, melhorias incorporadas ao ambiente gráfico ou observações relevantes para futuras instalações.
+A validação final deve usar o estado real da sessão, e não apenas a existência de arquivos. Erros de compatibilidade do Hyprland, parsing da Waybar e bindings do Rofi só se tornaram visíveis durante a execução integrada, reforçando a necessidade deste gate antes da fase seguinte.
