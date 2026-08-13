@@ -1,287 +1,179 @@
 ---
-
-title: First Boot Validation
-version: 1.0
+title: Validar o primeiro boot
+version: 1.1
 status: Stable
 author: Rafael
-last_review: 2026-08-01
-phase: Installation
-playbook: 18
+last_review: 2026-08-12
 related:
 
-* phase.yaml
 * architecture.md
+* ADR-0002
+* ADR-0004
 
 ---
 
-# First Boot Validation
+# 18 — Validar o primeiro boot
 
 ## Objetivo
 
-Validar que a instalação foi concluída com sucesso e que o sistema está pronto para iniciar a próxima milestone (**Base System**).
+Validar que a instalação inicial foi concluída com sucesso e que o sistema está pronto para iniciar a fase `02-system`.
 
-Este playbook **não modifica o sistema**.
-
-Seu objetivo é apenas confirmar que todos os componentes instalados nas etapas anteriores estão funcionando corretamente.
+Este playbook não modifica o sistema.
 
 ---
 
 # Pré-requisitos
 
-A instalação deve ter sido concluída até o playbook anterior:
-
-```text
-17-install-bootloader
-```
-
-O sistema deve ter sido reiniciado.
-
-O login deve ser realizado utilizando o usuário criado durante a instalação.
+* Playbook `17-install-bootloader.md` concluído.
+* Sistema reiniciado a partir do disco instalado.
+* Login realizado com o usuário criado durante a instalação.
 
 ---
 
-# Checklist
+# Resultado esperado
 
-## Bootloader
+Ao concluir este playbook:
 
-Verificar:
+* boot UEFI estará funcional;
+* systemd-boot estará operacional;
+* raiz LUKS2/Btrfs estará montada corretamente;
+* subvolumes previstos estarão disponíveis;
+* timezone e locale estarão configurados;
+* usuário administrativo e sudo estarão funcionais;
+* NetworkManager estará operacional;
+* não existirão falhas críticas que impeçam o início de `02-system`.
+
+---
+
+# Procedimento
+
+## 1. Validar o bootloader
 
 ```bash
 bootctl status
 ```
 
-Resultado esperado:
+Confirme que o systemd-boot está instalado e que a entrada utilizada para iniciar o sistema é reconhecida.
 
-* systemd-boot instalado
-* Boot Loader Specification reconhecida
-* entrada padrão localizada
-
----
-
-## Sistema de arquivos raiz
-
-Verificar:
+## 2. Validar a raiz e a ESP
 
 ```bash
 findmnt /
-```
-
-Resultado esperado:
-
-* Btrfs
-* subvolume `@`
-
----
-
-## EFI
-
-Verificar:
-
-```bash
 findmnt /boot
 ```
 
-Resultado esperado:
+Confirme:
 
-* ESP montada
-* sistema de arquivos FAT32
+* `/` em Btrfs usando o subvolume esperado;
+* `/boot` montado a partir da ESP FAT32.
 
----
-
-## LUKS
-
-Verificar:
+## 3. Validar LUKS e armazenamento
 
 ```bash
 lsblk -f
-```
-
-Resultado esperado:
-
-* partição criptografada
-* mapper `cryptroot`
-* Btrfs montado corretamente
-
----
-
-## Subvolumes
-
-Verificar:
-
-```bash
 findmnt
 ```
 
-Confirmar a presença dos seguintes pontos de montagem:
+Confirme a presença do volume criptografado, mapper esperado e pontos de montagem previstos pela arquitetura.
 
-* /
-* /home
-* /var
-* /var/log
-* /var/cache
-* /var/cache/pacman/pkg
-* /var/lib/docker
-* /.snapshots
-
----
-
-## Timezone
-
-Verificar:
+## 4. Validar timezone e locale
 
 ```bash
 timedatectl
-```
-
-Resultado esperado:
-
-```text
-Time zone: America/Sao_Paulo
-```
-
----
-
-## Locale
-
-Verificar:
-
-```bash
 locale
 ```
 
-Resultado esperado:
+A baseline atual utiliza:
 
 ```text
-LANG=pt_BR.UTF-8
+America/Sao_Paulo
+pt_BR.UTF-8
 ```
 
----
-
-## Usuário
-
-Verificar:
+## 5. Validar usuário e sudo
 
 ```bash
 id
-```
-
-Confirmar que o usuário pertence ao grupo:
-
-```text
-wheel
-```
-
----
-
-## sudo
-
-Verificar:
-
-```bash
 sudo -v
 ```
 
-Resultado esperado:
+Confirme que o usuário possui o acesso administrativo previsto pelo projeto.
 
-Nenhum erro.
-
----
-
-## NetworkManager
-
-Verificar:
+## 6. Validar rede
 
 ```bash
-systemctl status NetworkManager
+systemctl status NetworkManager --no-pager
 ```
 
-Resultado esperado:
+Confirme que o serviço está operacional.
 
-```text
-active (running)
-```
-
----
-
-## Kernel
-
-Verificar:
+## 7. Validar kernel
 
 ```bash
 uname -r
 ```
 
-Confirmar que o kernel instalado é carregado corretamente.
+Confirme que o kernel instalado foi carregado corretamente.
 
----
-
-## Microcode
-
-Verificar:
-
-```bash
-journalctl -b | grep microcode
-```
-
-Confirmar que o microcode Intel foi carregado durante o boot.
-
----
-
-## Serviços
-
-Verificar:
+## 8. Validar falhas de serviços
 
 ```bash
 systemctl --failed
 ```
 
-Resultado esperado:
+Investigue qualquer unidade em estado de falha antes de avançar.
+
+---
+
+# Verificação
+
+Confirme que:
+
+* o sistema inicia pelo disco instalado;
+* o bootloader funciona;
+* LUKS2 e Btrfs estão montados conforme a arquitetura;
+* timezone e locale estão corretos;
+* usuário e sudo funcionam;
+* NetworkManager está operacional;
+* não existem falhas críticas de serviços.
+
+Não valide nesta fase capacidades pertencentes a `02-system`, como instalação de microcode ou atualização completa da linha de base. Essas responsabilidades serão tratadas pelos playbooks correspondentes da próxima fase.
+
+---
+
+# Problemas comuns
+
+## Boot falha antes do desbloqueio
+
+Revise initramfs, parâmetros do kernel e configuração do bootloader.
+
+## Root filesystem não corresponde ao esperado
+
+Revise `fstab`, subvolumes e parâmetros de montagem antes de prosseguir.
+
+## Serviço essencial em falha
+
+Corrija a causa antes de iniciar `02-system`.
+
+---
+
+# Próximo playbook
 
 ```text
-0 loaded units listed.
+02-system/
+01-update-system.md
 ```
 
 ---
 
-## Atualização
+# Referências
 
-Verificar:
-
-```bash
-sudo pacman -Syu
-```
-
-Resultado esperado:
-
-Atualização executada sem erros.
+* architecture.md
+* Arch Wiki — Installation guide
+* Arch Wiki — systemd-boot
 
 ---
 
-# Critério de conclusão
+# Lições aprendidas
 
-A milestone é considerada concluída quando todas as verificações acima forem aprovadas.
-
-Ao final desta etapa o sistema deverá possuir:
-
-* Boot UEFI funcional
-* systemd-boot configurado
-* raiz criptografada com LUKS2
-* Btrfs com subvolumes
-* timezone configurado
-* locale configurado
-* usuário administrativo
-* sudo funcional
-* NetworkManager habilitado
-* sistema inicializando corretamente
-
----
-
-# Próxima fase
-
-Após a validação do primeiro boot, o projeto segue para:
-
-```text
-Milestone 2 — Base System
-```
-
-Nenhuma configuração adicional pertencente ao ambiente de desenvolvimento, desktop ou aplicações deve ser realizada antes do início da próxima milestone.
+A validação de primeiro boot deve permanecer estritamente dentro das capacidades entregues pela fase de instalação. Verificar ou atualizar componentes que pertencem à fase seguinte quebra os limites de responsabilidade do fluxo.
