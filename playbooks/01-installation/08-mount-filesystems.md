@@ -1,142 +1,56 @@
 ---
-
-title: Montar os sistemas de arquivos
-version: 1.0
+title: Montar filesystems de instalação
+version: 1.1
 status: Draft
 author: Rafael
-last_review: 2026-07-31
+last_review: 2026-08-13
 related:
-
-* architecture.md
-* ADR-0002
-* ADR-0003
-* ADR-0004
-
+  - ADR-0009
+  - 07-format-efi.md
+  - 09-install-base-system.md
 ---
 
-# 07 — Montar os sistemas de arquivos
+# 08 — Montar filesystems
 
 ## Objetivo
 
-Montar o sistema de arquivos utilizando a estrutura de subvolumes definida pela arquitetura do projeto.
+Montar em `/mnt` a árvore que receberá o sistema base.
 
-Ao final deste playbook, o ambiente estará preparado para a instalação do sistema base.
+A relação subvolume → mountpoint vem exclusivamente de:
 
----
+```text
+system/storage/btrfs-layout.tsv
+```
 
-# Pré-requisitos
+As opções Btrfs padrão são:
 
-* Volume LUKS2 aberto.
-* Sistema de arquivos Btrfs criado.
-* Todos os subvolumes criados.
+```text
+noatime,compress=zstd:3
+```
 
----
+A ESP é montada separadamente em `/mnt/boot`.
 
-# Resultado esperado
+## Execução
 
-Ao concluir este playbook:
+```bash
+sudo profiles/dell-latitude-e5470/01-installation/08-mount-filesystems/run.sh \
+  --efi-partition /dev/<esp>
+```
 
-* o subvolume raiz estará montado em `/mnt`;
-* os demais subvolumes estarão montados em seus respectivos pontos de montagem;
-* a partição EFI estará montada no local definido pela arquitetura.
+O Btrfs padrão é `/dev/mapper/cryptroot`. O script valida ambos os dispositivos, a ESP, o filesystem Btrfs e que o root de montagem ainda não está em uso.
 
----
+A operação exige confirmação `MOUNT`.
 
-# Procedimento
+## Segurança e rollback
 
-## 1. Montar o subvolume raiz
+Os mounts são registrados na ordem em que são criados. Se o passo não chegar ao fim, o cleanup tenta desmontá-los na ordem inversa. Quando o passo conclui com sucesso, os mounts permanecem ativos para `pacstrap`.
 
-Monte o subvolume `@` em `/mnt`.
+## Verificação
 
-Utilize as opções de montagem definidas pela arquitetura do projeto.
+Cada mount Btrfs deve apontar para o subvolume correspondente no layout e conter `noatime` e `compress=zstd:3`. `/mnt/boot` deve ser `vfat`.
 
----
-
-## 2. Criar os pontos de montagem
-
-Crie todos os diretórios necessários para os demais subvolumes.
-
-Os diretórios deverão refletir a estrutura final do sistema.
-
----
-
-## 3. Montar os demais subvolumes
-
-Monte os subvolumes nos respectivos pontos de montagem:
-
-| Subvolume    | Ponto de montagem           |
-| ------------ | --------------------------- |
-| `@home`      | `/mnt/home`                 |
-| `@var`       | `/mnt/var`                  |
-| `@var_log`   | `/mnt/var/log`              |
-| `@var_cache` | `/mnt/var/cache`            |
-| `@pkg`       | `/mnt/var/cache/pacman/pkg` |
-| `@docker`    | `/mnt/var/lib/docker`       |
-| `@snapshots` | `/mnt/.snapshots`           |
-
----
-
-## 4. Montar a partição EFI
-
-Monte a EFI System Partition no diretório definido pela arquitetura.
-
----
-
-## 5. Revisar a estrutura montada
-
-Confirme que todos os pontos de montagem estão ativos antes de iniciar a instalação do sistema.
-
----
-
-# Verificação
-
-Confirme que:
-
-* todos os subvolumes estão montados;
-* cada subvolume está montado no diretório correto;
-* a partição EFI está acessível;
-* a árvore de diretórios corresponde à arquitetura do projeto.
-
----
-
-# Problemas comuns
-
-## Subvolume não encontrado
-
-Verifique se o subvolume foi criado no playbook anterior.
-
----
-
-## Ponto de montagem inexistente
-
-Crie o diretório correspondente antes da montagem.
-
----
-
-## Partição EFI montada incorretamente
-
-Confirme se a ESP foi selecionada corretamente e se está montada no ponto previsto pela arquitetura.
-
----
-
-# Próximo playbook
-
-Após validar todas as montagens, prossiga para:
+## Próximo playbook
 
 ```text
 09-install-base-system.md
 ```
-
----
-
-# Referências
-
-* Arch Wiki — Btrfs
-* Arch Wiki — Installation Guide
-* Arch Wiki — EFI System Partition
-
----
-
-# Lições aprendidas
-
-Registrar ajustes nas opções de montagem, alterações na estrutura de subvolumes ou incompatibilidades observadas durante futuras instalações.
