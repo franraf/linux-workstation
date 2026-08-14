@@ -37,6 +37,9 @@ for phase in 01-installation 02-system 03-desktop 04-development; do
   else
     fail "Implemented phase manifest missing: $phase"
   fi
+
+  phase_status="$(manifest_phase_field "$phase_file" status)"
+  [[ "$phase_status" == "validated" ]] && pass "Validated phase status: $phase" || fail "Unexpected phase status for $phase: ${phase_status:-missing}"
 done
 
 for phase in 05-operations 06-security; do
@@ -70,6 +73,12 @@ if "${REPO_ROOT}/scripts/workstation" run-phase 04-development --from not-a-step
 else
   pass "Unknown resume step is rejected"
 fi
+
+status_output="$("${REPO_ROOT}/scripts/workstation" status)"
+[[ "$status_output" == *"01-installation          validated"* && "$status_output" == *"04-development           validated"* ]] &&
+  pass "Status reports validated implemented phases" || fail "Status does not report validated phase state"
+[[ "$status_output" == *"05-operations            planned"* && "$status_output" == *"Next phase: 05-operations (planned)"* ]] &&
+  pass "Status identifies the next planned phase" || fail "Status does not identify the next planned phase"
 
 printf '\nAutomation runner static summary\n'
 printf 'Passed: %d\nFailed: %d\n' "$pass_count" "$fail_count"
