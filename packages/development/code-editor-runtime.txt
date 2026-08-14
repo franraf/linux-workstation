@@ -2,3 +2,6 @@
 libsecret
 libx11
 libxkbfile
+
+# User configuration convergence
+chezmoi
