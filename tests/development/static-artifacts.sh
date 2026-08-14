@@ -31,13 +31,7 @@ for step in \
   pass "Bash syntax: ${run_file#${REPO_ROOT}/}"
 done
 
-for package_file in \
-  version-control \
-  shell \
-  code-editor-runtime \
-  container-platform \
-  cli-tools \
-  ai-tooling; do
+for package_file in version-control shell code-editor-runtime container-platform cli-tools ai-tooling; do
   require_file "${REPO_ROOT}/packages/development/${package_file}.txt"
 done
 
@@ -50,11 +44,15 @@ for module in environment aliases completion functions integrations prompt; do
   require_file "${REPO_ROOT}/system/development/zsh/modules/${module}.zsh"
 done
 
-require_file "${REPO_ROOT}/dotfiles/vscode/settings.json"
-require_file "${REPO_ROOT}/dotfiles/vscode/keybindings.json"
+require_file "${REPO_ROOT}/.chezmoiroot"
+[[ "$(<"${REPO_ROOT}/.chezmoiroot")" == "dotfiles/home" ]] || fail ".chezmoiroot does not point to dotfiles/home"
+pass ".chezmoiroot points to dotfiles/home"
+require_file "${REPO_ROOT}/dotfiles/home/private_dot_config/private_Code/User/settings.json"
+require_file "${REPO_ROOT}/dotfiles/home/private_dot_config/private_Code/User/keybindings.json"
 require_file "${REPO_ROOT}/dotfiles/vscode/extensions.txt"
 require_file "${REPO_ROOT}/dotfiles/ai/README.md"
 require_file "${REPO_ROOT}/docs/adr/0011-upstream-distribution-exception.md"
+require_file "${REPO_ROOT}/docs/adr/0014-chezmoi-managed-user-configuration.md"
 require_file "${REPO_ROOT}/tests/development/runtime-state.sh"
 bash -n "${REPO_ROOT}/tests/development/runtime-state.sh" || fail "Runtime validator syntax failed"
 pass "Bash syntax: tests/development/runtime-state.sh"
