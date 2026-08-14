@@ -4,13 +4,13 @@ set -Eeuo pipefail
 
 readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 readonly REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/.." && pwd)"
-readonly DEFAULT_PROFILE="dell-latitude-e5470"
 
 source "${REPO_ROOT}/scripts/lib/manifest.sh"
 
 usage() {
   cat <<'EOF'
 Usage:
+  scripts/workstation bootstrap [--profile <id>]
   scripts/workstation status [--profile <id>]
   scripts/workstation phases [--profile <id>]
   scripts/workstation steps <phase> [--profile <id>]
@@ -18,6 +18,7 @@ Usage:
   scripts/workstation run-phase <phase> [--from <step>] [--plan] [--profile <id>]
 
 Examples:
+  scripts/workstation bootstrap
   scripts/workstation status
   scripts/workstation phases
   scripts/workstation steps 04-development
@@ -32,7 +33,7 @@ fail() {
   exit 1
 }
 
-profile_id="$DEFAULT_PROFILE"
+profile_id=""
 command_name="${1:-}"
 [[ -n "$command_name" ]] || { usage; exit 1; }
 shift || true
@@ -43,7 +44,7 @@ from_step=""
 plan_only=false
 
 case "$command_name" in
-  status|phases)
+  bootstrap|status|phases)
     ;;
   steps|run-phase)
     phase_id="${1:-}"
@@ -93,6 +94,34 @@ while (($# > 0)); do
   esac
 done
 
+discover_profile() {
+  local profile_file_candidate
+  local candidate_id
+  local -a candidates=()
+
+  for profile_file_candidate in "${REPO_ROOT}"/profiles/*/profile.yaml; do
+    [[ -f "$profile_file_candidate" ]] || continue
+    candidate_id="$(basename "$(dirname "$profile_file_candidate")")"
+    candidates+=("$candidate_id")
+  done
+
+  case "${#candidates[@]}" in
+    0)
+      fail "No profile manifests were found under profiles/."
+      ;;
+    1)
+      printf '%s\n' "${candidates[0]}"
+      ;;
+    *)
+      fail "Multiple profiles are available (${candidates[*]}). Select one with --profile <id>."
+      ;;
+  esac
+}
+
+if [[ -z "$profile_id" ]]; then
+  profile_id="$(discover_profile)"
+fi
+
 profile_root="${REPO_ROOT}/profiles/${profile_id}"
 profile_file="${profile_root}/profile.yaml"
 [[ -f "$profile_file" ]] || fail "Profile not found: $profile_id"
@@ -118,6 +147,52 @@ step_declared() {
     [[ "$step" == "$wanted" ]] && return 0
   done < <(manifest_phase_steps "$phase_file")
   return 1
+}
+
+phase_status_for() {
+  local phase="$1"
+  local phase_file
+  local phase_status
+
+  phase_file="$(phase_file_for "$phase")"
+  if [[ -f "$phase_file" ]]; then
+    phase_status="$(manifest_phase_field "$phase_file" status)"
+    [[ -n "$phase_status" ]] || phase_status="implemented"
+  else
+    phase_status="planned"
+  fi
+
+  printf '%s\n' "$phase_status"
+}
+
+find_next_phase() {
+  local phase
+  local phase_status
+
+  next_phase=""
+  next_status=""
+
+  while IFS= read -r phase; do
+    phase_status="$(phase_status_for "$phase")"
+    if [[ "$phase_status" != "validated" ]]; then
+      next_phase="$phase"
+      next_status="$phase_status"
+      return 0
+    fi
+  done < <(manifest_profile_phases "$profile_file")
+}
+
+print_status_table() {
+  local phase
+  local phase_status
+
+  printf '%-24s %-12s\n' 'Phase' 'Status'
+  printf '%-24s %-12s\n' '------------------------' '------------'
+
+  while IFS= read -r phase; do
+    phase_status="$(phase_status_for "$phase")"
+    printf '%-24s %-12s\n' "$phase" "$phase_status"
+  done < <(manifest_profile_phases "$profile_file")
 }
 
 resolve_step() {
@@ -165,30 +240,37 @@ execute_step() {
 }
 
 case "$command_name" in
+  bootstrap)
+    printf 'Linux Workstation bootstrap\n'
+    printf '===========================\n\n'
+    printf 'Repository: %s\n' "$REPO_ROOT"
+    printf 'Profile:    %s\n\n' "$profile_id"
+
+    print_status_table
+    find_next_phase
+
+    printf '\nNext action\n-----------\n'
+    if [[ -z "$next_phase" ]]; then
+      printf 'All declared phases are validated. No phase action is pending.\n'
+    elif [[ "$next_status" == "planned" ]]; then
+      printf 'Phase %s is planned but not implemented yet.\n' "$next_phase"
+      printf 'No execution will be attempted. Add its phase manifest and playbooks before running it.\n'
+    else
+      printf 'Phase %s is %s and is the next actionable phase.\n' "$next_phase" "$next_status"
+      printf 'Inspect the execution plan with:\n'
+      printf '  ./scripts/workstation run-phase %s --plan --profile %s\n' "$next_phase" "$profile_id"
+    fi
+
+    printf '\nUseful commands\n---------------\n'
+    printf '  make status\n'
+    printf '  make validate-automation\n'
+    [[ -n "$next_phase" && "$next_status" != "planned" ]] && printf '  make plan-phase PHASE=%s\n' "$next_phase"
+    ;;
+
   status)
     printf 'Profile: %s\n\n' "$profile_id"
-    printf '%-24s %-12s\n' 'Phase' 'Status'
-    printf '%-24s %-12s\n' '------------------------' '------------'
-
-    next_phase=""
-    next_status=""
-
-    while IFS= read -r phase; do
-      phase_file="$(phase_file_for "$phase")"
-      if [[ -f "$phase_file" ]]; then
-        phase_status="$(manifest_phase_field "$phase_file" status)"
-        [[ -n "$phase_status" ]] || phase_status="implemented"
-      else
-        phase_status="planned"
-      fi
-
-      printf '%-24s %-12s\n' "$phase" "$phase_status"
-
-      if [[ -z "$next_phase" && "$phase_status" != "validated" ]]; then
-        next_phase="$phase"
-        next_status="$phase_status"
-      fi
-    done < <(manifest_profile_phases "$profile_file")
+    print_status_table
+    find_next_phase
 
     printf '\n'
     if [[ -n "$next_phase" ]]; then
