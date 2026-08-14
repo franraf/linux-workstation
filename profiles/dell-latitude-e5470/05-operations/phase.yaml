@@ -1,0 +1,76 @@
+---
+schema_version: "1.0"
+
+phase:
+  id: 05-operations
+  name: Operations
+  description: >
+    Manutenção contínua, observabilidade operacional, snapshots, backup,
+    recuperação e procedimentos de disaster recovery da workstation.
+  status: draft
+
+profile:
+  id: dell-latitude-e5470
+  manifest: ../profile.yaml
+
+execution:
+  order:
+    - 01-maintenance-policy
+    - 02-system-updates
+    - 03-health-checks
+    - 04-snapshots-and-retention
+    - 05-backup
+    - 06-recovery
+    - 07-disaster-recovery
+    - 08-operations-validation
+  stop_on_error: true
+  validate_after_each_step: true
+
+steps:
+  01-maintenance-policy:
+    mode: manual
+    destructive: false
+    playbook: ../../../playbooks/05-operations/01-maintenance-policy.md
+
+  02-system-updates:
+    mode: manual
+    destructive: false
+    playbook: ../../../playbooks/05-operations/02-system-updates.md
+
+  03-health-checks:
+    mode: manual
+    destructive: false
+    playbook: ../../../playbooks/05-operations/03-health-checks.md
+
+  04-snapshots-and-retention:
+    mode: manual
+    destructive: false
+    playbook: ../../../playbooks/05-operations/04-snapshots-and-retention.md
+
+  05-backup:
+    mode: manual
+    destructive: false
+    playbook: ../../../playbooks/05-operations/05-backup.md
+
+  06-recovery:
+    mode: manual
+    destructive: true
+    playbook: ../../../playbooks/05-operations/06-recovery.md
+
+  07-disaster-recovery:
+    mode: manual
+    destructive: true
+    playbook: ../../../playbooks/05-operations/07-disaster-recovery.md
+
+  08-operations-validation:
+    mode: validation
+    destructive: false
+    playbook: ../../../playbooks/05-operations/08-operations-validation.md
+
+validation:
+  final_step: 08-operations-validation
+  required_before_next_phase: true
+
+metadata:
+  created_at: 2026-08-14
+  last_review: 2026-08-14
