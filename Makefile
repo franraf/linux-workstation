@@ -3,11 +3,14 @@ PHASE ?=
 STEP ?=
 FROM ?=
 
-.PHONY: help status phases steps run-step run-phase plan-phase validate-automation
+.PHONY: help bootstrap status phases steps run-step run-phase plan-phase validate-automation
 
 help:
 	@printf '%s\n' \
 	  'Linux Workstation repository commands' \
+	  '' \
+	  '  make bootstrap' \
+	  '      Detect the selected profile, summarize state and show the next safe action.' \
 	  '' \
 	  '  make status' \
 	  '      Show phase lifecycle status and the next planned phase.' \
@@ -31,6 +34,9 @@ help:
 	  '      Validate the runner and manifest parser.' \
 	  '' \
 	  'Optional: PROFILE=<profile-id> (default: dell-latitude-e5470)'
+
+bootstrap:
+	@./scripts/workstation bootstrap --profile "$(PROFILE)"
 
 status:
 	@./scripts/workstation status --profile "$(PROFILE)"
