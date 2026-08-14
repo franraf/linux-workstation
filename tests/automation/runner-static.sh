@@ -80,6 +80,14 @@ status_output="$("${REPO_ROOT}/scripts/workstation" status)"
 [[ "$status_output" == *"05-operations            planned"* && "$status_output" == *"Next phase: 05-operations (planned)"* ]] &&
   pass "Status identifies the next planned phase" || fail "Status does not identify the next planned phase"
 
+bootstrap_output="$("${REPO_ROOT}/scripts/workstation" bootstrap)"
+[[ "$bootstrap_output" == *"Profile:    dell-latitude-e5470"* ]] &&
+  pass "Bootstrap auto-discovers the single repository profile" || fail "Bootstrap profile discovery failed"
+[[ "$bootstrap_output" == *"Phase 05-operations is planned but not implemented yet."* ]] &&
+  pass "Bootstrap reports the next safe repository action" || fail "Bootstrap next-action guidance is incorrect"
+[[ "$bootstrap_output" == *"No execution will be attempted."* ]] &&
+  pass "Bootstrap refuses execution for a planned-only phase" || fail "Bootstrap should not execute a planned-only phase"
+
 printf '\nAutomation runner static summary\n'
 printf 'Passed: %d\nFailed: %d\n' "$pass_count" "$fail_count"
 
