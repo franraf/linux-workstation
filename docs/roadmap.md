@@ -1,12 +1,14 @@
 ---
 title: Roadmap
-version: 2.4
+version: 2.5
 status: Stable
 author: Rafael
 last_review: 2026-08-14
 related:
   - ADR-0002
   - ADR-0012
+  - ADR-0013
+  - ADR-0014
   - architecture.md
 ---
 
@@ -22,7 +24,7 @@ Itens listados aqui representam direção arquitetural e prioridades, não garan
 
 A fundação estrutural está consolidada. As fases 01, 02, 03 e 04 possuem implementação e validações versionadas; a fase 04 também foi exercitada na workstation com seus checks manuais concluídos.
 
-A Milestone 5 — Repository Automation está em andamento. O runner de alto nível orientado por `profile.yaml` e `phase.yaml` já suporta descoberta, status, planejamento, execução supervisionada, retomada explícita e bootstrap seguro. Os gates estáticos também são executados no GitHub Actions.
+A Milestone 5 — Repository Automation está em andamento. O runner de alto nível orientado por `profile.yaml` e `phase.yaml` já suporta descoberta, status, planejamento, execução supervisionada, retomada persistente, gates pré/pós-fase, bootstrap seguro e testes de idempotência. Os gates portáveis são executados no GitHub Actions.
 
 O repositório já possui fontes compartilhadas em `packages/`, `system/` e `dotfiles/`, bibliotecas reutilizáveis em `scripts/lib/` e gates em `tests/`.
 
@@ -123,17 +125,23 @@ Implementado e exercitado até agora:
 * retomada explícita com `--from`;
 * execução supervisionada sem automatizar confirmações destrutivas;
 * bootstrap de alto nível que não executa fases apenas planejadas;
+* estado persistente XDG e retomada segura via `resume`;
+* gates pré e pós-fase orientados pelos manifests;
+* testes de falha/retomada, incluindo falha no post-gate;
+* testes de idempotência em ambiente controlado;
 * parser mínimo de manifests sem dependência de Python, Node.js ou `yq`;
 * comandos convenientes via `Makefile`;
 * gate estático do runner;
-* CI no GitHub Actions executando `make validate-automation` em pushes para `main`, pull requests e execução manual.
+* CI no GitHub Actions executando os gates portáveis;
+* adoção inicial do `chezmoi` para convergência de configuração de usuário, conforme ADR-0014.
+
+Em validação na workstation:
+
+* aplicação dos arquivos de usuário do VS Code através do `chezmoi` usando o próprio repositório como fonte canônica.
 
 Próximos incrementos:
 
-* persistir estado mínimo para retomada segura após falha;
-* integrar gates pré e pós-fase;
-* adicionar testes de idempotência;
-* integrar o `chezmoi` quando adotado operacionalmente;
+* concluir a validação operacional do `chezmoi` na workstation;
 * ampliar a CI conforme novos gates portáveis forem adicionados.
 
 Critério: uma nova instalação pode ser conduzida a partir da ISO e do repositório com somente as intervenções indispensáveis e sem exigir conhecimento dos scripts internos.
