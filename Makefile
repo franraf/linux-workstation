@@ -3,36 +3,25 @@ PHASE ?=
 STEP ?=
 FROM ?=
 
-.PHONY: help bootstrap status execution-status clear-state resume resume-plan phases steps run-step run-phase plan-phase validate-automation
+.PHONY: help bootstrap status execution-status clear-state resume resume-plan phases steps run-step run-phase plan-phase validate-automation validate-resume
 
 help:
 	@printf '%s\n' \
 	  'Linux Workstation repository commands' \
 	  '' \
 	  '  make bootstrap' \
-	  '      Detect the selected profile, summarize state and show the next safe action.' \
 	  '  make status' \
-	  '      Show phase lifecycle status and the next planned phase.' \
 	  '  make execution-status' \
-	  '      Show persisted execution progress for the selected profile.' \
 	  '  make resume-plan' \
-	  '      Show the recovered resume plan without executing it.' \
 	  '  make resume' \
-	  '      Resume from the first uncompleted persisted step.' \
 	  '  make clear-state' \
-	  '      Remove persisted execution progress for the selected profile.' \
 	  '  make phases' \
-	  '      List phases declared by the selected profile.' \
 	  '  make steps PHASE=04-development' \
-	  '      List steps declared by a phase.' \
 	  '  make run-step PHASE=04-development STEP=07-development-validation' \
-	  '      Execute one explicit step through the repository runner.' \
 	  '  make plan-phase PHASE=04-development [FROM=05-cli-tools]' \
-	  '      Show the supervised execution plan without running steps.' \
 	  '  make run-phase PHASE=04-development [FROM=05-cli-tools]' \
-	  '      Execute a phase in manifest order, preserving step confirmations.' \
-	  '  make validate-automation' \
-	  '      Validate the runner and manifest parser.'
+	  '  make validate-resume' \
+	  '  make validate-automation'
 
 bootstrap:
 	@./scripts/workstation bootstrap --profile "$(PROFILE)"
@@ -61,5 +50,8 @@ plan-phase:
 run-phase:
 	@test -n "$(PHASE)" || { echo 'PHASE is required.' >&2; exit 1; }
 	@./scripts/workstation run-phase "$(PHASE)" $(if $(FROM),--from "$(FROM)",) --profile "$(PROFILE)"
+validate-resume:
+	@bash tests/automation/resume-integration.sh
 validate-automation:
 	@bash tests/automation/runner-static.sh
+	@bash tests/automation/resume-integration.sh
