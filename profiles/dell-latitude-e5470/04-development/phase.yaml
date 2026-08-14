@@ -7,7 +7,7 @@ phase:
   description: >
     Ferramentas e configuração do host para desenvolvimento, mantendo
     runtimes e SDKs específicos de projeto fora da workstation.
-  status: in-progress
+  status: validated
 
 profile:
   id: dell-latitude-e5470
@@ -71,7 +71,14 @@ steps:
 validation:
   final_step: 07-development-validation
   required_before_next_phase: true
+  automated: passed
+  manual:
+    github_ssh: passed
+    vscode_zsh: passed
+    dev_container: passed
+    codex_cli: passed
+  validated_at: 2026-08-14
 
 metadata:
   created_at: 2026-08-13
-  last_review: 2026-08-13
+  last_review: 2026-08-14
