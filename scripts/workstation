@@ -1,15 +1,10 @@
 #!/usr/bin/env bash
-
 set -Eeuo pipefail
-
 readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 readonly REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/.." && pwd)"
-
 source "${REPO_ROOT}/scripts/lib/manifest.sh"
 source "${REPO_ROOT}/scripts/lib/state.sh"
-
-usage() {
-  cat <<'EOF'
+usage() { cat <<'EOF'
 Usage:
   scripts/workstation bootstrap [--profile <id>]
   scripts/workstation status [--profile <id>]
@@ -22,221 +17,47 @@ Usage:
   scripts/workstation run-phase <phase> [--from <step>] [--plan] [--profile <id>]
 EOF
 }
-
 fail() { printf '[ERROR] %s\n' "$*" >&2; exit 1; }
-
-profile_id=""
-command_name="${1:-}"
-[[ -n "$command_name" ]] || { usage; exit 1; }
-shift || true
-phase_id=""
-step_id=""
-from_step=""
-plan_only=false
-
+profile_id=""; command_name="${1:-}"; [[ -n "$command_name" ]] || { usage; exit 1; }; shift || true
+phase_id=""; step_id=""; from_step=""; plan_only=false
 case "$command_name" in
   bootstrap|status|execution-status|clear-state|resume|phases) ;;
-  steps|run-phase)
-    phase_id="${1:-}"
-    [[ -n "$phase_id" ]] || fail "A phase id is required."
-    shift
-    ;;
-  run-step)
-    phase_id="${1:-}"
-    step_id="${2:-}"
-    [[ -n "$phase_id" && -n "$step_id" ]] || fail "Phase and step ids are required."
-    shift 2
-    ;;
+  steps|run-phase) phase_id="${1:-}"; [[ -n "$phase_id" ]] || fail "A phase id is required."; shift ;;
+  run-step) phase_id="${1:-}"; step_id="${2:-}"; [[ -n "$phase_id" && -n "$step_id" ]] || fail "Phase and step ids are required."; shift 2 ;;
   -h|--help|help) usage; exit 0 ;;
   *) fail "Unknown command: $command_name" ;;
 esac
-
-while (($# > 0)); do
-  case "$1" in
-    --profile)
-      (($# >= 2)) || fail "Missing value for --profile."
-      profile_id="$2"; shift 2
-      ;;
-    --from)
-      [[ "$command_name" == "run-phase" ]] || fail "--from is only valid with run-phase."
-      (($# >= 2)) || fail "Missing value for --from."
-      from_step="$2"; shift 2
-      ;;
-    --plan)
-      [[ "$command_name" == "run-phase" || "$command_name" == "resume" ]] || fail "--plan is only valid with run-phase or resume."
-      plan_only=true; shift
-      ;;
-    -h|--help) usage; exit 0 ;;
-    *) fail "Unknown argument: $1" ;;
-  esac
-done
-
-discover_profile() {
-  local candidate candidate_id
-  local -a candidates=()
-  for candidate in "${REPO_ROOT}"/profiles/*/profile.yaml; do
-    [[ -f "$candidate" ]] || continue
-    candidate_id="$(basename "$(dirname "$candidate")")"
-    candidates+=("$candidate_id")
-  done
-  case "${#candidates[@]}" in
-    0) fail "No profile manifests were found under profiles/." ;;
-    1) printf '%s\n' "${candidates[0]}" ;;
-    *) fail "Multiple profiles are available (${candidates[*]}). Select one with --profile <id>." ;;
-  esac
-}
-
+while (($# > 0)); do case "$1" in
+  --profile) (($# >= 2)) || fail "Missing value for --profile."; profile_id="$2"; shift 2 ;;
+  --from) [[ "$command_name" == run-phase ]] || fail "--from is only valid with run-phase."; (($# >= 2)) || fail "Missing value for --from."; from_step="$2"; shift 2 ;;
+  --plan) [[ "$command_name" == run-phase || "$command_name" == resume ]] || fail "--plan is only valid with run-phase or resume."; plan_only=true; shift ;;
+  -h|--help) usage; exit 0 ;;
+  *) fail "Unknown argument: $1" ;;
+esac; done
+discover_profile() { local candidate candidate_id; local -a candidates=(); for candidate in "${REPO_ROOT}"/profiles/*/profile.yaml; do [[ -f "$candidate" ]] || continue; candidate_id="$(basename "$(dirname "$candidate")")"; candidates+=("$candidate_id"); done; case "${#candidates[@]}" in 0) fail "No profile manifests were found under profiles/." ;; 1) printf '%s\n' "${candidates[0]}" ;; *) fail "Multiple profiles are available (${candidates[*]}). Select one with --profile <id>." ;; esac; }
 [[ -n "$profile_id" ]] || profile_id="$(discover_profile)"
-profile_root="${REPO_ROOT}/profiles/${profile_id}"
-profile_file="${profile_root}/profile.yaml"
-[[ -f "$profile_file" ]] || fail "Profile not found: $profile_id"
-
+profile_root="${REPO_ROOT}/profiles/${profile_id}"; profile_file="${profile_root}/profile.yaml"; [[ -f "$profile_file" ]] || fail "Profile not found: $profile_id"
 phase_file_for() { printf '%s/%s/phase.yaml\n' "$profile_root" "$1"; }
-
-phase_declared() {
-  local wanted="$1" phase
-  while IFS= read -r phase; do [[ "$phase" == "$wanted" ]] && return 0; done < <(manifest_profile_phases "$profile_file")
-  return 1
-}
-
-step_declared() {
-  local phase_file="$1" wanted="$2" step
-  while IFS= read -r step; do [[ "$step" == "$wanted" ]] && return 0; done < <(manifest_phase_steps "$phase_file")
-  return 1
-}
-
-next_step_after() {
-  local phase_file="$1" completed="$2" step found=false
-  while IFS= read -r step; do
-    if $found; then printf '%s\n' "$step"; return 0; fi
-    [[ "$step" == "$completed" ]] && found=true
-  done < <(manifest_phase_steps "$phase_file")
-  return 1
-}
-
-phase_status_for() {
-  local phase="$1" phase_file phase_status
-  phase_file="$(phase_file_for "$phase")"
-  if [[ -f "$phase_file" ]]; then
-    phase_status="$(manifest_phase_field "$phase_file" status)"
-    [[ -n "$phase_status" ]] || phase_status="implemented"
-  else phase_status="planned"; fi
-  printf '%s\n' "$phase_status"
-}
-
-find_next_phase() {
-  local phase phase_status
-  next_phase=""; next_status=""
-  while IFS= read -r phase; do
-    phase_status="$(phase_status_for "$phase")"
-    if [[ "$phase_status" != "validated" ]]; then next_phase="$phase"; next_status="$phase_status"; return 0; fi
-  done < <(manifest_profile_phases "$profile_file")
-}
-
-print_status_table() {
-  local phase phase_status
-  printf '%-24s %-12s\n' 'Phase' 'Status'
-  printf '%-24s %-12s\n' '------------------------' '------------'
-  while IFS= read -r phase; do phase_status="$(phase_status_for "$phase")"; printf '%-24s %-12s\n' "$phase" "$phase_status"; done < <(manifest_profile_phases "$profile_file")
-}
-
-resolve_step() {
-  local phase_file="$1" step="$2"
-  mode="$(manifest_step_field "$phase_file" "$step" mode)"
-  entrypoint="$(manifest_step_field "$phase_file" "$step" entrypoint)"
-  entrypoint_path=""
-  [[ -z "$entrypoint" ]] || entrypoint_path="${profile_root}/${phase_id}/${entrypoint}"
-}
-
-execute_step() {
-  local step="$1" phase_file="$2"
-  resolve_step "$phase_file" "$step"
-  printf '\n============================================================\nPhase: %s\nStep:  %s\nMode:  %s\n============================================================\n\n' "$phase_id" "$step" "${mode:-unknown}"
-  [[ "$mode" != "manual" ]] || fail "Manual step reached: ${phase_id}/${step}. Follow its playbook, then resume explicitly from the next step."
-  [[ -n "$entrypoint" ]] || fail "Step has no executable entrypoint: ${phase_id}/${step}"
-  [[ -f "$entrypoint_path" ]] || fail "Entrypoint not found: $entrypoint_path"
-  [[ -x "$entrypoint_path" ]] || fail "Entrypoint is not executable: $entrypoint_path"
-  case "$mode" in
-    validation|manual-validation) "$entrypoint_path" ;;
-    *) if ((EUID == 0)); then "$entrypoint_path"; else command -v sudo >/dev/null 2>&1 || fail "sudo is required to execute this step as root."; sudo "$entrypoint_path"; fi ;;
-  esac
-}
-
-validate_saved_state() {
-  local file="$1"
-  saved_profile="$(state_read_field "$file" profile || true)"
-  saved_phase="$(state_read_field "$file" phase || true)"
-  saved_last="$(state_read_field "$file" last_completed_step || true)"
-  saved_next="$(state_read_field "$file" next_step || true)"
-  saved_status="$(state_read_field "$file" status || true)"
-  [[ "$saved_profile" == "$profile_id" ]] || fail "Persisted state belongs to a different profile."
-  phase_declared "$saved_phase" || fail "Persisted phase is no longer declared: $saved_phase"
-  local saved_phase_file="$(phase_file_for "$saved_phase")"
-  [[ -f "$saved_phase_file" ]] || fail "Persisted phase is no longer implemented: $saved_phase"
-  [[ -n "$saved_next" ]] || fail "Persisted state has no next step."
-  step_declared "$saved_phase_file" "$saved_next" || fail "Persisted next step is no longer declared: $saved_next"
-}
-
-run_phase() {
-  local phase_file="$1" start_step="$2" step next_step last_completed="" started=false
-  [[ -z "$start_step" ]] && started=true
-  while IFS= read -r step; do
-    if ! $started; then [[ "$step" == "$start_step" ]] || continue; started=true; fi
-    resolve_step "$phase_file" "$step"
-    if $plan_only; then printf '%-32s %-18s %s\n' "$step" "${mode:-unknown}" "${entrypoint:-manual}"; continue; fi
-    state_write "$profile_id" "$phase_id" "$last_completed" "$step" running
-    execute_step "$step" "$phase_file"
-    last_completed="$step"
-    next_step="$(next_step_after "$phase_file" "$step" || true)"
-    if [[ -n "$next_step" ]]; then state_write "$profile_id" "$phase_id" "$last_completed" "$next_step" interrupted; fi
-  done < <(manifest_phase_steps "$phase_file")
-  if ! $plan_only; then state_clear "$profile_id"; printf '\nPhase completed successfully: %s\n' "$phase_id"; fi
-}
-
+phase_declared() { local wanted="$1" phase; while IFS= read -r phase; do [[ "$phase" == "$wanted" ]] && return 0; done < <(manifest_profile_phases "$profile_file"); return 1; }
+step_declared() { local phase_file="$1" wanted="$2" step; while IFS= read -r step; do [[ "$step" == "$wanted" ]] && return 0; done < <(manifest_phase_steps "$phase_file"); return 1; }
+next_step_after() { local phase_file="$1" completed="$2" step found=false; while IFS= read -r step; do if $found; then printf '%s\n' "$step"; return 0; fi; [[ "$step" == "$completed" ]] && found=true; done < <(manifest_phase_steps "$phase_file"); return 1; }
+phase_status_for() { local phase="$1" phase_file phase_status; phase_file="$(phase_file_for "$phase")"; if [[ -f "$phase_file" ]]; then phase_status="$(manifest_phase_field "$phase_file" status)"; [[ -n "$phase_status" ]] || phase_status=implemented; else phase_status=planned; fi; printf '%s\n' "$phase_status"; }
+find_next_phase() { local phase phase_status; next_phase=""; next_status=""; while IFS= read -r phase; do phase_status="$(phase_status_for "$phase")"; if [[ "$phase_status" != validated ]]; then next_phase="$phase"; next_status="$phase_status"; return 0; fi; done < <(manifest_profile_phases "$profile_file"); }
+print_status_table() { local phase phase_status; printf '%-24s %-12s\n' Phase Status; printf '%-24s %-12s\n' '------------------------' '------------'; while IFS= read -r phase; do phase_status="$(phase_status_for "$phase")"; printf '%-24s %-12s\n' "$phase" "$phase_status"; done < <(manifest_profile_phases "$profile_file"); }
+resolve_step() { local phase_file="$1" step="$2"; mode="$(manifest_step_field "$phase_file" "$step" mode)"; entrypoint="$(manifest_step_field "$phase_file" "$step" entrypoint)"; entrypoint_path=""; [[ -z "$entrypoint" ]] || entrypoint_path="${profile_root}/${phase_id}/${entrypoint}"; }
+execute_step() { local step="$1" phase_file="$2"; resolve_step "$phase_file" "$step"; printf '\n============================================================\nPhase: %s\nStep:  %s\nMode:  %s\n============================================================\n\n' "$phase_id" "$step" "${mode:-unknown}"; [[ "$mode" != manual ]] || fail "Manual step reached: ${phase_id}/${step}. Follow its playbook, then resume explicitly from the next step."; [[ -n "$entrypoint" ]] || fail "Step has no executable entrypoint: ${phase_id}/${step}"; [[ -f "$entrypoint_path" ]] || fail "Entrypoint not found: $entrypoint_path"; [[ -x "$entrypoint_path" ]] || fail "Entrypoint is not executable: $entrypoint_path"; case "$mode" in validation|manual-validation) "$entrypoint_path" ;; *) if ((EUID == 0)); then "$entrypoint_path"; else command -v sudo >/dev/null 2>&1 || fail "sudo is required to execute this step as root."; sudo "$entrypoint_path"; fi ;; esac; }
+validate_saved_state() { local file="$1"; saved_profile="$(state_read_field "$file" profile || true)"; saved_phase="$(state_read_field "$file" phase || true)"; saved_last="$(state_read_field "$file" last_completed_step || true)"; saved_next="$(state_read_field "$file" next_step || true)"; saved_status="$(state_read_field "$file" status || true)"; [[ "$saved_profile" == "$profile_id" ]] || fail "Persisted state belongs to a different profile."; phase_declared "$saved_phase" || fail "Persisted phase is no longer declared: $saved_phase"; local saved_phase_file="$(phase_file_for "$saved_phase")"; [[ -f "$saved_phase_file" ]] || fail "Persisted phase is no longer implemented: $saved_phase"; [[ -n "$saved_next" ]] || fail "Persisted state has no next step."; step_declared "$saved_phase_file" "$saved_next" || fail "Persisted next step is no longer declared: $saved_next"; }
+validate_phase_contract() { local phase_file="$1" final_step required; final_step="$(manifest_validation_field "$phase_file" final_step)"; required="$(manifest_validation_field "$phase_file" required_before_next_phase)"; if [[ -n "$final_step" ]]; then step_declared "$phase_file" "$final_step" || fail "Validation final_step is not declared in execution order: $final_step"; [[ "$(manifest_step_field "$phase_file" "$final_step" mode)" == validation ]] || fail "Validation final_step must use mode=validation: $final_step"; fi; if [[ "$required" == true && -z "$final_step" ]]; then fail "Phase requires validation before the next phase but declares no final_step."; fi; }
+print_pre_gate() { local phase_file="$1"; validate_phase_contract "$phase_file"; printf '[PRE-GATE] manifest contract valid\n'; }
+run_phase() { local phase_file="$1" start_step="$2" step next_step last_completed="" started=false final_step; final_step="$(manifest_validation_field "$phase_file" final_step)"; validate_phase_contract "$phase_file"; [[ -z "$start_step" ]] && started=true; if [[ -z "$start_step" ]]; then print_pre_gate "$phase_file"; fi; while IFS= read -r step; do if ! $started; then [[ "$step" == "$start_step" ]] || continue; started=true; fi; resolve_step "$phase_file" "$step"; if $plan_only; then if [[ "$step" == "$final_step" ]]; then printf '[POST-GATE] '; else printf '            '; fi; printf '%-32s %-18s %s\n' "$step" "${mode:-unknown}" "${entrypoint:-manual}"; continue; fi; state_write "$profile_id" "$phase_id" "$last_completed" "$step" running; [[ "$step" == "$final_step" ]] && printf '\n[POST-GATE] executing declared final validation: %s\n' "$step"; execute_step "$step" "$phase_file"; last_completed="$step"; next_step="$(next_step_after "$phase_file" "$step" || true)"; if [[ -n "$next_step" ]]; then state_write "$profile_id" "$phase_id" "$last_completed" "$next_step" interrupted; fi; done < <(manifest_phase_steps "$phase_file"); if ! $plan_only; then if [[ -n "$final_step" && "$last_completed" != "$final_step" ]]; then fail "Phase ended without completing declared post-gate: $final_step"; fi; state_clear "$profile_id"; printf '\nPhase completed successfully: %s\n' "$phase_id"; fi; }
 case "$command_name" in
-  bootstrap)
-    printf 'Linux Workstation bootstrap\n===========================\n\nRepository: %s\nProfile:    %s\n\n' "$REPO_ROOT" "$profile_id"
-    print_status_table; find_next_phase
-    printf '\nNext action\n-----------\n'
-    if [[ -z "$next_phase" ]]; then printf 'All declared phases are validated. No phase action is pending.\n'
-    elif [[ "$next_status" == planned ]]; then printf 'Phase %s is planned but not implemented yet.\nNo execution will be attempted. Add its phase manifest and playbooks before running it.\n' "$next_phase"
-    else printf 'Phase %s is %s and is the next actionable phase.\n' "$next_phase" "$next_status"; fi
-    ;;
-  status)
-    printf 'Profile: %s\n\n' "$profile_id"; print_status_table; find_next_phase; printf '\n'; [[ -n "$next_phase" ]] && printf 'Next phase: %s (%s)\n' "$next_phase" "$next_status" || printf 'Next phase: none; all declared phases are validated.\n'
-    ;;
-  execution-status)
-    state_file="$(state_file_for_profile "$profile_id")"
-    if [[ ! -f "$state_file" ]]; then printf 'No active execution state for profile %s.\n' "$profile_id"; exit 0; fi
-    validate_saved_state "$state_file"
-    printf 'Profile:             %s\nPhase:               %s\nLast completed step: %s\nNext step:           %s\nStatus:              %s\nState file:          %s\n' "$saved_profile" "$saved_phase" "${saved_last:-none}" "$saved_next" "$saved_status" "$state_file"
-    ;;
-  clear-state)
-    state_clear "$profile_id"; printf 'Execution state cleared for profile %s.\n' "$profile_id"
-    ;;
-  resume)
-    state_file="$(state_file_for_profile "$profile_id")"
-    [[ -f "$state_file" ]] || fail "No active execution state exists for profile $profile_id."
-    validate_saved_state "$state_file"
-    phase_id="$saved_phase"; phase_file="$(phase_file_for "$phase_id")"; from_step="$saved_next"
-    printf 'Recovered execution state\n-------------------------\nProfile: %s\nPhase:   %s\nResume:  %s\n' "$profile_id" "$phase_id" "$from_step"
-    $plan_only && printf 'Mode:    plan only\n'; printf '\n'
-    run_phase "$phase_file" "$from_step"
-    ;;
-  phases)
-    printf 'Profile: %s\n\n' "$profile_id"; while IFS= read -r phase; do [[ -f "$(phase_file_for "$phase")" ]] && printf '%-24s available\n' "$phase" || printf '%-24s planned\n' "$phase"; done < <(manifest_profile_phases "$profile_file")
-    ;;
-  steps)
-    phase_declared "$phase_id" || fail "Phase is not declared by profile: $phase_id"; phase_file="$(phase_file_for "$phase_id")"; [[ -f "$phase_file" ]] || fail "Phase is planned but not implemented: $phase_id"
-    printf 'Profile: %s\nPhase:   %s\n\n' "$profile_id" "$phase_id"; while IFS= read -r step; do mode="$(manifest_step_field "$phase_file" "$step" mode)"; entrypoint="$(manifest_step_field "$phase_file" "$step" entrypoint)"; printf '%-32s %-18s %s\n' "$step" "${mode:-unknown}" "${entrypoint:-manual}"; done < <(manifest_phase_steps "$phase_file")
-    ;;
-  run-step)
-    phase_declared "$phase_id" || fail "Phase is not declared by profile: $phase_id"; phase_file="$(phase_file_for "$phase_id")"; [[ -f "$phase_file" ]] || fail "Phase is planned but not implemented: $phase_id"; step_declared "$phase_file" "$step_id" || fail "Step is not declared in ${phase_id}: ${step_id}"; execute_step "$step_id" "$phase_file"
-    ;;
-  run-phase)
-    phase_declared "$phase_id" || fail "Phase is not declared by profile: $phase_id"; phase_file="$(phase_file_for "$phase_id")"; [[ -f "$phase_file" ]] || fail "Phase is planned but not implemented: $phase_id"
-    [[ -z "$from_step" ]] || step_declared "$phase_file" "$from_step" || fail "Resume step is not declared in ${phase_id}: ${from_step}"
-    printf 'Profile: %s\nPhase:   %s\n' "$profile_id" "$phase_id"; [[ -n "$from_step" ]] && printf 'Resume:  %s\n' "$from_step"; $plan_only && printf 'Mode:    plan only\n'; printf '\n'
-    run_phase "$phase_file" "$from_step"
-    ;;
+  bootstrap) printf 'Linux Workstation bootstrap\n===========================\n\nRepository: %s\nProfile:    %s\n\n' "$REPO_ROOT" "$profile_id"; print_status_table; find_next_phase; printf '\nNext action\n-----------\n'; if [[ -z "$next_phase" ]]; then printf 'All declared phases are validated. No phase action is pending.\n'; elif [[ "$next_status" == planned ]]; then printf 'Phase %s is planned but not implemented yet.\nNo execution will be attempted. Add its phase manifest and playbooks before running it.\n' "$next_phase"; else printf 'Phase %s is %s and is the next actionable phase.\n' "$next_phase" "$next_status"; fi ;;
+  status) printf 'Profile: %s\n\n' "$profile_id"; print_status_table; find_next_phase; printf '\n'; [[ -n "$next_phase" ]] && printf 'Next phase: %s (%s)\n' "$next_phase" "$next_status" || printf 'Next phase: none; all declared phases are validated.\n' ;;
+  execution-status) state_file="$(state_file_for_profile "$profile_id")"; if [[ ! -f "$state_file" ]]; then printf 'No active execution state for profile %s.\n' "$profile_id"; exit 0; fi; validate_saved_state "$state_file"; printf 'Profile:             %s\nPhase:               %s\nLast completed step: %s\nNext step:           %s\nStatus:              %s\nState file:          %s\n' "$saved_profile" "$saved_phase" "${saved_last:-none}" "$saved_next" "$saved_status" "$state_file" ;;
+  clear-state) state_clear "$profile_id"; printf 'Execution state cleared for profile %s.\n' "$profile_id" ;;
+  resume) state_file="$(state_file_for_profile "$profile_id")"; [[ -f "$state_file" ]] || fail "No active execution state exists for profile $profile_id."; validate_saved_state "$state_file"; phase_id="$saved_phase"; phase_file="$(phase_file_for "$phase_id")"; from_step="$saved_next"; printf 'Recovered execution state\n-------------------------\nProfile: %s\nPhase:   %s\nResume:  %s\n' "$profile_id" "$phase_id" "$from_step"; $plan_only && printf 'Mode:    plan only\n'; printf '\n'; run_phase "$phase_file" "$from_step" ;;
+  phases) printf 'Profile: %s\n\n' "$profile_id"; while IFS= read -r phase; do [[ -f "$(phase_file_for "$phase")" ]] && printf '%-24s available\n' "$phase" || printf '%-24s planned\n' "$phase"; done < <(manifest_profile_phases "$profile_file") ;;
+  steps) phase_declared "$phase_id" || fail "Phase is not declared by profile: $phase_id"; phase_file="$(phase_file_for "$phase_id")"; [[ -f "$phase_file" ]] || fail "Phase is planned but not implemented: $phase_id"; printf 'Profile: %s\nPhase:   %s\n\n' "$profile_id" "$phase_id"; while IFS= read -r step; do mode="$(manifest_step_field "$phase_file" "$step" mode)"; entrypoint="$(manifest_step_field "$phase_file" "$step" entrypoint)"; printf '%-32s %-18s %s\n' "$step" "${mode:-unknown}" "${entrypoint:-manual}"; done < <(manifest_phase_steps "$phase_file") ;;
+  run-step) phase_declared "$phase_id" || fail "Phase is not declared by profile: $phase_id"; phase_file="$(phase_file_for "$phase_id")"; [[ -f "$phase_file" ]] || fail "Phase is planned but not implemented: $phase_id"; step_declared "$phase_file" "$step_id" || fail "Step is not declared in ${phase_id}: ${step_id}"; execute_step "$step_id" "$phase_file" ;;
+  run-phase) phase_declared "$phase_id" || fail "Phase is not declared by profile: $phase_id"; phase_file="$(phase_file_for "$phase_id")"; [[ -f "$phase_file" ]] || fail "Phase is planned but not implemented: $phase_id"; [[ -z "$from_step" ]] || step_declared "$phase_file" "$from_step" || fail "Resume step is not declared in ${phase_id}: ${from_step}"; printf 'Profile: %s\nPhase:   %s\n' "$profile_id" "$phase_id"; [[ -n "$from_step" ]] && printf 'Resume:  %s\n' "$from_step"; $plan_only && printf 'Mode:    plan only\n'; printf '\n'; run_phase "$phase_file" "$from_step" ;;
 esac
