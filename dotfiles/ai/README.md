@@ -13,7 +13,7 @@ Project-specific instructions belong to each project repository. This directory 
 Authenticate interactively from the normal user session:
 
 ```bash
-codex --login
+codex login
 ```
 
 Do not store access tokens, API keys or generated credentials in this repository.
