@@ -1,14 +1,15 @@
 ---
 title: Editor de código
-version: 1.2
+version: 1.3
 status: Draft
 author: Rafael
-last_review: 2026-08-13
+last_review: 2026-08-14
 related:
 
 * architecture.md
 * ADR-0005
 * ADR-0011
+* ADR-0014
 
 ---
 
@@ -38,7 +39,7 @@ O comando estável é exposto em:
 /usr/local/bin/code
 ```
 
-O Pacman continua responsável somente pelas dependências de runtime declaradas em:
+O Pacman administra as dependências de runtime e o `chezmoi`, declarados em:
 
 ```text
 packages/development/code-editor-runtime.txt
@@ -46,20 +47,33 @@ packages/development/code-editor-runtime.txt
 
 ## Fontes canônicas
 
-Configuração do usuário:
+Arquivos de usuário gerenciados pelo chezmoi:
 
 ```text
-dotfiles/vscode/
+.chezmoiroot → dotfiles/home
+
+dotfiles/home/private_dot_config/private_Code/User/
 ├── settings.json
-├── keybindings.json
-└── extensions.txt
+└── keybindings.json
+```
+
+Eles convergem para:
+
+```text
+~/.config/Code/User/settings.json
+~/.config/Code/User/keybindings.json
+```
+
+A lista declarativa de extensões permanece em:
+
+```text
+dotfiles/vscode/extensions.txt
 ```
 
 Integração do sistema:
 
 ```text
-system/development/vscode/
-└── code.desktop
+system/development/vscode/code.desktop
 ```
 
 ## Procedimento
@@ -73,15 +87,29 @@ sudo ./03-code-editor/run.sh
 O script:
 
 1. valida o sistema e o usuário normal de destino;
-2. instala dependências de runtime ausentes pelos repositórios oficiais;
+2. instala dependências de runtime e `chezmoi` quando ausentes;
 3. apresenta a origem upstream e solicita confirmação `VSCODE`;
 4. baixa a versão Stable mais recente pelo endpoint oficial Microsoft;
 5. valida a estrutura mínima do arquivo baixado antes de substituir a instalação anterior;
 6. instala o aplicativo em `/opt/visual-studio-code`;
 7. cria o comando `/usr/local/bin/code` e o launcher desktop;
-8. aplica `settings.json` e `keybindings.json` ao usuário;
+8. usa o próprio repositório como source dir do chezmoi e aplica `settings.json` e `keybindings.json`;
 9. instala as extensões declaradas;
-10. valida versão, arquivos canônicos e extensões.
+10. valida versão, arquivos canônicos, convergência do chezmoi e extensões.
+
+## Chezmoi
+
+Conforme ADR-0014, não existe um segundo repositório de dotfiles. O `linux-workstation` continua sendo a fonte canônica.
+
+O script aplica somente os alvos de VS Code relevantes:
+
+```bash
+chezmoi -S <repo-root> apply \
+  ~/.config/Code/User/settings.json \
+  ~/.config/Code/User/keybindings.json
+```
+
+Depois da aplicação, `chezmoi diff` para esses alvos deve estar vazio.
 
 ## Dev Containers
 
@@ -94,16 +122,18 @@ A presença da extensão não significa que Dev Containers já esteja funcional.
 Confirme que:
 
 * `code --version` retorna uma versão;
+* `chezmoi --version` retorna uma versão;
 * `/usr/local/bin/code` aponta para a instalação em `/opt`;
 * o launcher gráfico abre o Visual Studio Code;
-* `settings.json` e `keybindings.json` correspondem às fontes versionadas;
+* `settings.json` e `keybindings.json` correspondem ao source state versionado;
+* `chezmoi -S <repo-root> diff` não mostra mudanças para os dois arquivos gerenciados;
 * todas as extensões declaradas estão instaladas;
 * o terminal integrado utiliza Zsh;
 * operações Git locais funcionam no editor.
 
 ## Atualizações
 
-Executar novamente este playbook baixa a versão Stable mais recente e substitui a instalação upstream de maneira controlada. Pacman não administra os binários do Visual Studio Code.
+Executar novamente este playbook baixa a versão Stable mais recente, converge novamente os arquivos gerenciados pelo chezmoi e substitui a instalação upstream de maneira controlada. Pacman não administra os binários do Visual Studio Code.
 
 ## Próximo playbook
 
@@ -114,6 +144,7 @@ Executar novamente este playbook baixa a versão Stable mais recente e substitui
 ## Referências
 
 * ADR-0011 — Allow upstream distribution for selected host tools
+* ADR-0014 — Chezmoi-managed User Configuration
 * Documentação oficial do Visual Studio Code — Linux
-* Visual Studio Code FAQ — download endpoints
+* Documentação oficial do chezmoi
 * Development Containers Specification
