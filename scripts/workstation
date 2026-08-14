@@ -1,0 +1,164 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+
+readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/.." && pwd)"
+readonly DEFAULT_PROFILE="dell-latitude-e5470"
+
+source "${REPO_ROOT}/scripts/lib/manifest.sh"
+
+usage() {
+  cat <<'EOF'
+Usage:
+  scripts/workstation phases [--profile <id>]
+  scripts/workstation steps <phase> [--profile <id>]
+  scripts/workstation run-step <phase> <step> [--profile <id>]
+
+Examples:
+  scripts/workstation phases
+  scripts/workstation steps 04-development
+  scripts/workstation run-step 04-development 07-development-validation
+EOF
+}
+
+fail() {
+  printf '[ERROR] %s\n' "$*" >&2
+  exit 1
+}
+
+profile_id="$DEFAULT_PROFILE"
+command_name="${1:-}"
+[[ -n "$command_name" ]] || { usage; exit 1; }
+shift || true
+
+phase_id=""
+step_id=""
+
+case "$command_name" in
+  phases)
+    ;;
+  steps)
+    phase_id="${1:-}"
+    [[ -n "$phase_id" ]] || fail "A phase id is required."
+    shift
+    ;;
+  run-step)
+    phase_id="${1:-}"
+    step_id="${2:-}"
+    [[ -n "$phase_id" && -n "$step_id" ]] || fail "Phase and step ids are required."
+    shift 2
+    ;;
+  -h|--help|help)
+    usage
+    exit 0
+    ;;
+  *)
+    fail "Unknown command: $command_name"
+    ;;
+esac
+
+while (($# > 0)); do
+  case "$1" in
+    --profile)
+      (($# >= 2)) || fail "Missing value for --profile."
+      profile_id="$2"
+      shift 2
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      fail "Unknown argument: $1"
+      ;;
+  esac
+done
+
+profile_root="${REPO_ROOT}/profiles/${profile_id}"
+profile_file="${profile_root}/profile.yaml"
+[[ -f "$profile_file" ]] || fail "Profile not found: $profile_id"
+
+phase_file_for() {
+  printf '%s/%s/phase.yaml\n' "$profile_root" "$1"
+}
+
+phase_declared() {
+  local wanted="$1"
+  local phase
+  while IFS= read -r phase; do
+    [[ "$phase" == "$wanted" ]] && return 0
+  done < <(manifest_profile_phases "$profile_file")
+  return 1
+}
+
+step_declared() {
+  local phase_file="$1"
+  local wanted="$2"
+  local step
+  while IFS= read -r step; do
+    [[ "$step" == "$wanted" ]] && return 0
+  done < <(manifest_phase_steps "$phase_file")
+  return 1
+}
+
+case "$command_name" in
+  phases)
+    printf 'Profile: %s\n\n' "$profile_id"
+    while IFS= read -r phase; do
+      phase_file="$(phase_file_for "$phase")"
+      if [[ -f "$phase_file" ]]; then
+        printf '%-24s available\n' "$phase"
+      else
+        printf '%-24s planned\n' "$phase"
+      fi
+    done < <(manifest_profile_phases "$profile_file")
+    ;;
+
+  steps)
+    phase_declared "$phase_id" || fail "Phase is not declared by profile: $phase_id"
+    phase_file="$(phase_file_for "$phase_id")"
+    [[ -f "$phase_file" ]] || fail "Phase is planned but not implemented: $phase_id"
+
+    printf 'Profile: %s\nPhase:   %s\n\n' "$profile_id" "$phase_id"
+    while IFS= read -r step; do
+      mode="$(manifest_step_field "$phase_file" "$step" mode)"
+      entrypoint="$(manifest_step_field "$phase_file" "$step" entrypoint)"
+      printf '%-32s %-18s %s\n' "$step" "${mode:-unknown}" "${entrypoint:-manual}"
+    done < <(manifest_phase_steps "$phase_file")
+    ;;
+
+  run-step)
+    phase_declared "$phase_id" || fail "Phase is not declared by profile: $phase_id"
+    phase_file="$(phase_file_for "$phase_id")"
+    [[ -f "$phase_file" ]] || fail "Phase is planned but not implemented: $phase_id"
+    step_declared "$phase_file" "$step_id" || fail "Step is not declared in ${phase_id}: ${step_id}"
+
+    mode="$(manifest_step_field "$phase_file" "$step_id" mode)"
+    entrypoint="$(manifest_step_field "$phase_file" "$step_id" entrypoint)"
+    [[ -n "$entrypoint" ]] || fail "Step has no executable entrypoint: ${phase_id}/${step_id}"
+
+    entrypoint_path="${profile_root}/${phase_id}/${entrypoint}"
+    [[ -f "$entrypoint_path" ]] || fail "Entrypoint not found: $entrypoint_path"
+    [[ -x "$entrypoint_path" ]] || fail "Entrypoint is not executable: $entrypoint_path"
+
+    printf 'Profile:    %s\nPhase:      %s\nStep:       %s\nMode:       %s\nEntrypoint: %s\n\n' \
+      "$profile_id" "$phase_id" "$step_id" "${mode:-unknown}" "$entrypoint_path"
+
+    case "$mode" in
+      validation|manual-validation)
+        exec "$entrypoint_path"
+        ;;
+      manual)
+        fail "Manual steps are not executed by the runner. Follow the linked playbook."
+        ;;
+      *)
+        if ((EUID == 0)); then
+          exec "$entrypoint_path"
+        fi
+        command -v sudo >/dev/null 2>&1 || fail "sudo is required to execute this step as root."
+        exec sudo "$entrypoint_path"
+        ;;
+    esac
+    ;;
+esac
