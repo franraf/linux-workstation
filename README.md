@@ -52,7 +52,9 @@ A workstation utiliza, entre outros componentes:
 * Git;
 * Zsh + Oh My Zsh + Starship;
 * Visual Studio Code oficial da Microsoft;
-* Codex CLI.
+* Codex CLI;
+* chezmoi para convergência de configuração de usuário;
+* runner declarativo `scripts/workstation`.
 
 O sistema utiliza a GPU Intel integrada como padrão. A GPU AMD dedicada permanece disponível para uso sob demanda.
 
@@ -78,6 +80,7 @@ linux-workstation/
 │   └── workstation
 ├── system/
 ├── tests/
+├── .chezmoiroot
 ├── .gitignore
 ├── LICENCE
 ├── Makefile
@@ -106,7 +109,7 @@ Contém comportamento reutilizável compartilhado pelos steps.
 
 ### `scripts/workstation`
 
-É o runner de alto nível do repositório. Ele lê `profile.yaml` e `phase.yaml`, lista fases/steps e executa um step explícito sem substituir as confirmações implementadas pelo próprio step.
+É o runner de alto nível do repositório. Ele lê `profile.yaml` e `phase.yaml`, descobre fases e steps, mostra status e planos, executa fases de maneira supervisionada, persiste o ponto de retomada e preserva as confirmações implementadas pelos próprios steps.
 
 ### `system/`
 
@@ -114,11 +117,11 @@ Armazena configurações canônicas de sistema e serviços.
 
 ### `dotfiles/`
 
-Armazena configurações canônicas de usuário que pertencem à workstation.
+Armazena configurações canônicas de usuário que pertencem à workstation. O diretório `dotfiles/home` é aplicado pelo chezmoi usando este próprio repositório como source state.
 
 ### `tests/`
 
-Contém gates estáticos e de runtime que validam o estado esperado.
+Contém gates estáticos, de integração e de runtime que validam o estado esperado.
 
 ### `examples/`
 
@@ -154,7 +157,7 @@ Não há dual boot.
 
 Cada fase possui seu próprio `phase.yaml`, playbooks, scripts e gate final.
 
-A Milestone 5 — Repository Automation está em andamento e adiciona coordenação de alto nível sem duplicar a lógica dos steps.
+A Milestone 5 — Repository Automation está concluída. A próxima fase de implementação é `05-operations`.
 
 ## Estratégia de desenvolvimento
 
@@ -174,35 +177,40 @@ Isso inclui, entre outros:
 
 ## Runner do repositório
 
-Depois de clonar o repositório, os principais comandos de inspeção são:
+Depois de clonar o repositório, os principais comandos são:
 
 ```bash
-./scripts/workstation phases
-./scripts/workstation steps 04-development
+make bootstrap
+make status
+make phases
+make steps PHASE=04-development
+make plan-phase PHASE=04-development
 ```
 
-Um único step pode ser executado explicitamente por:
+Execução e retomada supervisionadas:
 
 ```bash
-./scripts/workstation run-step 04-development 07-development-validation
+make run-phase PHASE=04-development
+make execution-status
+make resume-plan
+make resume
 ```
 
 O runner nunca responde automaticamente confirmações destrutivas.
 
-Os mesmos comandos possuem atalhos no Makefile:
+Validação portátil do repositório:
 
 ```bash
-make phases
-make steps PHASE=04-development
-make run-step PHASE=04-development STEP=07-development-validation
-make validate-automation
+make validate-portable
 ```
 
 ## Status
 
-As milestones de Installation, System, Desktop e Development estão validadas na workstation real.
+As milestones de Installation, System, Desktop, Development e Repository Automation estão concluídas.
 
-O trabalho atual está concentrado na **Repository Automation**, seguida futuramente por Operations e Security.
+O trabalho atual está concentrado em **Operations**, seguido futuramente por Security.
+
+A reconstrução integral a partir da ISO será exercitada em uma instalação real futura; não é simulada de forma destrutiva apenas para validar o runner.
 
 Nenhum procedimento deve ser considerado estável somente porque existe no repositório; o status deve acompanhar a validação real correspondente.
 
@@ -223,10 +231,11 @@ Consulte [`docs/architecture.md`](docs/architecture.md), [`docs/roadmap.md`](doc
 
 1. Leia arquitetura, padrões e ADRs.
 2. Identifique o profile de hardware.
-3. Consulte as fases e steps disponíveis.
-4. Execute os playbooks/runner na ordem indicada.
-5. Valide cada fase antes de avançar.
-6. Registre problemas e lições aprendidas.
+3. Execute `make bootstrap` para descobrir o estado atual e a próxima ação segura.
+4. Consulte fases e steps disponíveis.
+5. Execute as fases pelo runner na ordem indicada.
+6. Valide cada fase antes de avançar.
+7. Registre problemas e lições aprendidas.
 
 ## Estados dos documentos
 
