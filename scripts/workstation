@@ -11,12 +11,14 @@ source "${REPO_ROOT}/scripts/lib/manifest.sh"
 usage() {
   cat <<'EOF'
 Usage:
+  scripts/workstation status [--profile <id>]
   scripts/workstation phases [--profile <id>]
   scripts/workstation steps <phase> [--profile <id>]
   scripts/workstation run-step <phase> <step> [--profile <id>]
   scripts/workstation run-phase <phase> [--from <step>] [--plan] [--profile <id>]
 
 Examples:
+  scripts/workstation status
   scripts/workstation phases
   scripts/workstation steps 04-development
   scripts/workstation run-step 04-development 07-development-validation
@@ -41,7 +43,7 @@ from_step=""
 plan_only=false
 
 case "$command_name" in
-  phases)
+  status|phases)
     ;;
   steps|run-phase)
     phase_id="${1:-}"
@@ -163,6 +165,39 @@ execute_step() {
 }
 
 case "$command_name" in
+  status)
+    printf 'Profile: %s\n\n' "$profile_id"
+    printf '%-24s %-12s\n' 'Phase' 'Status'
+    printf '%-24s %-12s\n' '------------------------' '------------'
+
+    next_phase=""
+    next_status=""
+
+    while IFS= read -r phase; do
+      phase_file="$(phase_file_for "$phase")"
+      if [[ -f "$phase_file" ]]; then
+        phase_status="$(manifest_phase_field "$phase_file" status)"
+        [[ -n "$phase_status" ]] || phase_status="implemented"
+      else
+        phase_status="planned"
+      fi
+
+      printf '%-24s %-12s\n' "$phase" "$phase_status"
+
+      if [[ -z "$next_phase" && "$phase_status" != "validated" ]]; then
+        next_phase="$phase"
+        next_status="$phase_status"
+      fi
+    done < <(manifest_profile_phases "$profile_file")
+
+    printf '\n'
+    if [[ -n "$next_phase" ]]; then
+      printf 'Next phase: %s (%s)\n' "$next_phase" "$next_status"
+    else
+      printf 'Next phase: none; all declared phases are validated.\n'
+    fi
+    ;;
+
   phases)
     printf 'Profile: %s\n\n' "$profile_id"
     while IFS= read -r phase; do
