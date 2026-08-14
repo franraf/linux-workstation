@@ -21,6 +21,23 @@ manifest_profile_phases() {
   ' "$profile_file"
 }
 
+manifest_phase_field() {
+  local phase_file="$1"
+  local field="$2"
+
+  awk -v wanted_field="$field" '
+    /^phase:[[:space:]]*$/ { in_phase=1; next }
+    in_phase && /^[^[:space:]]/ { in_phase=0 }
+    in_phase && $0 ~ "^  " wanted_field ":[[:space:]]*" {
+      value=$0
+      sub("^  " wanted_field ":[[:space:]]*", "", value)
+      gsub(/^["\047]|["\047]$/, "", value)
+      print value
+      exit
+    }
+  ' "$phase_file"
+}
+
 manifest_phase_steps() {
   local phase_file="$1"
 
