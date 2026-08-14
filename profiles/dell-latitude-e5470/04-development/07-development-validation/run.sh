@@ -20,7 +20,7 @@ main() {
   bash "${REPO_ROOT}/tests/development/runtime-state.sh"
 
   printf '\nDevelopment phase automated gate passed.\n'
-  printf 'Complete the manual checks printed above before considering the phase fully validated.\n'
+  printf 'Manual validation is required on a new or rebuilt workstation; the current validated baseline is recorded in phase.yaml.\n'
 }
 
 main "$@"
