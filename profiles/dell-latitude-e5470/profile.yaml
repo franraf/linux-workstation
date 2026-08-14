@@ -225,7 +225,8 @@ development:
   editor:
     implementation: visual-studio-code
     distribution: microsoft-upstream
-    configuration_source: dotfiles/vscode
+    configuration_source: dotfiles/home
+    configuration_manager: chezmoi
 
   containers:
     implementation: docker
@@ -257,6 +258,7 @@ development:
 dotfiles:
   enabled: true
   manager: chezmoi
+  source_directory: dotfiles/home
 
   repository:
     provider: github
@@ -269,7 +271,9 @@ dotfiles:
     automatic_push: false
 
 automation:
-  enabled: false
+  enabled: true
+  implementation: scripts/workstation
+  state_directory: ${XDG_STATE_HOME:-~/.local/state}/linux-workstation
 
   phases:
     - 01-installation
@@ -310,7 +314,7 @@ validation:
 
 metadata:
   created_at: 2026-07-31
-  last_review: 2026-08-13
+  last_review: 2026-08-14
 
   related:
     - docs/architecture.md
@@ -319,3 +323,6 @@ metadata:
     - docs/adr/0004-playbook-granularity.md
     - docs/adr/0005-modularize-configuration-by-capability.md
     - docs/adr/0011-upstream-distribution-exception.md
+    - docs/adr/0012-manifest-driven-workstation-runner.md
+    - docs/adr/0013-persistent-runner-state-and-safe-resume.md
+    - docs/adr/0014-chezmoi-managed-user-configuration.md
