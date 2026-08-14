@@ -1,11 +1,12 @@
 ---
 title: Roadmap
-version: 2.2
+version: 2.3
 status: Stable
 author: Rafael
 last_review: 2026-08-14
 related:
   - ADR-0002
+  - ADR-0012
   - architecture.md
 ---
 
@@ -20,6 +21,8 @@ Itens listados aqui representam direção arquitetural e prioridades, não garan
 ## Estado atual
 
 A fundação estrutural está consolidada. As fases 01, 02, 03 e 04 possuem implementação e validações versionadas; a fase 04 também foi exercitada na workstation com seus checks manuais concluídos.
+
+A Milestone 5 — Repository Automation está em andamento. O primeiro runner de alto nível orientado por `profile.yaml` e `phase.yaml` já foi iniciado, sem substituir a lógica dos steps individuais.
 
 O repositório já possui fontes compartilhadas em `packages/`, `system/` e `dotfiles/`, bibliotecas reutilizáveis em `scripts/lib/` e gates em `tests/`.
 
@@ -102,23 +105,33 @@ Escopo validado:
 
 Critério concluído em 2026-08-14: `07-development-validation` passou e os checks manuais documentados foram exercitados na workstation.
 
-## Milestone 5 — Repository Automation
+## Milestone 5 — Repository Automation 🟡
 
 Objetivo: elevar a automação já existente para uma experiência de reconstrução e operação mais integrada.
 
-Parte significativa da automação de fases já existe; esta milestone agora foca no que falta para coordená-la como sistema.
+Parte significativa da automação de fases já existe; esta milestone agora coordena esses artefatos como um sistema, conforme ADR-0012.
 
-Escopo futuro:
+Implementado até agora:
 
-* bootstrap de alto nível da workstation;
-* descoberta/seleção de profile;
-* executor de fases e steps;
-* retomada segura após falhas;
-* validação pré e pós-fase integrada;
-* testes de idempotência;
-* integração do `chezmoi` quando adotada operacionalmente;
-* CI para gates estáticos e consistência do repositório;
-* comandos convenientes via Makefile ou mecanismo equivalente.
+* runner `scripts/workstation`;
+* descoberta das fases pelo `profile.yaml`;
+* descoberta dos steps pelo `phase.yaml`;
+* resolução de modos e entrypoints;
+* execução explícita de um step sem automatizar confirmações destrutivas;
+* parser mínimo de manifests sem dependência de Python, Node.js ou `yq`;
+* comandos convenientes via `Makefile`;
+* teste estático inicial do runner.
+
+Próximos incrementos:
+
+* validar o runner na workstation;
+* adicionar execução supervisionada de uma fase completa;
+* persistir estado mínimo para retomada segura;
+* integrar gates pré e pós-fase;
+* adicionar bootstrap de alto nível e descoberta/seleção de profile;
+* adicionar testes de idempotência;
+* integrar o `chezmoi` quando adotado operacionalmente;
+* adicionar CI para gates estáticos e consistência do repositório.
 
 Critério: uma nova instalação pode ser conduzida a partir da ISO e do repositório com somente as intervenções indispensáveis e sem exigir conhecimento dos scripts internos.
 
