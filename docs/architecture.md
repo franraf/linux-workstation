@@ -1,6 +1,6 @@
 ---
 title: Arquitetura da workstation
-version: 0.3
+version: 0.4
 status: Draft
 author: Rafael
 last_review: 2026-08-14
@@ -12,6 +12,8 @@ related:
   - ADR-0009
   - ADR-0011
   - ADR-0012
+  - ADR-0013
+  - ADR-0014
 ---
 
 # Arquitetura da workstation
@@ -67,9 +69,11 @@ Responsabilidades:
 * oferecer inspeção antes da execução;
 * delegar execução para os `run.sh` existentes;
 * preservar confirmações e validações dos próprios steps;
-* fornecer base para retomada, bootstrap e gates integrados.
+* persistir somente progresso operacional mínimo fora do repositório;
+* retomar a primeira unidade ainda não concluída;
+* interpretar gates pré e pós-fase declarados nos manifests.
 
-A implementação inicial é `scripts/workstation`, definida pelo ADR-0012. O runner não contém lógica de configuração específica de uma capacidade.
+A implementação é `scripts/workstation`, definida pelos ADR-0012 e ADR-0013. O runner não contém lógica de configuração específica de uma capacidade.
 
 ## Fontes canônicas e responsabilidades
 
@@ -83,7 +87,7 @@ O estado esperado é dividido por responsabilidade:
 | `profiles/` | manifests, ordem de execução e particularidades de hardware |
 | `scripts/lib/` | comportamento reutilizável |
 | `scripts/workstation` | orquestração de alto nível |
-| `tests/` | gates estáticos e de runtime |
+| `tests/` | gates estáticos, integração e runtime |
 | `playbooks/` | procedimentos reproduzíveis e contexto operacional |
 
 Um profile consome essas fontes; não deve duplicá-las sem necessidade específica de hardware.
@@ -198,9 +202,13 @@ Codex CLI é a ferramenta global de assistência por IA; autenticação e segred
 
 ## Dotfiles
 
-Configurações de usuário que fazem parte da definição da workstation podem ser armazenadas em `dotfiles/` neste repositório.
+Configurações de usuário que fazem parte da definição da workstation são armazenadas em `dotfiles/`.
 
-O `chezmoi` continua previsto como mecanismo de aplicação/sincronização, mas sua adoção operacional ainda pertence à Milestone 5.
+Conforme ADR-0014, `chezmoi` é o mecanismo de aplicação e convergência para arquivos de usuário migrados para esse modelo. O próprio repositório continua sendo a fonte canônica: não existe um segundo repositório de dotfiles.
+
+A raiz do repositório contém `.chezmoiroot`, que aponta para `dotfiles/home`. Essa árvore utiliza a nomenclatura de source state do chezmoi e representa caminhos no `$HOME`. A migração é incremental; inicialmente, VS Code `settings.json` e `keybindings.json` são gerenciados dessa forma.
+
+Artefatos que não são arquivos de estado do `$HOME`, como a lista de extensões do VS Code, permanecem em diretórios declarativos próprios dentro de `dotfiles/`.
 
 ## Automação
 
@@ -208,13 +216,13 @@ Scripts Bash usam `set -Eeuo pipefail`, validam pré-requisitos, falham explicit
 
 A automação de alto nível não remove essas proteções. `scripts/workstation` apenas resolve manifests e delega a execução.
 
-O runner inicial depende somente de Bash e ferramentas base, para permanecer utilizável antes da instalação de runtimes de desenvolvimento.
+O runner depende somente de Bash e ferramentas base, para permanecer utilizável antes da instalação de runtimes de desenvolvimento. Seu estado mutável de execução fica sob `${XDG_STATE_HOME:-$HOME/.local/state}/linux-workstation/`, nunca no repositório.
 
 ## Validação
 
 `tests/` contém gates para armazenamento, sistema, desktop, desenvolvimento, consistência do repositório e automação.
 
-Testes de configuração validam estado da workstation; não substituem testes tradicionais de software.
+A automação possui testes estáticos, de interrupção/retomada, de recuperação do post-gate e de idempotência em ambiente isolado. Testes de configuração validam estado da workstation; não substituem testes tradicionais de software.
 
 ## Fluxo de mudança
 
