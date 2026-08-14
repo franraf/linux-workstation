@@ -1,9 +1,9 @@
 ---
 title: Ferramentas de inteligência artificial
-version: 1.1
-status: Draft
+version: 1.2
+status: Stable
 author: Rafael
-last_review: 2026-08-13
+last_review: 2026-08-14
 related:
 
 * architecture.md
@@ -51,7 +51,7 @@ A automação não grava tokens, chaves de API nem credenciais.
 Depois da instalação, autentique-se na sessão normal do usuário:
 
 ```bash
-codex --login
+codex login
 ```
 
 O fluxo de autenticação é interativo e não deve ser executado nem armazenado pelo script root da workstation.
@@ -86,7 +86,7 @@ O script:
 Confirme que:
 
 * `codex --version` funciona;
-* a autenticação pode ser concluída interativamente;
+* `codex login` conclui a autenticação interativa;
 * nenhum segredo foi adicionado ao repositório;
 * a ferramenta funciona dentro de um repositório de teste;
 * mudanças geradas podem ser revisadas antes da aplicação.
