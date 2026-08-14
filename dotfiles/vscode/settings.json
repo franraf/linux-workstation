@@ -1,7 +1,0 @@
-{
-  "editor.formatOnSave": true,
-  "files.trimTrailingWhitespace": true,
-  "git.autofetch": true,
-  "terminal.integrated.defaultProfile.linux": "zsh",
-  "workbench.startupEditor": "none"
-}
