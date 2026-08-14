@@ -1,6 +1,6 @@
 ---
 title: Roadmap
-version: 2.6
+version: 2.7
 status: Stable
 author: Rafael
 last_review: 2026-08-14
@@ -22,11 +22,13 @@ Itens listados aqui representam direção arquitetural e prioridades, não garan
 
 ## Estado atual
 
-A fundação estrutural está consolidada. As fases 01, 02, 03 e 04 possuem implementação e validações versionadas; a fase 04 também foi exercitada na workstation com seus checks manuais concluídos.
+A fundação estrutural está consolidada. As fases 01, 02, 03 e 04 possuem implementação e validações versionadas e foram exercitadas na workstation real.
 
-A Milestone 5 — Repository Automation está em fase de fechamento. O runner de alto nível orientado por `profile.yaml` e `phase.yaml` já suporta descoberta, status, planejamento, execução supervisionada, retomada persistente, gates pré/pós-fase, bootstrap seguro e testes de idempotência. A configuração de usuário do VS Code foi validada operacionalmente através do `chezmoi`, e todos os gates portáveis existentes são agregados por `make validate-portable` e executados no GitHub Actions.
+A Milestone 5 — Repository Automation está concluída. O runner de alto nível orientado por `profile.yaml` e `phase.yaml` suporta descoberta, status, planejamento, execução supervisionada, retomada persistente, gates pré/pós-fase, bootstrap seguro e testes de idempotência. A configuração de usuário do VS Code foi validada operacionalmente através do `chezmoi`, e os gates portáveis existentes são agregados por `make validate-portable` e executados no GitHub Actions.
 
-O repositório já possui fontes compartilhadas em `packages/`, `system/` e `dotfiles/`, bibliotecas reutilizáveis em `scripts/lib/` e gates em `tests/`.
+O fluxo de reconstrução completa a partir da ISO será validado quando ocorrer uma instalação real. O projeto não executará uma reinstalação destrutiva artificial apenas para repetir um cenário já coberto por manifests, gates, retomada e validações locais.
+
+O trabalho ativo passa agora para a Milestone 6 — Operations.
 
 ## Milestone 1 — Base Arch Installation ✅
 
@@ -108,13 +110,11 @@ Escopo validado:
 
 Critério concluído em 2026-08-14: `07-development-validation` passou, os checks manuais documentados foram exercitados na workstation e a validação posterior com `chezmoi` terminou com 67 passes, zero warnings e zero falhas.
 
-## Milestone 5 — Repository Automation 🟡
+## Milestone 5 — Repository Automation ✅
 
 Objetivo: elevar a automação já existente para uma experiência de reconstrução e operação mais integrada.
 
-Parte significativa da automação de fases já existe; esta milestone coordena esses artefatos como um sistema, conforme ADR-0012.
-
-Implementado e exercitado até agora:
+Escopo concluído:
 
 * runner `scripts/workstation`;
 * descoberta automática do profile quando existe apenas um;
@@ -137,13 +137,9 @@ Implementado e exercitado até agora:
 * suíte agregada `make validate-portable`;
 * CI no GitHub Actions executando consistência entre fases, gates estáticos de instalação/sistema/development e testes de automação.
 
-Próximo passo para fechamento:
+Critério considerado atendido em 2026-08-14: a operação normal da workstation pode ser conduzida pela interface de alto nível do repositório sem conhecimento dos caminhos internos dos scripts. O `bootstrap` detecta o profile, reconhece as fases validadas e se recusa corretamente a executar fases apenas planejadas. Uma reconstrução integral a partir da ISO permanece como validação futura de campo, a ser realizada na próxima instalação real.
 
-* validar o critério da milestone em um ensaio de reconstrução conduzido pelo runner, confirmando que uma instalação pode avançar a partir do repositório com somente as intervenções indispensáveis e sem exigir conhecimento dos scripts internos.
-
-Critério: uma nova instalação pode ser conduzida a partir da ISO e do repositório com somente as intervenções indispensáveis e sem exigir conhecimento dos scripts internos.
-
-## Milestone 6 — Operations
+## Milestone 6 — Operations 🟡
 
 Objetivo: manter a workstation durante todo seu ciclo de vida.
 
@@ -157,6 +153,8 @@ Escopo planejado:
 * recuperação;
 * disaster recovery;
 * validação operacional.
+
+Próximo passo: implementar a fase `05-operations` com manifests, políticas, playbooks, scripts e gate final próprios.
 
 Critério: manutenção e recuperação possuem procedimentos reproduzíveis e testados.
 
