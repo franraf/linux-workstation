@@ -264,7 +264,9 @@ case "$command_name" in
     printf '\nUseful commands\n---------------\n'
     printf '  make status\n'
     printf '  make validate-automation\n'
-    [[ -n "$next_phase" && "$next_status" != "planned" ]] && printf '  make plan-phase PHASE=%s\n' "$next_phase"
+    if [[ -n "$next_phase" && "$next_status" != "planned" ]]; then
+      printf '  make plan-phase PHASE=%s\n' "$next_phase"
+    fi
     ;;
 
   status)
