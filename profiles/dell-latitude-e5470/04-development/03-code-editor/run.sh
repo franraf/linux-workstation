@@ -6,8 +6,8 @@ readonly SCRIPT_NAME="$(basename "$0")"
 readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 readonly REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
 readonly PACKAGE_FILE="${REPO_ROOT}/packages/development/code-editor-runtime.txt"
-readonly SETTINGS_SOURCE="${REPO_ROOT}/dotfiles/vscode/settings.json"
-readonly KEYBINDINGS_SOURCE="${REPO_ROOT}/dotfiles/vscode/keybindings.json"
+readonly SETTINGS_SOURCE="${REPO_ROOT}/dotfiles/home/private_dot_config/private_Code/User/settings.json"
+readonly KEYBINDINGS_SOURCE="${REPO_ROOT}/dotfiles/home/private_dot_config/private_Code/User/keybindings.json"
 readonly EXTENSIONS_SOURCE="${REPO_ROOT}/dotfiles/vscode/extensions.txt"
 readonly DESKTOP_SOURCE="${REPO_ROOT}/system/development/vscode/code.desktop"
 readonly DOWNLOAD_URL="https://update.code.visualstudio.com/latest/linux-x64/stable"
@@ -38,6 +38,8 @@ from:
 
 Application destination:
   ${INSTALL_DIR}
+
+User configuration is applied from the repository through chezmoi.
 EOF
 }
 
@@ -66,6 +68,7 @@ show_plan() {
   printf 'Distribution:\n  Microsoft upstream stable Linux x64\n\n'
   printf 'Download endpoint:\n  %s\n\n' "$DOWNLOAD_URL"
   printf 'Install directory:\n  %s\n\n' "$INSTALL_DIR"
+  printf 'User configuration:\n  chezmoi source: %s\n\n' "$REPO_ROOT"
   printf 'Runtime packages to install:\n'
   if ((${#MISSING_PACKAGES[@]} == 0)); then
     printf '  none\n'
@@ -114,12 +117,10 @@ install_vscode() {
   install -m 0644 -o root -g root "$DESKTOP_SOURCE" "$DESKTOP_TARGET"
 }
 
-install_user_configuration() {
-  local user_dir="${TARGET_HOME}/.config/Code/User"
-  install_user_directory "${TARGET_HOME}/.config/Code"
-  install_user_directory "$user_dir"
-  install_user_file "$SETTINGS_SOURCE" "${user_dir}/settings.json"
-  install_user_file "$KEYBINDINGS_SOURCE" "${user_dir}/keybindings.json"
+apply_user_configuration() {
+  run_as_target_user chezmoi -S "$REPO_ROOT" apply \
+    "${TARGET_HOME}/.config/Code/User/settings.json" \
+    "${TARGET_HOME}/.config/Code/User/keybindings.json"
 }
 
 install_extensions() {
@@ -137,8 +138,13 @@ validate_vscode() {
   [[ -x "${INSTALL_DIR}/bin/code" ]] || die "Visual Studio Code launcher is missing."
   [[ -L "$CODE_LINK" ]] || die "The code command symlink is missing."
   [[ -f "$DESKTOP_TARGET" ]] || die "Visual Studio Code desktop launcher is missing."
-  cmp -s "$SETTINGS_SOURCE" "${TARGET_HOME}/.config/Code/User/settings.json" || die "VS Code settings differ from canonical source."
-  cmp -s "$KEYBINDINGS_SOURCE" "${TARGET_HOME}/.config/Code/User/keybindings.json" || die "VS Code keybindings differ from canonical source."
+  cmp -s "$SETTINGS_SOURCE" "${TARGET_HOME}/.config/Code/User/settings.json" || die "VS Code settings differ from canonical chezmoi source."
+  cmp -s "$KEYBINDINGS_SOURCE" "${TARGET_HOME}/.config/Code/User/keybindings.json" || die "VS Code keybindings differ from canonical chezmoi source."
+
+  run_as_target_user chezmoi -S "$REPO_ROOT" diff \
+    "${TARGET_HOME}/.config/Code/User/settings.json" \
+    "${TARGET_HOME}/.config/Code/User/keybindings.json" | grep -q . &&
+      die "chezmoi still reports unapplied VS Code user configuration."
 
   local version_output version
   version_output="$(run_as_target_user "$CODE_LINK" --version)"
@@ -156,13 +162,14 @@ validate_vscode() {
   done <"$EXTENSIONS_SOURCE"
 
   printf '\nVisual Studio Code configured successfully.\n\nVersion:\n  %s\n' "$version"
+  printf '\nVS Code user configuration converged through chezmoi.\n'
   printf '\nDev Containers extension is installed; runtime integration will be validated after Docker configuration.\n'
   printf '\nNext step:\n  04-container-platform\n'
 }
 
 main() {
   require_root
-  require_commands chown cmp cp curl install ln mktemp mv pacman rm sudo tar
+  require_commands chown cmp cp curl grep install ln mktemp mv pacman rm sudo tar
   require_arch_systemd
   require_user_config_commands
   parse_arguments "$@"
@@ -177,9 +184,10 @@ main() {
   confirm_changes
   install_missing_packages
   validate_installed_packages
+  require_commands chezmoi
   download_and_stage_vscode
   install_vscode
-  install_user_configuration
+  apply_user_configuration
   install_extensions
   validate_vscode
 }
