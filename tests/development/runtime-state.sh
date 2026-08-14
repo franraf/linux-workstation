@@ -50,12 +50,19 @@ cmp -s "${REPO_ROOT}/system/development/starship/starship.toml" "${HOME}/.config
 zsh -lic 'true' >/dev/null 2>&1 && pass "Interactive Zsh starts without error" || fail "Interactive Zsh startup failed"
 
 section "Visual Studio Code"
+check_package_file "${REPO_ROOT}/packages/development/code-editor-runtime.txt"
 check_command code
+check_command chezmoi
 code_version_output="$(code --version 2>/dev/null || true)"
 code_version="${code_version_output%%$'\n'*}"
 [[ -n "$code_version" ]] && pass "Visual Studio Code version: $code_version" || fail "Visual Studio Code did not return a version"
-cmp -s "${REPO_ROOT}/dotfiles/vscode/settings.json" "${HOME}/.config/Code/User/settings.json" && pass "VS Code settings match canonical source" || fail "VS Code settings differ from canonical source"
-cmp -s "${REPO_ROOT}/dotfiles/vscode/keybindings.json" "${HOME}/.config/Code/User/keybindings.json" && pass "VS Code keybindings match canonical source" || fail "VS Code keybindings differ from canonical source"
+cmp -s "${REPO_ROOT}/dotfiles/home/private_dot_config/private_Code/User/settings.json" "${HOME}/.config/Code/User/settings.json" && pass "VS Code settings match canonical chezmoi source" || fail "VS Code settings differ from canonical chezmoi source"
+cmp -s "${REPO_ROOT}/dotfiles/home/private_dot_config/private_Code/User/keybindings.json" "${HOME}/.config/Code/User/keybindings.json" && pass "VS Code keybindings match canonical chezmoi source" || fail "VS Code keybindings differ from canonical chezmoi source"
+if chezmoi -S "$REPO_ROOT" diff "${HOME}/.config/Code/User/settings.json" "${HOME}/.config/Code/User/keybindings.json" | grep -q .; then
+  fail "chezmoi reports unapplied VS Code configuration"
+else
+  pass "chezmoi reports VS Code configuration converged"
+fi
 extensions="$(code --list-extensions 2>/dev/null || true)"
 grep -Fxiq 'ms-vscode-remote.remote-containers' <<<"$extensions" && pass "Dev Containers extension is installed" || fail "Dev Containers extension is missing"
 
