@@ -1,6 +1,6 @@
 ---
 title: Roadmap
-version: 2.5
+version: 2.6
 status: Stable
 author: Rafael
 last_review: 2026-08-14
@@ -24,7 +24,7 @@ Itens listados aqui representam direção arquitetural e prioridades, não garan
 
 A fundação estrutural está consolidada. As fases 01, 02, 03 e 04 possuem implementação e validações versionadas; a fase 04 também foi exercitada na workstation com seus checks manuais concluídos.
 
-A Milestone 5 — Repository Automation está em andamento. O runner de alto nível orientado por `profile.yaml` e `phase.yaml` já suporta descoberta, status, planejamento, execução supervisionada, retomada persistente, gates pré/pós-fase, bootstrap seguro e testes de idempotência. Os gates portáveis são executados no GitHub Actions.
+A Milestone 5 — Repository Automation está em fase de fechamento. O runner de alto nível orientado por `profile.yaml` e `phase.yaml` já suporta descoberta, status, planejamento, execução supervisionada, retomada persistente, gates pré/pós-fase, bootstrap seguro e testes de idempotência. A configuração de usuário do VS Code foi validada operacionalmente através do `chezmoi`, e todos os gates portáveis existentes são agregados por `make validate-portable` e executados no GitHub Actions.
 
 O repositório já possui fontes compartilhadas em `packages/`, `system/` e `dotfiles/`, bibliotecas reutilizáveis em `scripts/lib/` e gates em `tests/`.
 
@@ -103,15 +103,16 @@ Escopo validado:
 * Dev Containers com runtime de projeto isolado do host;
 * ferramentas CLI globais;
 * Codex CLI com autenticação e tarefa controlada;
-* gates estático e de runtime.
+* gates estático e de runtime;
+* `chezmoi` aplicando e validando configuração versionada do VS Code.
 
-Critério concluído em 2026-08-14: `07-development-validation` passou e os checks manuais documentados foram exercitados na workstation.
+Critério concluído em 2026-08-14: `07-development-validation` passou, os checks manuais documentados foram exercitados na workstation e a validação posterior com `chezmoi` terminou com 67 passes, zero warnings e zero falhas.
 
 ## Milestone 5 — Repository Automation 🟡
 
 Objetivo: elevar a automação já existente para uma experiência de reconstrução e operação mais integrada.
 
-Parte significativa da automação de fases já existe; esta milestone agora coordena esses artefatos como um sistema, conforme ADR-0012.
+Parte significativa da automação de fases já existe; esta milestone coordena esses artefatos como um sistema, conforme ADR-0012.
 
 Implementado e exercitado até agora:
 
@@ -131,18 +132,14 @@ Implementado e exercitado até agora:
 * testes de idempotência em ambiente controlado;
 * parser mínimo de manifests sem dependência de Python, Node.js ou `yq`;
 * comandos convenientes via `Makefile`;
-* gate estático do runner;
-* CI no GitHub Actions executando os gates portáveis;
-* adoção inicial do `chezmoi` para convergência de configuração de usuário, conforme ADR-0014.
+* adoção operacional do `chezmoi` usando o próprio repositório como fonte canônica;
+* validação real do estado aplicado pelo `chezmoi` na workstation;
+* suíte agregada `make validate-portable`;
+* CI no GitHub Actions executando consistência entre fases, gates estáticos de instalação/sistema/development e testes de automação.
 
-Em validação na workstation:
+Próximo passo para fechamento:
 
-* aplicação dos arquivos de usuário do VS Code através do `chezmoi` usando o próprio repositório como fonte canônica.
-
-Próximos incrementos:
-
-* concluir a validação operacional do `chezmoi` na workstation;
-* ampliar a CI conforme novos gates portáveis forem adicionados.
+* validar o critério da milestone em um ensaio de reconstrução conduzido pelo runner, confirmando que uma instalação pode avançar a partir do repositório com somente as intervenções indispensáveis e sem exigir conhecimento dos scripts internos.
 
 Critério: uma nova instalação pode ser conduzida a partir da ISO e do repositório com somente as intervenções indispensáveis e sem exigir conhecimento dos scripts internos.
 
