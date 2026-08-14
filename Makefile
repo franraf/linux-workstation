@@ -3,7 +3,7 @@ PHASE ?=
 STEP ?=
 FROM ?=
 
-.PHONY: help bootstrap status execution-status clear-state resume resume-plan phases steps run-step run-phase plan-phase validate-automation validate-resume
+.PHONY: help bootstrap status execution-status clear-state resume resume-plan phases steps run-step run-phase plan-phase validate-automation validate-resume validate-idempotency
 
 help:
 	@printf '%s\n' \
@@ -21,6 +21,7 @@ help:
 	  '  make plan-phase PHASE=04-development [FROM=05-cli-tools]' \
 	  '  make run-phase PHASE=04-development [FROM=05-cli-tools]' \
 	  '  make validate-resume' \
+	  '  make validate-idempotency' \
 	  '  make validate-automation'
 
 bootstrap:
@@ -52,6 +53,9 @@ run-phase:
 	@./scripts/workstation run-phase "$(PHASE)" $(if $(FROM),--from "$(FROM)",) --profile "$(PROFILE)"
 validate-resume:
 	@bash tests/automation/resume-integration.sh
+validate-idempotency:
+	@bash tests/automation/idempotency-integration.sh
 validate-automation:
 	@bash tests/automation/runner-static.sh
 	@bash tests/automation/resume-integration.sh
+	@bash tests/automation/idempotency-integration.sh
