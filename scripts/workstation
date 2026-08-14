@@ -14,11 +14,14 @@ Usage:
   scripts/workstation phases [--profile <id>]
   scripts/workstation steps <phase> [--profile <id>]
   scripts/workstation run-step <phase> <step> [--profile <id>]
+  scripts/workstation run-phase <phase> [--from <step>] [--plan] [--profile <id>]
 
 Examples:
   scripts/workstation phases
   scripts/workstation steps 04-development
   scripts/workstation run-step 04-development 07-development-validation
+  scripts/workstation run-phase 04-development --plan
+  scripts/workstation run-phase 04-development --from 05-cli-tools
 EOF
 }
 
@@ -34,11 +37,13 @@ shift || true
 
 phase_id=""
 step_id=""
+from_step=""
+plan_only=false
 
 case "$command_name" in
   phases)
     ;;
-  steps)
+  steps|run-phase)
     phase_id="${1:-}"
     [[ -n "$phase_id" ]] || fail "A phase id is required."
     shift
@@ -64,6 +69,17 @@ while (($# > 0)); do
       (($# >= 2)) || fail "Missing value for --profile."
       profile_id="$2"
       shift 2
+      ;;
+    --from)
+      [[ "$command_name" == "run-phase" ]] || fail "--from is only valid with run-phase."
+      (($# >= 2)) || fail "Missing value for --from."
+      from_step="$2"
+      shift 2
+      ;;
+    --plan)
+      [[ "$command_name" == "run-phase" ]] || fail "--plan is only valid with run-phase."
+      plan_only=true
+      shift
       ;;
     -h|--help)
       usage
@@ -102,6 +118,50 @@ step_declared() {
   return 1
 }
 
+resolve_step() {
+  local phase_file="$1"
+  local step="$2"
+  mode="$(manifest_step_field "$phase_file" "$step" mode)"
+  entrypoint="$(manifest_step_field "$phase_file" "$step" entrypoint)"
+  entrypoint_path=""
+  if [[ -n "$entrypoint" ]]; then
+    entrypoint_path="${profile_root}/${phase_id}/${entrypoint}"
+  fi
+}
+
+execute_step() {
+  local step="$1"
+  local phase_file="$2"
+
+  resolve_step "$phase_file" "$step"
+
+  printf '\n============================================================\n'
+  printf 'Phase: %s\nStep:  %s\nMode:  %s\n' "$phase_id" "$step" "${mode:-unknown}"
+  printf '============================================================\n\n'
+
+  if [[ "$mode" == "manual" ]]; then
+    fail "Manual step reached: ${phase_id}/${step}. Follow its playbook, then resume with --from <next-step>."
+  fi
+
+  [[ -n "$entrypoint" ]] || fail "Step has no executable entrypoint: ${phase_id}/${step}"
+  [[ -f "$entrypoint_path" ]] || fail "Entrypoint not found: $entrypoint_path"
+  [[ -x "$entrypoint_path" ]] || fail "Entrypoint is not executable: $entrypoint_path"
+
+  case "$mode" in
+    validation|manual-validation)
+      "$entrypoint_path"
+      ;;
+    *)
+      if ((EUID == 0)); then
+        "$entrypoint_path"
+      else
+        command -v sudo >/dev/null 2>&1 || fail "sudo is required to execute this step as root."
+        sudo "$entrypoint_path"
+      fi
+      ;;
+  esac
+}
+
 case "$command_name" in
   phases)
     printf 'Profile: %s\n\n' "$profile_id"
@@ -133,32 +193,44 @@ case "$command_name" in
     phase_file="$(phase_file_for "$phase_id")"
     [[ -f "$phase_file" ]] || fail "Phase is planned but not implemented: $phase_id"
     step_declared "$phase_file" "$step_id" || fail "Step is not declared in ${phase_id}: ${step_id}"
+    execute_step "$step_id" "$phase_file"
+    ;;
 
-    mode="$(manifest_step_field "$phase_file" "$step_id" mode)"
-    entrypoint="$(manifest_step_field "$phase_file" "$step_id" entrypoint)"
-    [[ -n "$entrypoint" ]] || fail "Step has no executable entrypoint: ${phase_id}/${step_id}"
+  run-phase)
+    phase_declared "$phase_id" || fail "Phase is not declared by profile: $phase_id"
+    phase_file="$(phase_file_for "$phase_id")"
+    [[ -f "$phase_file" ]] || fail "Phase is planned but not implemented: $phase_id"
 
-    entrypoint_path="${profile_root}/${phase_id}/${entrypoint}"
-    [[ -f "$entrypoint_path" ]] || fail "Entrypoint not found: $entrypoint_path"
-    [[ -x "$entrypoint_path" ]] || fail "Entrypoint is not executable: $entrypoint_path"
+    if [[ -n "$from_step" ]]; then
+      step_declared "$phase_file" "$from_step" || fail "Resume step is not declared in ${phase_id}: ${from_step}"
+    fi
 
-    printf 'Profile:    %s\nPhase:      %s\nStep:       %s\nMode:       %s\nEntrypoint: %s\n\n' \
-      "$profile_id" "$phase_id" "$step_id" "${mode:-unknown}" "$entrypoint_path"
+    printf 'Profile: %s\nPhase:   %s\n' "$profile_id" "$phase_id"
+    [[ -n "$from_step" ]] && printf 'Resume:  %s\n' "$from_step"
+    $plan_only && printf 'Mode:    plan only\n'
+    printf '\n'
 
-    case "$mode" in
-      validation|manual-validation)
-        exec "$entrypoint_path"
-        ;;
-      manual)
-        fail "Manual steps are not executed by the runner. Follow the linked playbook."
-        ;;
-      *)
-        if ((EUID == 0)); then
-          exec "$entrypoint_path"
-        fi
-        command -v sudo >/dev/null 2>&1 || fail "sudo is required to execute this step as root."
-        exec sudo "$entrypoint_path"
-        ;;
-    esac
+    started=false
+    [[ -z "$from_step" ]] && started=true
+
+    while IFS= read -r step; do
+      if ! $started; then
+        [[ "$step" == "$from_step" ]] || continue
+        started=true
+      fi
+
+      resolve_step "$phase_file" "$step"
+
+      if $plan_only; then
+        printf '%-32s %-18s %s\n' "$step" "${mode:-unknown}" "${entrypoint:-manual}"
+        continue
+      fi
+
+      execute_step "$step" "$phase_file"
+    done < <(manifest_phase_steps "$phase_file")
+
+    if ! $plan_only; then
+      printf '\nPhase completed successfully: %s\n' "$phase_id"
+    fi
     ;;
 esac
