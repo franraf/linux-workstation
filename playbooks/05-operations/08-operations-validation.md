@@ -20,22 +20,65 @@ related:
 
 Consolidar o gate final da fase Operations e impedir avanço para Security enquanto manutenção e recuperação não forem verificáveis.
 
-## Gate esperado
+## Pré-requisitos
 
-A implementação futura deverá comprovar, no mínimo:
+- playbooks `01` a `07` implementados no nível exigido pela fase;
+- checks automatizados executáveis quando aplicáveis;
+- verificações manuais indispensáveis documentadas e concluídas;
+- nenhuma falha operacional conhecida ignorada pelo gate.
 
-* política de manutenção definida;
-* atualização do sistema com procedimento reproduzível;
-* health checks executáveis;
-* snapshots e retenção observáveis;
-* backup com restauração de amostra validada;
-* procedimento de recuperação testado em cenário controlado;
-* disaster recovery documentado e com dependências externas identificadas.
+## Procedimento
 
-## Política de resultado
+1. Validar que a política de manutenção possui critérios objetivos.
+2. Validar o procedimento reproduzível de atualização do sistema.
+3. Executar os health checks e consolidar `PASS`, `WARN` e `FAIL`.
+4. Validar observabilidade da política de snapshots e retenção.
+5. Confirmar backup por meio de restauração de amostra.
+6. Confirmar pelo menos um cenário controlado de recuperação.
+7. Verificar que disaster recovery identifica dependências externas e caminho de reconstrução.
+8. Emitir resumo final e bloquear avanço enquanto houver `FAIL` ou verificação obrigatória pendente.
 
-O gate deve produzir resumo objetivo de `PASS`, `WARN` e `FAIL`. A fase só poderá ser marcada como validada quando não houver falhas e os checks manuais indispensáveis tiverem sido concluídos.
+### Política de resultado
 
-## Próxima fase
+- `PASS`: requisito comprovado;
+- `WARN`: condição conhecida que não invalida o gate, com justificativa explícita;
+- `FAIL`: requisito não atendido ou condição que impede considerar Operations validada.
 
-`06-security`
+A fase só poderá ser marcada como validada quando não houver falhas e os checks manuais indispensáveis tiverem sido concluídos.
+
+## Verificação
+
+O gate estará correto quando produzir resultado determinístico, retornar código diferente de zero diante de qualquer `FAIL` e impedir avanço para Security enquanto a fase não estiver validada.
+
+## Problemas comuns
+
+### Gate que apenas verifica presença de arquivos
+
+Validar comportamento e estado operacional sempre que possível, não apenas existência de scripts ou documentos.
+
+### `WARN` usado para esconder requisito incompleto
+
+Não rebaixar para aviso uma condição que o próprio contrato da fase define como obrigatória.
+
+### Validação manual sem evidência
+
+Documentar o que foi verificado e o critério usado antes de marcar a fase como validada.
+
+## Próximo playbook
+
+Não há outro playbook nesta fase. Após validação completa, a próxima fase declarada é `06-security`.
+
+## Referências
+
+- `01-maintenance-policy.md`
+- `02-system-updates.md`
+- `03-health-checks.md`
+- `04-snapshots-and-retention.md`
+- `05-backup.md`
+- `06-recovery.md`
+- `07-disaster-recovery.md`
+- `docs/standards.md`
+
+## Lições aprendidas
+
+- O gate final deve provar capacidade operacional; presença de implementação sem evidência de funcionamento não encerra a fase.
