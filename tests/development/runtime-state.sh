@@ -95,8 +95,9 @@ printf 'Passed:   %d\nWarnings: %d\nFailed:   %d\n' "$PASS_COUNT" "$WARN_COUNT" 
 ((FAIL_COUNT == 0)) || exit 1
 
 printf '\nAutomated development validation completed successfully.\n'
-printf '\nManual validation still required:\n'
+printf '\nManual validation checklist for a new or rebuilt workstation:\n'
 printf '  - confirm GitHub SSH authentication and push/pull using a controlled repository\n'
 printf '  - open Visual Studio Code graphically and verify the integrated Zsh terminal\n'
 printf '  - open a real project in a Dev Container and run its tests\n'
-printf '  - run `codex --login` if needed and validate one reviewed task in a controlled repository\n'
+printf '  - run `codex login` if needed and validate one reviewed task in a controlled repository\n'
+printf '\nThe validated baseline for this profile is recorded in its phase manifest.\n'
