@@ -1,9 +1,9 @@
 ---
 title: Roadmap
-version: 2.1
+version: 2.2
 status: Stable
 author: Rafael
-last_review: 2026-08-13
+last_review: 2026-08-14
 related:
   - ADR-0002
   - architecture.md
@@ -19,7 +19,7 @@ Itens listados aqui representam direção arquitetural e prioridades, não garan
 
 ## Estado atual
 
-A fundação estrutural está consolidada. As fases 01, 02 e 03 possuem implementação e validações versionadas. A fase 04 está implementada, mas ainda depende da validação completa na workstation para ser considerada concluída.
+A fundação estrutural está consolidada. As fases 01, 02, 03 e 04 possuem implementação e validações versionadas; a fase 04 também foi exercitada na workstation com seus checks manuais concluídos.
 
 O repositório já possui fontes compartilhadas em `packages/`, `system/` e `dotfiles/`, bibliotecas reutilizáveis em `scripts/lib/` e gates em `tests/`.
 
@@ -83,31 +83,24 @@ Escopo implementado:
 
 Critério: login gráfico e sessão desktop passam no gate da fase 03.
 
-## Milestone 4 — Development Environment 🟡
+## Milestone 4 — Development Environment ✅
 
 Objetivo: preparar a workstation para desenvolvimento sem transformar o host em ambiente específico de linguagem.
 
-Escopo implementado:
+Escopo validado:
 
 * Git e identidade local;
+* GitHub via SSH;
 * Zsh, Oh My Zsh e Starship;
 * Visual Studio Code oficial da Microsoft;
+* terminal Zsh integrado ao VS Code;
 * Docker Engine, Compose e Buildx;
-* Dev Containers;
+* Dev Containers com runtime de projeto isolado do host;
 * ferramentas CLI globais;
-* Codex CLI;
+* Codex CLI com autenticação e tarefa controlada;
 * gates estático e de runtime.
 
-Pendente para conclusão:
-
-* executar toda a fase 04 na workstation atual;
-* reabrir sessão após associação ao grupo `docker`;
-* validar GitHub via SSH/push-pull;
-* validar VS Code gráfico e terminal integrado;
-* validar um Dev Container real;
-* validar autenticação e uma tarefa controlada com Codex CLI.
-
-Critério: `07-development-validation` passa e os checks manuais documentados são concluídos.
+Critério concluído em 2026-08-14: `07-development-validation` passou e os checks manuais documentados foram exercitados na workstation.
 
 ## Milestone 5 — Repository Automation
 
