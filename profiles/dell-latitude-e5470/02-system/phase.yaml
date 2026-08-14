@@ -7,7 +7,7 @@ phase:
   description: >
     Configuração do sistema base da Linux Workstation para o perfil
     Dell Latitude E5470.
-  status: draft
+  status: validated
 
 profile:
   id: dell-latitude-e5470
@@ -110,4 +110,4 @@ validation:
 
 metadata:
   created_at: 2026-08-01
-  last_review: 2026-08-13
+  last_review: 2026-08-14
