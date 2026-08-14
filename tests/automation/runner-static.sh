@@ -37,7 +37,6 @@ for phase in 01-installation 02-system 03-desktop 04-development; do
   else
     fail "Implemented phase manifest missing: $phase"
   fi
-
 done
 
 for phase in 05-operations 06-security; do
@@ -57,6 +56,20 @@ entrypoint="$(manifest_step_field "${PROFILE_ROOT}/04-development/phase.yaml" "0
 
 mode="$(manifest_step_field "${PROFILE_ROOT}/04-development/phase.yaml" "07-development-validation" mode)"
 [[ "$mode" == "validation" ]] && pass "Validation mode resolved" || fail "Validation mode resolution: $mode"
+
+plan_output="$("${REPO_ROOT}/scripts/workstation" run-phase 04-development --plan)"
+[[ "$plan_output" == *"01-version-control"* && "$plan_output" == *"07-development-validation"* ]] &&
+  pass "Phase plan includes first and final development steps" || fail "Phase plan output is incomplete"
+
+resume_output="$("${REPO_ROOT}/scripts/workstation" run-phase 04-development --from 05-cli-tools --plan)"
+[[ "$resume_output" != *"01-version-control"* && "$resume_output" == *"05-cli-tools"* && "$resume_output" == *"07-development-validation"* ]] &&
+  pass "Phase resume plan starts from the requested step" || fail "Phase resume planning failed"
+
+if "${REPO_ROOT}/scripts/workstation" run-phase 04-development --from not-a-step --plan >/dev/null 2>&1; then
+  fail "Unknown resume step should be rejected"
+else
+  pass "Unknown resume step is rejected"
+fi
 
 printf '\nAutomation runner static summary\n'
 printf 'Passed: %d\nFailed: %d\n' "$pass_count" "$fail_count"
