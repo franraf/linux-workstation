@@ -1,54 +1,67 @@
 # Linux Workstation
 
-Uma plataforma pessoal para construir, manter e reproduzir uma workstation Linux moderna baseada em Arch Linux.
+Uma plataforma pessoal para construção, manutenção e reprodução de uma workstation Linux moderna baseada em Arch Linux.
 
-O projeto aplica à máquina pessoal princípios de engenharia normalmente usados em software e infraestrutura: decisões arquiteturais documentadas, fontes versionadas, automação reproduzível, validação objetiva e evolução incremental.
+Este projeto trata a infraestrutura de uma máquina pessoal com princípios normalmente aplicados a projetos profissionais de software e infraestrutura: decisões documentadas, mudanças versionadas, automação testável e procedimentos reproduzíveis.
 
 O primeiro perfil de hardware suportado é o **Dell Latitude E5470**.
 
 ## Objetivo
 
-Construir um ambiente Linux que seja reproduzível, documentado, seguro, modular, compreensível e simples de manter, com desenvolvimento baseado principalmente em containers.
+Construir um ambiente Linux que seja:
 
-O repositório representa o estado esperado da workstation. Configuração relevante não deve depender de ajustes manuais desconhecidos pelo projeto.
+* reproduzível;
+* documentado;
+* seguro;
+* simples de manter;
+* modular;
+* compreensível antes de ser automatizado;
+* preparado para desenvolvimento com containers.
+
+O repositório é a fonte da verdade. Toda configuração relevante da workstation deve estar documentada ou representada por arquivos versionados.
 
 ## Princípios
 
-1. Decisões antes da implementação.
+1. Documentação antes da implementação.
 2. Automação depois do entendimento.
 3. Mudanças pequenas, testáveis e reversíveis.
-4. Preferência por fontes oficiais e consolidadas.
-5. Exceções externas exigem justificativa documentada.
+4. Preferência por ferramentas oficiais e consolidadas.
+5. Decisões arquiteturais registradas em ADRs.
 6. Scripts idempotentes sempre que possível.
-7. Operações destrutivas exigem confirmação explícita.
-8. Toda capacidade importante deve possuir validação.
-9. Problemas encontrados devem melhorar documentação, scripts ou testes.
-10. O roadmap registra ideias futuras sem interromper a fase atual.
+7. Comandos destrutivos exigem validação explícita.
+8. Toda implementação importante deve possuir uma forma de verificação.
+9. Problemas encontrados devem gerar documentação ou melhorias.
+10. Novas ideias entram no roadmap e não interrompem a implementação sem justificativa técnica.
 
 ## Arquitetura atual
 
-A implementação principal utiliza:
+A workstation utiliza, entre outros componentes:
 
-* Arch Linux, UEFI e GPT;
-* LUKS2 e Btrfs;
-* systemd-boot e mkinitcpio;
-* Snapper;
-* NetworkManager, PipeWire e BlueZ;
-* Hyprland, Waybar, Hyprlock, Hypridle, Rofi, SwayNC, Kitty e Thunar;
-* greetd + tuigreet para autenticação da sessão;
-* Git, Zsh, Oh My Zsh e Starship;
+* Arch Linux;
+* UEFI + GPT;
+* systemd-boot;
+* LUKS2;
+* Btrfs;
+* Hyprland;
+* greetd + tuigreet;
+* Waybar;
+* PipeWire;
+* NetworkManager;
+* Docker + Compose + Buildx;
+* Dev Containers;
+* Git;
+* Zsh + Oh My Zsh + Starship;
 * Visual Studio Code oficial da Microsoft;
-* Docker Engine, Compose, Buildx e Dev Containers;
-* ferramentas CLI globais de produtividade;
-* Codex CLI como ferramenta global de IA.
+* Codex CLI.
 
-A GPU Intel integrada é o padrão. A GPU AMD dedicada permanece disponível para uso sob demanda.
+O sistema utiliza a GPU Intel integrada como padrão. A GPU AMD dedicada permanece disponível para uso sob demanda.
 
 ## Organização
 
 ```text
 linux-workstation/
 ├── .github/
+│   └── workflows/
 ├── docs/
 │   ├── adr/
 │   ├── architecture.md
@@ -61,7 +74,8 @@ linux-workstation/
 ├── profiles/
 │   └── dell-latitude-e5470/
 ├── scripts/
-│   └── lib/
+│   ├── lib/
+│   └── workstation
 ├── system/
 ├── tests/
 ├── .gitignore
@@ -72,41 +86,47 @@ linux-workstation/
 
 ### `docs/adr/`
 
-Registra decisões arquiteturais, contexto, alternativas e consequências.
+Registra decisões arquiteturais, seus contextos, alternativas e consequências.
 
 ### `playbooks/`
 
-Descreve os procedimentos e a intenção operacional de cada etapa.
+Contém procedimentos reproduzíveis para instalação, configuração, recuperação e manutenção.
 
 ### `packages/`
 
-Contém as fontes declarativas de pacotes, organizadas por capacidade ou fase.
-
-### `system/`
-
-Contém configurações canônicas reproduzíveis da workstation e de ferramentas instaladas no host.
-
-### `dotfiles/`
-
-Contém configurações de usuário que fazem parte desta workstation e podem ser distribuídas para o home pelo respectivo script.
+Mantém listas declarativas de pacotes utilizados no sistema.
 
 ### `profiles/`
 
-Contém manifests e orquestradores específicos de hardware. Os `run.sh` devem consumir fontes compartilhadas em vez de duplicá-las localmente.
+Contém manifests, ordem de execução e particularidades de cada perfil de hardware.
 
 ### `scripts/lib/`
 
-Contém funções Bash reutilizáveis para requisitos, pacotes, configuração de usuário, armazenamento e configuração do sistema.
+Contém comportamento reutilizável compartilhado pelos steps.
+
+### `scripts/workstation`
+
+É o runner de alto nível do repositório. Ele lê `profile.yaml` e `phase.yaml`, lista fases/steps e executa um step explícito sem substituir as confirmações implementadas pelo próprio step.
+
+### `system/`
+
+Armazena configurações canônicas de sistema e serviços.
+
+### `dotfiles/`
+
+Armazena configurações canônicas de usuário que pertencem à workstation.
 
 ### `tests/`
 
-Contém gates estáticos e verificações de runtime. Uma fase só deve ser considerada concluída após sua validação aplicável.
+Contém gates estáticos e de runtime que validam o estado esperado.
 
 ### `examples/`
 
-Reserva exemplos reutilizáveis que não sejam fontes canônicas de configuração.
+Reúne exemplos realmente reutilizáveis, como Dev Containers de referência.
 
 ## Perfil inicial
+
+O primeiro profile suportado é:
 
 ```text
 profiles/dell-latitude-e5470/
@@ -123,17 +143,7 @@ Hardware principal:
 
 Não há dual boot.
 
-## Estratégia de desenvolvimento
-
-O host contém apenas ferramentas globais da workstation. Runtimes e SDKs específicos de projetos permanecem preferencialmente em Dev Containers.
-
-Ferramentas como `.NET`, Node.js, Terraform, kubectl, Helm, AWS CLI e runtimes Python de projeto não fazem parte da baseline do host.
-
-O uso de pacotes oficiais do Arch continua sendo o padrão. Distribuições upstream são exceções explícitas e documentadas, como o Visual Studio Code oficial da Microsoft.
-
-## Fases
-
-O perfil atual está dividido em:
+## Fases implementadas e validadas
 
 ```text
 01-installation
@@ -142,33 +152,96 @@ O perfil atual está dividido em:
 04-development
 ```
 
-Cada fase possui um `phase.yaml`, playbooks correspondentes e uma etapa de validação. Fases futuras devem entrar no roadmap antes de serem implementadas.
+Cada fase possui seu próprio `phase.yaml`, playbooks, scripts e gate final.
 
-## Estado atual
+A Milestone 5 — Repository Automation está em andamento e adiciona coordenação de alto nível sem duplicar a lógica dos steps.
 
-As fases 01, 02 e 03 já possuem implementação e validações versionadas. A fase 04 está implementada e aguarda validação completa na workstation antes de ser considerada concluída.
+## Estratégia de desenvolvimento
 
-Consulte [`docs/roadmap.md`](docs/roadmap.md) para o estado das milestones e [`docs/architecture.md`](docs/architecture.md) para os limites arquiteturais.
+As ferramentas fundamentais permanecem instaladas no host, incluindo Git, Docker, VS Code, OpenSSH e ferramentas CLI globais.
+
+SDKs, CLIs e runtimes específicos de projetos permanecem preferencialmente em Dev Containers.
+
+Isso inclui, entre outros:
+
+* .NET;
+* Node.js;
+* Terraform;
+* kubectl;
+* Helm;
+* AWS CLI;
+* runtimes Python utilizados pelos projetos.
+
+## Runner do repositório
+
+Depois de clonar o repositório, os principais comandos de inspeção são:
+
+```bash
+./scripts/workstation phases
+./scripts/workstation steps 04-development
+```
+
+Um único step pode ser executado explicitamente por:
+
+```bash
+./scripts/workstation run-step 04-development 07-development-validation
+```
+
+O runner nunca responde automaticamente confirmações destrutivas.
+
+Os mesmos comandos possuem atalhos no Makefile:
+
+```bash
+make phases
+make steps PHASE=04-development
+make run-step PHASE=04-development STEP=07-development-validation
+make validate-automation
+```
+
+## Status
+
+As milestones de Installation, System, Desktop e Development estão validadas na workstation real.
+
+O trabalho atual está concentrado na **Repository Automation**, seguida futuramente por Operations e Security.
+
+Nenhum procedimento deve ser considerado estável somente porque existe no repositório; o status deve acompanhar a validação real correspondente.
+
+## Conceitos arquiteturais
+
+* **Architecture First:** decisões precedem implementações.
+* **Documentation as Source of Truth:** o repositório representa o estado esperado da workstation.
+* **Incremental Evolution:** mudanças são pequenas, verificáveis e reversíveis.
+* **Single Responsibility:** cada artefato possui uma responsabilidade clara.
+* **Capabilities over Implementations:** capacidades são permanentes; ferramentas podem ser substituídas.
+* **Modular Configuration:** configurações são separadas por responsabilidade.
+* **Validate Before Advancing:** cada fase termina com uma validação objetiva.
+* **Profile-driven Orchestration:** manifests coordenam execução sem duplicar a implementação dos steps.
+
+Consulte [`docs/architecture.md`](docs/architecture.md), [`docs/roadmap.md`](docs/roadmap.md) e os [Architecture Decision Records](docs/adr/) para detalhes.
 
 ## Como começar
 
-1. Leia a arquitetura, os padrões e os ADRs.
-2. Identifique o perfil de hardware.
-3. Execute os playbooks na ordem declarada no `phase.yaml`.
-4. Use os `run.sh` como orquestradores das fontes versionadas.
-5. Execute o gate final da fase antes de avançar.
-6. Registre qualquer divergência encontrada durante a execução real.
+1. Leia arquitetura, padrões e ADRs.
+2. Identifique o profile de hardware.
+3. Consulte as fases e steps disponíveis.
+4. Execute os playbooks/runner na ordem indicada.
+5. Valide cada fase antes de avançar.
+6. Registre problemas e lições aprendidas.
 
 ## Estados dos documentos
 
-* `Draft`: conteúdo em elaboração ou ainda não validado completamente;
-* `Review`: pronto para revisão;
-* `Stable`: validado e adotado;
-* `Deprecated`: mantido apenas como referência histórica.
+Os documentos podem utilizar:
+
+* `Draft`;
+* `Review`;
+* `Stable`;
+* `Deprecated`.
 
 ## Contribuições
 
-Toda mudança relevante deve respeitar os princípios do projeto, atualizar a documentação correspondente e incluir ou ajustar validações quando aplicável. Decisões arquiteturais devem ser registradas em ADR antes de sua implementação.
+Toda mudança relevante deve respeitar os princípios do projeto, possuir justificativa clara, atualizar a documentação correspondente e incluir ou atualizar verificações quando aplicável.
+
+Decisões arquiteturais devem ser registradas em ADR antes da implementação.
 
 ## Licença
 
