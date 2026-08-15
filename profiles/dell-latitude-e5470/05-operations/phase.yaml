@@ -39,8 +39,9 @@ steps:
     playbook: ../../../playbooks/05-operations/02-system-updates.md
 
   03-health-checks:
-    mode: manual
+    mode: validation
     destructive: false
+    source: 03-health-checks/run.sh
     playbook: ../../../playbooks/05-operations/03-health-checks.md
 
   04-snapshots-and-retention:
