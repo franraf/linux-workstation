@@ -45,8 +45,9 @@ steps:
     playbook: ../../../playbooks/05-operations/03-health-checks.md
 
   04-snapshots-and-retention:
-    mode: manual
+    mode: interactive-script
     destructive: false
+    source: 04-snapshots-and-retention/run.sh
     playbook: ../../../playbooks/05-operations/04-snapshots-and-retention.md
 
   05-backup:
@@ -75,4 +76,4 @@ validation:
 
 metadata:
   created_at: 2026-08-14
-  last_review: 2026-08-14
+  last_review: 2026-08-15
