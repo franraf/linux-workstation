@@ -60,7 +60,7 @@ report_configuration_interventions() {
   if ((found == 0)); then
     printf '  none found under /etc\n'
   else
-    warn "Review the files listed above before considering maintenance complete."
+    log_warn "Review the files listed above before considering maintenance complete."
   fi
 }
 
