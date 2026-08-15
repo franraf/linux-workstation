@@ -1,7 +1,7 @@
 ---
 title: Health checks
-version: 0.1
-status: Draft
+version: 0.2
+status: Implemented
 author: Rafael
 last_review: 2026-08-14
 related:
@@ -12,51 +12,78 @@ related:
 
 ## Objetivo
 
-Definir verificações de saúde que indiquem problemas operacionais antes que eles se transformem em falhas de uso ou recuperação.
+Executar verificações determinísticas de saúde da workstation antes e depois de manutenção ou mudanças sensíveis.
 
 ## Pré-requisitos
 
 - política de manutenção definida;
-- serviços essenciais da workstation conhecidos;
-- critérios de `PASS`, `WARN` e `FAIL` documentados antes de automatizar cada check.
+- Arch Linux inicializado com systemd;
+- execução como root para acesso consistente aos dados operacionais;
+- ferramentas básicas do sistema disponíveis.
 
 ## Procedimento
 
-1. Verificar serviços systemd em estado de falha.
-2. Verificar timers essenciais definidos pelo projeto.
-3. Medir espaço livre e uso dos filesystems.
-4. Verificar o estado observável do Btrfs.
-5. Revisar erros relevantes de boot e kernel segundo critérios documentados.
-6. Verificar conectividade de rede básica.
-7. Verificar Docker quando instalado e habilitado.
-8. Verificar existência e acessibilidade dos artefatos necessários à recuperação.
-9. Consolidar o resultado em resumo determinístico.
+O entrypoint é:
+
+```bash
+sudo profiles/dell-latitude-e5470/05-operations/03-health-checks/run.sh
+```
+
+O check atual verifica:
+
+1. unidades systemd em estado `failed`;
+2. utilização do filesystem raiz;
+3. tipo do filesystem raiz e contadores de erro do Btrfs;
+4. existência de rota de rede padrão;
+5. estado do `docker.service` quando Docker está instalado;
+6. consistência da base local do Pacman;
+7. mensagens de prioridade `err` no journal do boot atual.
 
 ### Política de saída
 
 - `PASS`: condição esperada confirmada;
-- `WARN`: condição que merece atenção, mas não invalida imediatamente a operação;
-- `FAIL`: condição que torna o estado operacional inadequado ou impede uma ação dependente.
+- `WARN`: condição que merece investigação, mas não invalida automaticamente a operação;
+- `FAIL`: condição operacional impeditiva.
 
-Avisos não devem ser tratados como sucesso silencioso nem como falha fatal sem critério documentado.
+O script retorna código diferente de zero somente quando há pelo menos um `FAIL`.
+
+### Critérios iniciais
+
+Para uso do filesystem raiz:
+
+- abaixo de 85%: `PASS`;
+- de 85% a 94%: `WARN`;
+- 95% ou mais: `FAIL`.
+
+Entradas `err` do journal são `WARN`, porque a presença isolada de mensagens dessa prioridade não prova uma falha operacional atual. O operador recebe o comando de revisão correspondente.
+
+Contadores Btrfs diferentes de zero são inicialmente `WARN`; a interpretação depende do histórico e do dispositivo afetado.
+
+Docker ausente ou instalado mas inativo é `WARN`, não `FAIL`, porque o health check não deve tornar um componente de desenvolvimento opcional requisito de boot da workstation.
 
 ## Verificação
 
-A implementação estará pronta quando produzir um resumo determinístico e retornar código diferente de zero apenas para condições classificadas como falha.
+A implementação está pronta quando produz um resumo determinístico de `Passed`, `Warnings` e `Failed`, e retorna código diferente de zero somente diante de falhas classificadas como impeditivas.
+
+O health check deve ser executado antes e depois de `02-system-updates` durante a janela semanal.
 
 ## Problemas comuns
 
 ### Logs ruidosos gerando falsos positivos
 
-Não transformar qualquer mensagem histórica em falha atual; definir janela e severidade relevantes.
+Mensagens `err` do boot são reportadas como aviso e precisam de revisão contextual; não são convertidas automaticamente em falha.
 
 ### Serviço opcional tratado como obrigatório
 
-Distinguir serviços essenciais de componentes opcionais ou desabilitados intencionalmente.
+Docker é observado, mas sua ausência ou inatividade não bloqueia a saúde geral da workstation.
 
-### `WARN` sem ação possível
+### Btrfs apresenta contador histórico
 
-Todo aviso recorrente deve ter significado operacional documentado ou ser removido do gate.
+Um contador não zero permanece visível como `WARN`. Investigue antes de zerar estatísticas; não apague evidência automaticamente.
+
+### Filesystem próximo da capacidade
+
+Uso acima de 85% exige atenção e acima de 95% bloqueia o gate até que haja espaço operacional adequado.
 
 ## Próximo playbook
 
@@ -67,7 +94,9 @@ Todo aviso recorrente deve ter significado operacional documentado ou ser removi
 - `01-maintenance-policy.md`
 - `02-system-updates.md`
 - `docs/standards.md`
+- `profiles/dell-latitude-e5470/05-operations/03-health-checks/run.sh`
 
 ## Lições aprendidas
 
 - Health checks úteis precisam de critérios de severidade explícitos; quantidade de checks não substitui qualidade do sinal.
+- Sinais históricos ou contextuais devem permanecer visíveis sem serem promovidos artificialmente a falha fatal.
