@@ -85,25 +85,9 @@ if [[ ! -f "${CONFIG_FILE}" ]]; then
 
   log_info "Canonical ${EXPECTED_SNAPSHOT_SUBVOLUME} mount detected; creating Snapper config without recreating ${SNAPSHOT_DIR}."
   install -Dm600 "${CONFIG_TEMPLATE}" "${CONFIG_FILE}"
-
-  sed -i \
-    -e 's|^SUBVOLUME=.*|SUBVOLUME="/"|' \
-    -e 's|^FSTYPE=.*|FSTYPE="btrfs"|' \
-    -e 's/^TIMELINE_CREATE=.*/TIMELINE_CREATE="no"/' \
-    -e 's/^TIMELINE_CLEANUP=.*/TIMELINE_CLEANUP="no"/' \
-    -e 's/^NUMBER_CLEANUP=.*/NUMBER_CLEANUP="no"/' \
-    -e 's/^EMPTY_PRE_POST_CLEANUP=.*/EMPTY_PRE_POST_CLEANUP="no"/' \
-    "${CONFIG_FILE}"
-else
-  log_info "Snapper configuration already exists: ${CONFIG_FILE}"
 fi
 
-if [[ ! -f "${CONFIG_FILE}" ]]; then
-  log_error "Snapper configuration was not created: ${CONFIG_FILE}"
-  exit 1
-fi
-
-# Enforce the approved non-destructive baseline on repeated runs.
+# Enforce the approved non-destructive baseline on every run.
 sed -i \
   -e 's|^SUBVOLUME=.*|SUBVOLUME="/"|' \
   -e 's|^FSTYPE=.*|FSTYPE="btrfs"|' \
@@ -113,8 +97,26 @@ sed -i \
   -e 's/^EMPTY_PRE_POST_CLEANUP=.*/EMPTY_PRE_POST_CLEANUP="no"/' \
   "${CONFIG_FILE}"
 
-if [[ "$(snapper -c "${SNAPPER_CONFIG}" get-config -k SUBVOLUME -v 2>/dev/null | tail -n1 | xargs)" != "/" ]]; then
-  log_error "Snapper root configuration does not target /."
+if [[ ! -f "${CONFIG_FILE}" ]]; then
+  log_error "Snapper configuration was not created: ${CONFIG_FILE}"
+  exit 1
+fi
+
+configured_subvolume="$(awk -F= '$1 == "SUBVOLUME" {value=$2; gsub(/^\"|\"$/, "", value); print value; exit}' "${CONFIG_FILE}")"
+configured_fstype="$(awk -F= '$1 == "FSTYPE" {value=$2; gsub(/^\"|\"$/, "", value); print value; exit}' "${CONFIG_FILE}")"
+
+if [[ "${configured_subvolume}" != "/" ]]; then
+  log_error "Snapper root configuration does not target /. Found: ${configured_subvolume:-<empty>}"
+  exit 1
+fi
+
+if [[ "${configured_fstype}" != "btrfs" ]]; then
+  log_error "Snapper root configuration does not declare Btrfs. Found: ${configured_fstype:-<empty>}"
+  exit 1
+fi
+
+if ! snapper -c "${SNAPPER_CONFIG}" get-config >/dev/null; then
+  log_error "Snapper cannot load configuration '${SNAPPER_CONFIG}'."
   exit 1
 fi
 
