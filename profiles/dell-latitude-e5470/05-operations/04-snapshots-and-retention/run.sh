@@ -9,6 +9,9 @@ source "${REPO_ROOT}/scripts/lib/logging.sh"
 PACKAGE_FILE="${REPO_ROOT}/packages/operations/snapshots.txt"
 SNAPPER_CONFIG="root"
 SNAPSHOT_DIR="/.snapshots"
+CONFIG_FILE="/etc/snapper/configs/${SNAPPER_CONFIG}"
+CONFIG_TEMPLATE="/usr/share/snapper/config-templates/default"
+EXPECTED_SNAPSHOT_SUBVOLUME="@snapshots"
 
 trap 'log_error "run.sh failed at line ${LINENO} with exit code $?"' ERR
 
@@ -51,28 +54,72 @@ else
   log_info "Snapper is already installed."
 fi
 
-if [[ ! -f "/etc/snapper/configs/${SNAPPER_CONFIG}" ]]; then
-  if [[ -e "${SNAPSHOT_DIR}" ]]; then
-    log_error "${SNAPSHOT_DIR} already exists but Snapper config '${SNAPPER_CONFIG}' does not. Refusing to modify the existing Btrfs layout automatically."
-    log_error "Inspect the existing @snapshots mount before creating the Snapper configuration."
+if ! mountpoint -q "${SNAPSHOT_DIR}"; then
+  log_error "${SNAPSHOT_DIR} is not a mount point."
+  log_error "The canonical Btrfs layout requires ${EXPECTED_SNAPSHOT_SUBVOLUME} to be mounted there."
+  exit 1
+fi
+
+if [[ "$(findmnt -n -o FSTYPE "${SNAPSHOT_DIR}")" != "btrfs" ]]; then
+  log_error "${SNAPSHOT_DIR} is not backed by Btrfs."
+  exit 1
+fi
+
+snapshot_source="$(findmnt -n -o SOURCE "${SNAPSHOT_DIR}")"
+if [[ "${snapshot_source}" != *"[/${EXPECTED_SNAPSHOT_SUBVOLUME}]" ]]; then
+  log_error "Unexpected snapshot mount source: ${snapshot_source}"
+  log_error "Expected the canonical Btrfs subvolume ${EXPECTED_SNAPSHOT_SUBVOLUME}."
+  exit 1
+fi
+
+if ! btrfs subvolume show "${SNAPSHOT_DIR}" >/dev/null 2>&1; then
+  log_error "${SNAPSHOT_DIR} is not a valid Btrfs subvolume."
+  exit 1
+fi
+
+if [[ ! -f "${CONFIG_FILE}" ]]; then
+  if [[ ! -r "${CONFIG_TEMPLATE}" ]]; then
+    log_error "Snapper configuration template not found: ${CONFIG_TEMPLATE}"
     exit 1
   fi
 
-  snapper -c "${SNAPPER_CONFIG}" create-config /
-fi
+  log_info "Canonical ${EXPECTED_SNAPSHOT_SUBVOLUME} mount detected; creating Snapper config without recreating ${SNAPSHOT_DIR}."
+  install -Dm600 "${CONFIG_TEMPLATE}" "${CONFIG_FILE}"
 
-CONFIG_FILE="/etc/snapper/configs/${SNAPPER_CONFIG}"
+  sed -i \
+    -e 's|^SUBVOLUME=.*|SUBVOLUME="/"|' \
+    -e 's|^FSTYPE=.*|FSTYPE="btrfs"|' \
+    -e 's/^TIMELINE_CREATE=.*/TIMELINE_CREATE="no"/' \
+    -e 's/^TIMELINE_CLEANUP=.*/TIMELINE_CLEANUP="no"/' \
+    -e 's/^NUMBER_CLEANUP=.*/NUMBER_CLEANUP="no"/' \
+    -e 's/^EMPTY_PRE_POST_CLEANUP=.*/EMPTY_PRE_POST_CLEANUP="no"/' \
+    "${CONFIG_FILE}"
+else
+  log_info "Snapper configuration already exists: ${CONFIG_FILE}"
+fi
 
 if [[ ! -f "${CONFIG_FILE}" ]]; then
   log_error "Snapper configuration was not created: ${CONFIG_FILE}"
   exit 1
 fi
 
-# Timeline snapshots are intentionally outside the approved policy.
-sed -i 's/^TIMELINE_CREATE=.*/TIMELINE_CREATE="no"/' "${CONFIG_FILE}"
+# Enforce the approved non-destructive baseline on repeated runs.
+sed -i \
+  -e 's|^SUBVOLUME=.*|SUBVOLUME="/"|' \
+  -e 's|^FSTYPE=.*|FSTYPE="btrfs"|' \
+  -e 's/^TIMELINE_CREATE=.*/TIMELINE_CREATE="no"/' \
+  -e 's/^TIMELINE_CLEANUP=.*/TIMELINE_CLEANUP="no"/' \
+  -e 's/^NUMBER_CLEANUP=.*/NUMBER_CLEANUP="no"/' \
+  -e 's/^EMPTY_PRE_POST_CLEANUP=.*/EMPTY_PRE_POST_CLEANUP="no"/' \
+  "${CONFIG_FILE}"
 
-log_info "Snapper configuration exists and timeline snapshots are disabled."
-log_info "Retention enforcement for maintenance pairs and manual snapshots remains explicit until snapshot tagging is integrated with the updater."
+if [[ "$(snapper -c "${SNAPPER_CONFIG}" get-config -k SUBVOLUME -v 2>/dev/null | tail -n1 | xargs)" != "/" ]]; then
+  log_error "Snapper root configuration does not target /."
+  exit 1
+fi
+
+log_info "Snapper root configuration exists on the canonical @snapshots mount."
+log_info "Timeline and automatic cleanup are disabled until snapshot classification and retention enforcement are validated."
 
 printf '\nCurrent Snapper state:\n\n'
 snapper -c "${SNAPPER_CONFIG}" list
