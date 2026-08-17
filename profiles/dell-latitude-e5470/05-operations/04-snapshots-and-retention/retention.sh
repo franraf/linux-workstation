@@ -32,36 +32,35 @@ if [[ ${EUID} -ne 0 ]]; then
 fi
 
 command -v snapper >/dev/null || { printf '[ERROR] snapper is unavailable.\n' >&2; exit 1; }
+command -v jq >/dev/null || { printf '[ERROR] jq is unavailable.\n' >&2; exit 1; }
 snapper -c "$SNAPPER_CONFIG" get-config >/dev/null || { printf '[ERROR] Snapper config root is unavailable.\n' >&2; exit 1; }
 
-mapfile -t snapshot_ids < <(find /.snapshots -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | grep -E '^[0-9]+$' | sort -n)
+snapshot_json="$(snapper --jsonout -c "$SNAPPER_CONFIG" list --columns number,userdata,pre-number,post-number)"
 
-manual_ids=()
-maintenance_pre_ids=()
-maintenance_post_by_pre=()
+mapfile -t manual_ids < <(
+  jq -r --arg config "$SNAPPER_CONFIG" '
+    .[$config][]
+    | select(.number != 0)
+    | select(.userdata.class? == "manual")
+    | select(."pre-number" == null and ."post-number" == null)
+    | .number
+  ' <<<"$snapshot_json" | sort -n
+)
 
-for id in "${snapshot_ids[@]}"; do
-  [[ "$id" == "0" ]] && continue
-  info="/.snapshots/${id}/info.xml"
-  [[ -r "$info" ]] || continue
-
-  userdata="$(sed -n 's:.*<userdata>\(.*\)</userdata>.*:\1:p' "$info" | head -n1)"
-  type="$(sed -n 's:.*<type>\(.*\)</type>.*:\1:p' "$info" | head -n1)"
-  pre="$(sed -n 's:.*<pre_num>\(.*\)</pre_num>.*:\1:p' "$info" | head -n1)"
-
-  case "$userdata" in
-    *class=manual*)
-      [[ "$type" == "single" ]] && manual_ids+=("$id")
-      ;;
-    *class=maintenance*)
-      if [[ "$type" == "pre" ]]; then
-        maintenance_pre_ids+=("$id")
-      elif [[ "$type" == "post" && "$pre" =~ ^[0-9]+$ ]]; then
-        maintenance_post_by_pre+=("${pre}:${id}")
-      fi
-      ;;
-  esac
-done
+mapfile -t maintenance_pairs < <(
+  jq -r --arg config "$SNAPPER_CONFIG" '
+    .[$config] as $items
+    | $items[]
+    | select(.number != 0)
+    | select(.userdata.class? == "maintenance")
+    | select(."post-number" != null)
+    | . as $pre
+    | ($items[] | select(.number == $pre."post-number")) as $post
+    | select($post.userdata.class? == "maintenance")
+    | select($post."pre-number" == $pre.number)
+    | "\($pre.number):\($post.number)"
+  ' <<<"$snapshot_json" | sort -t: -k1,1n
+)
 
 candidate_groups=()
 
@@ -72,28 +71,16 @@ if ((manual_excess > 0)); then
   done
 fi
 
-complete_pairs=()
-for pre_id in "${maintenance_pre_ids[@]}"; do
-  post_id=""
-  for pair in "${maintenance_post_by_pre[@]}"; do
-    if [[ "${pair%%:*}" == "$pre_id" ]]; then
-      post_id="${pair##*:}"
-      break
-    fi
-  done
-  [[ -n "$post_id" ]] && complete_pairs+=("${pre_id}:${post_id}")
-done
-
-pair_excess=$((${#complete_pairs[@]} - MAINTENANCE_PAIR_LIMIT))
+pair_excess=$((${#maintenance_pairs[@]} - MAINTENANCE_PAIR_LIMIT))
 if ((pair_excess > 0)); then
   for ((i=0; i<pair_excess; i++)); do
-    candidate_groups+=("maintenance:${complete_pairs[$i]}")
+    candidate_groups+=("maintenance:${maintenance_pairs[$i]}")
   done
 fi
 
 printf '\nSnapshot retention plan\n-----------------------\n'
 printf 'Manual snapshots:       %d / %d\n' "${#manual_ids[@]}" "$MANUAL_LIMIT"
-printf 'Maintenance pairs:      %d / %d\n' "${#complete_pairs[@]}" "$MAINTENANCE_PAIR_LIMIT"
+printf 'Maintenance pairs:      %d / %d\n' "${#maintenance_pairs[@]}" "$MAINTENANCE_PAIR_LIMIT"
 printf 'Deletion candidate(s):  %d\n\n' "${#candidate_groups[@]}"
 
 if ((${#candidate_groups[@]} == 0)); then
