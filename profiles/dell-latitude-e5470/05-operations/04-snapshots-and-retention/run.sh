@@ -11,6 +11,7 @@ SNAPPER_CONFIG="root"
 SNAPSHOT_DIR="/.snapshots"
 CONFIG_FILE="/etc/snapper/configs/${SNAPPER_CONFIG}"
 CONFIG_TEMPLATE="/usr/share/snapper/config-templates/default"
+GLOBAL_CONFIG="/etc/conf.d/snapper"
 EXPECTED_SNAPSHOT_SUBVOLUME="@snapshots"
 
 trap 'log_error "run.sh failed at line ${LINENO} with exit code $?"' ERR
@@ -97,13 +98,8 @@ sed -i \
   -e 's/^EMPTY_PRE_POST_CLEANUP=.*/EMPTY_PRE_POST_CLEANUP="no"/' \
   "${CONFIG_FILE}"
 
-if [[ ! -f "${CONFIG_FILE}" ]]; then
-  log_error "Snapper configuration was not created: ${CONFIG_FILE}"
-  exit 1
-fi
-
-configured_subvolume="$(awk -F= '$1 == "SUBVOLUME" {value=$2; gsub(/^\"|\"$/, "", value); print value; exit}' "${CONFIG_FILE}")"
-configured_fstype="$(awk -F= '$1 == "FSTYPE" {value=$2; gsub(/^\"|\"$/, "", value); print value; exit}' "${CONFIG_FILE}")"
+configured_subvolume="$(grep -m1 '^SUBVOLUME=' "${CONFIG_FILE}" | cut -d= -f2- | tr -d '"')"
+configured_fstype="$(grep -m1 '^FSTYPE=' "${CONFIG_FILE}" | cut -d= -f2- | tr -d '"')"
 
 if [[ "${configured_subvolume}" != "/" ]]; then
   log_error "Snapper root configuration does not target /. Found: ${configured_subvolume:-<empty>}"
@@ -114,6 +110,36 @@ if [[ "${configured_fstype}" != "btrfs" ]]; then
   log_error "Snapper root configuration does not declare Btrfs. Found: ${configured_fstype:-<empty>}"
   exit 1
 fi
+
+# A manually provisioned config must also be registered globally. create-config
+# normally performs this step, but it cannot be used with our pre-existing
+# canonical @snapshots mount.
+if [[ ! -f "${GLOBAL_CONFIG}" ]]; then
+  install -Dm644 /dev/null "${GLOBAL_CONFIG}"
+fi
+
+current_configs="$(sed -n 's/^SNAPPER_CONFIGS="\([^"]*\)".*/\1/p' "${GLOBAL_CONFIG}" | head -n1)"
+if [[ " ${current_configs} " != *" ${SNAPPER_CONFIG} "* ]]; then
+  if [[ -n "${current_configs}" ]]; then
+    new_configs="${current_configs} ${SNAPPER_CONFIG}"
+  else
+    new_configs="${SNAPPER_CONFIG}"
+  fi
+
+  if grep -q '^SNAPPER_CONFIGS=' "${GLOBAL_CONFIG}"; then
+    sed -i "s/^SNAPPER_CONFIGS=.*/SNAPPER_CONFIGS=\"${new_configs}\"/" "${GLOBAL_CONFIG}"
+  else
+    printf '\nSNAPPER_CONFIGS="%s"\n' "${new_configs}" >> "${GLOBAL_CONFIG}"
+  fi
+  log_info "Registered Snapper configuration '${SNAPPER_CONFIG}' in ${GLOBAL_CONFIG}."
+else
+  log_info "Snapper configuration '${SNAPPER_CONFIG}' is already registered globally."
+fi
+
+# snapperd may have cached the previous global configuration during an earlier
+# failed attempt. Restart it only when already active; otherwise D-Bus will
+# activate it on demand.
+systemctl try-restart snapperd.service >/dev/null 2>&1 || true
 
 if ! snapper -c "${SNAPPER_CONFIG}" get-config >/dev/null; then
   log_error "Snapper cannot load configuration '${SNAPPER_CONFIG}'."
