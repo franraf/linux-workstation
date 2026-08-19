@@ -1,0 +1,77 @@
+---
+schema_version: "1.0"
+
+phase:
+  id: 06-security
+  name: Security
+  description: >
+    Baseline, gestão de segredos, hardening de acesso, revisão da criptografia,
+    Secure Boot e controles opcionais de hardware da workstation.
+  status: draft
+
+profile:
+  id: dell-latitude-e5470
+  manifest: ../profile.yaml
+
+execution:
+  order:
+    - 01-security-baseline
+    - 02-secrets-management
+    - 03-ssh-hardening
+    - 04-disk-encryption-review
+    - 05-secure-boot
+    - 06-tpm2
+    - 07-hardware-token
+    - 08-security-validation
+  stop_on_error: true
+  validate_after_each_step: true
+
+steps:
+  01-security-baseline:
+    mode: validation
+    destructive: false
+    source: 01-security-baseline/run.sh
+    playbook: ../../../playbooks/06-security/01-security-baseline.md
+
+  02-secrets-management:
+    mode: manual
+    destructive: false
+    playbook: ../../../playbooks/06-security/02-secrets-management.md
+
+  03-ssh-hardening:
+    mode: interactive-script
+    destructive: false
+    playbook: ../../../playbooks/06-security/03-ssh-hardening.md
+
+  04-disk-encryption-review:
+    mode: validation
+    destructive: false
+    playbook: ../../../playbooks/06-security/04-disk-encryption-review.md
+
+  05-secure-boot:
+    mode: interactive-script
+    destructive: true
+    playbook: ../../../playbooks/06-security/05-secure-boot.md
+
+  06-tpm2:
+    mode: manual
+    destructive: true
+    playbook: ../../../playbooks/06-security/06-tpm2.md
+
+  07-hardware-token:
+    mode: manual
+    destructive: false
+    playbook: ../../../playbooks/06-security/07-hardware-token.md
+
+  08-security-validation:
+    mode: validation
+    destructive: false
+    playbook: ../../../playbooks/06-security/08-security-validation.md
+
+validation:
+  final_step: 08-security-validation
+  required_before_next_phase: true
+
+metadata:
+  created_at: 2026-08-18
+  last_review: 2026-08-18
