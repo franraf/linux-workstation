@@ -2,9 +2,12 @@
 
 set -Eeuo pipefail
 
-readonly SCRIPT_NAME="$(basename "$0")"
-readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-readonly REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
+SCRIPT_NAME="$(basename "$0")"
+readonly SCRIPT_NAME
+SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIRECTORY
+REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
+readonly REPO_ROOT
 readonly DEFAULT_TARGET_ROOT="/mnt"
 readonly DEFAULT_SHELL="/bin/bash"
 readonly LAYOUT_FILE="${REPO_ROOT}/system/storage/btrfs-layout.tsv"
@@ -37,10 +40,25 @@ EOF
 parse_arguments() {
   while (($# > 0)); do
     case "$1" in
-      --root) (($# >= 2)) || die "Missing value for --root."; TARGET_ROOT="$2"; shift 2 ;;
-      --shell) (($# >= 2)) || die "Missing value for --shell."; TARGET_SHELL="$2"; shift 2 ;;
-      --) shift; CHROOT_COMMAND=("$@"); break ;;
-      --help | -h) usage; exit 0 ;;
+      --root)
+        (($# >= 2)) || die "Missing value for --root."
+        TARGET_ROOT="$2"
+        shift 2
+        ;;
+      --shell)
+        (($# >= 2)) || die "Missing value for --shell."
+        TARGET_SHELL="$2"
+        shift 2
+        ;;
+      --)
+        shift
+        CHROOT_COMMAND=("$@")
+        break
+        ;;
+      --help | -h)
+        usage
+        exit 0
+        ;;
       *) die "Unknown argument: $1. Use -- before the chroot command." ;;
     esac
   done

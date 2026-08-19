@@ -2,8 +2,10 @@
 
 set -Eeuo pipefail
 
-readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-readonly REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../.." && pwd)"
+SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIRECTORY
+REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../.." && pwd)"
+readonly REPO_ROOT
 
 run_gate() {
   local name="$1"

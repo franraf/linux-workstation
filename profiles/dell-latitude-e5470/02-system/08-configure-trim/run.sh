@@ -2,9 +2,12 @@
 
 set -Eeuo pipefail
 
-readonly SCRIPT_NAME="$(basename "$0")"
-readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-readonly REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
+SCRIPT_NAME="$(basename "$0")"
+readonly SCRIPT_NAME
+SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIRECTORY
+REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
+readonly REPO_ROOT
 readonly TRIM_TIMER="fstrim.timer"
 readonly TRIM_SERVICE="fstrim.service"
 readonly ROOT_MOUNT="/"
@@ -21,7 +24,10 @@ usage() {
 parse_arguments() {
   while (($# > 0)); do
     case "$1" in
-      --help|-h) usage; exit 0 ;;
+      --help | -h)
+        usage
+        exit 0
+        ;;
       *) die "Unknown argument: $1" ;;
     esac
   done

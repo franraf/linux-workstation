@@ -2,9 +2,12 @@
 
 set -Eeuo pipefail
 
-readonly SCRIPT_NAME="$(basename "$0")"
-readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-readonly REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
+SCRIPT_NAME="$(basename "$0")"
+readonly SCRIPT_NAME
+SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIRECTORY
+REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
+readonly REPO_ROOT
 readonly EXPECTED_PARTITION_TYPE="CA7D7CCB-63ED-4C53-861C-1742536059CC"
 readonly MAPPER_NAME="cryptroot"
 readonly MAPPER_PATH="/dev/mapper/${MAPPER_NAME}"
@@ -32,8 +35,15 @@ EOF
 parse_arguments() {
   while (($# > 0)); do
     case "$1" in
-      --partition) (($# >= 2)) || die "Missing value for --partition."; TARGET_PARTITION="$2"; shift 2 ;;
-      --help | -h) usage; exit 0 ;;
+      --partition)
+        (($# >= 2)) || die "Missing value for --partition."
+        TARGET_PARTITION="$2"
+        shift 2
+        ;;
+      --help | -h)
+        usage
+        exit 0
+        ;;
       *) die "Unknown argument: $1" ;;
     esac
   done
@@ -53,7 +63,8 @@ validate_target() {
   [[ -z "$(lsblk --noheadings --output MOUNTPOINTS "$TARGET_PARTITION" | sed '/^[[:space:]]*$/d')" ]] ||
     die "Target partition is mounted and cannot be formatted."
 
-  local holder_directory="/sys/class/block/$(basename "$TARGET_PARTITION")/holders"
+  local holder_directory
+  holder_directory="/sys/class/block/$(basename "$TARGET_PARTITION")/holders"
   local holder_count=0
   [[ ! -d "$holder_directory" ]] || holder_count="$(find "$holder_directory" -mindepth 1 -maxdepth 1 | wc -l)"
   ((holder_count == 0)) || die "Target partition has active device-mapper holders."

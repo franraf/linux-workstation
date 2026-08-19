@@ -2,16 +2,27 @@
 
 set -Eeuo pipefail
 
-readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-readonly REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../.." && pwd)"
+SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIRECTORY
+REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../.." && pwd)"
+readonly REPO_ROOT
 
 PASS_COUNT=0
 WARN_COUNT=0
 FAIL_COUNT=0
 
-pass() { printf '[PASS] %s\n' "$*"; ((PASS_COUNT += 1)); }
-warn() { printf '[WARN] %s\n' "$*" >&2; ((WARN_COUNT += 1)); }
-fail() { printf '[FAIL] %s\n' "$*" >&2; ((FAIL_COUNT += 1)); }
+pass() {
+  printf '[PASS] %s\n' "$*"
+  ((PASS_COUNT += 1))
+}
+warn() {
+  printf '[WARN] %s\n' "$*" >&2
+  ((WARN_COUNT += 1))
+}
+fail() {
+  printf '[FAIL] %s\n' "$*" >&2
+  ((FAIL_COUNT += 1))
+}
 section() { printf '\n== %s ==\n\n' "$*"; }
 
 check_package_file() {
@@ -79,7 +90,7 @@ if swapon --noheadings --show=NAME --raw | awk '$1 == "/dev/zram0" { found=1 } E
 sshd -t >/dev/null 2>&1 && pass "sshd configuration syntax is valid" || fail "sshd configuration syntax is invalid"
 
 section "Filesystem and boot"
-while IFS=$'\t' read -r subvolume mountpoint options; do
+while IFS=$'\t' read -r subvolume mountpoint _options; do
   [[ -n "$subvolume" && "$subvolume" != \#* ]] || continue
   actual="$(findmnt --noheadings --output FSTYPE --target "$mountpoint" 2>/dev/null | xargs)"
   [[ "$actual" == "btrfs" ]] && pass "$mountpoint uses btrfs" || fail "$mountpoint expected btrfs, found ${actual:-none}"
@@ -90,7 +101,10 @@ bootctl is-installed >/dev/null 2>&1 && pass "systemd-boot is installed" || fail
 
 section "Failed units"
 failed_units="$(systemctl --failed --no-legend --plain 2>/dev/null || true)"
-[[ -z "$failed_units" ]] && pass "No failed systemd units" || { fail "Failed systemd units detected"; printf '%s\n' "$failed_units" >&2; }
+[[ -z "$failed_units" ]] && pass "No failed systemd units" || {
+  fail "Failed systemd units detected"
+  printf '%s\n' "$failed_units" >&2
+}
 
 printf '\n========================================\nSystem validation summary\n========================================\n\n'
 printf 'Passed:   %d\nWarnings: %d\nFailed:   %d\n' "$PASS_COUNT" "$WARN_COUNT" "$FAIL_COUNT"

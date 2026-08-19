@@ -2,9 +2,12 @@
 
 set -Eeuo pipefail
 
-readonly SCRIPT_NAME="$(basename "$0")"
-readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-readonly REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
+SCRIPT_NAME="$(basename "$0")"
+readonly SCRIPT_NAME
+SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIRECTORY
+REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
+readonly REPO_ROOT
 readonly DEFAULT_ESP_PATH="/boot"
 readonly DEFAULT_ENTRY_ID="arch-linux"
 readonly DEFAULT_ENTRY_TITLE="Arch Linux"
@@ -56,11 +59,30 @@ EOF
 parse_arguments() {
   while (($# > 0)); do
     case "$1" in
-      --esp-path) (($# >= 2)) || die "Missing value for --esp-path."; ESP_PATH="$2"; shift 2 ;;
-      --entry-id) (($# >= 2)) || die "Missing value for --entry-id."; ENTRY_ID="$2"; shift 2 ;;
-      --title) (($# >= 2)) || die "Missing value for --title."; ENTRY_TITLE="$2"; shift 2 ;;
-      --timeout) (($# >= 2)) || die "Missing value for --timeout."; LOADER_TIMEOUT="$2"; shift 2 ;;
-      --help | -h) usage; exit 0 ;;
+      --esp-path)
+        (($# >= 2)) || die "Missing value for --esp-path."
+        ESP_PATH="$2"
+        shift 2
+        ;;
+      --entry-id)
+        (($# >= 2)) || die "Missing value for --entry-id."
+        ENTRY_ID="$2"
+        shift 2
+        ;;
+      --title)
+        (($# >= 2)) || die "Missing value for --title."
+        ENTRY_TITLE="$2"
+        shift 2
+        ;;
+      --timeout)
+        (($# >= 2)) || die "Missing value for --timeout."
+        LOADER_TIMEOUT="$2"
+        shift 2
+        ;;
+      --help | -h)
+        usage
+        exit 0
+        ;;
       *) die "Unknown argument: $1" ;;
     esac
   done

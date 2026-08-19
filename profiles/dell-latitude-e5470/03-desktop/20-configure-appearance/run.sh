@@ -2,9 +2,12 @@
 
 set -Eeuo pipefail
 
-readonly SCRIPT_NAME="$(basename "$0")"
-readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-readonly REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
+SCRIPT_NAME="$(basename "$0")"
+readonly SCRIPT_NAME
+SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIRECTORY
+REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
+readonly REPO_ROOT
 
 readonly HYPR_APPEARANCE_SOURCE="${REPO_ROOT}/system/hyprland/modules/80-appearance.lua"
 readonly GTK3_SOURCE="${REPO_ROOT}/system/gtk-3.0/settings.ini"
@@ -104,7 +107,7 @@ validate_installed_appearance() {
   grep -q '^include appearance.conf$' "$kitty_config" || die "Kitty appearance module is not included."
   grep -q '^background #1a1b26$' "$kitty_appearance" || die "Kitty background color is missing."
 
-  runuser -u "$TARGET_USER" -- rofi -no-config -theme "$rofi_theme" -dump-theme >/dev/null 2>&1 || \
+  runuser -u "$TARGET_USER" -- rofi -no-config -theme "$rofi_theme" -dump-theme >/dev/null 2>&1 ||
     die "Rofi could not parse the installed theme."
 }
 
@@ -123,7 +126,10 @@ show_result() {
 }
 
 main() {
-  [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]] && { usage; exit 0; }
+  [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]] && {
+    usage
+    exit 0
+  }
   (($# == 1)) || die "Expected exactly one argument: username"
 
   require_root

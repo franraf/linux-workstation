@@ -2,9 +2,12 @@
 
 set -Eeuo pipefail
 
-readonly SCRIPT_NAME="$(basename "$0")"
-readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-readonly REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
+SCRIPT_NAME="$(basename "$0")"
+readonly SCRIPT_NAME
+SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIRECTORY
+REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
+readonly REPO_ROOT
 readonly EXPECTED_PARTITION_TYPE="C12A7328-F81F-11D2-BA4B-00A0C93EC93B"
 readonly DEFAULT_LABEL="EFI"
 
@@ -32,9 +35,20 @@ EOF
 parse_arguments() {
   while (($# > 0)); do
     case "$1" in
-      --partition) (($# >= 2)) || die "Missing value for --partition."; TARGET_PARTITION="$2"; shift 2 ;;
-      --label) (($# >= 2)) || die "Missing value for --label."; FILESYSTEM_LABEL="$2"; shift 2 ;;
-      --help | -h) usage; exit 0 ;;
+      --partition)
+        (($# >= 2)) || die "Missing value for --partition."
+        TARGET_PARTITION="$2"
+        shift 2
+        ;;
+      --label)
+        (($# >= 2)) || die "Missing value for --label."
+        FILESYSTEM_LABEL="$2"
+        shift 2
+        ;;
+      --help | -h)
+        usage
+        exit 0
+        ;;
       *) die "Unknown argument: $1" ;;
     esac
   done
@@ -51,7 +65,7 @@ validate_target() {
   actual_type="$(lsblk --noheadings --nodeps --output PARTTYPE "$TARGET_PARTITION" | xargs | tr '[:lower:]' '[:upper:]')"
   [[ "$actual_type" == "$EXPECTED_PARTITION_TYPE" ]] || die "Partition is not marked as an EFI System Partition."
 
-  (( $(blockdev --getsize64 "$TARGET_PARTITION") >= 260 * 1024 * 1024 )) ||
+  (($(blockdev --getsize64 "$TARGET_PARTITION") >= 260 * 1024 * 1024)) ||
     die "EFI System Partition must have at least 260 MiB."
 
   [[ -z "$(findmnt --noheadings --source "$TARGET_PARTITION" 2>/dev/null || true)" ]] ||

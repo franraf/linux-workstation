@@ -2,9 +2,12 @@
 
 set -Eeuo pipefail
 
-readonly SCRIPT_NAME="$(basename "$0")"
-readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-readonly REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
+SCRIPT_NAME="$(basename "$0")"
+readonly SCRIPT_NAME
+SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIRECTORY
+REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
+readonly REPO_ROOT
 readonly PACKAGE_FILE="${REPO_ROOT}/packages/development/version-control.txt"
 
 TARGET_USER_ARG="${SUDO_USER:-}"
@@ -36,10 +39,25 @@ EOF
 parse_arguments() {
   while (($# > 0)); do
     case "$1" in
-      --user) (($# >= 2)) || die "Missing value for --user."; TARGET_USER_ARG="$2"; shift 2 ;;
-      --name) (($# >= 2)) || die "Missing value for --name."; GIT_NAME="$2"; shift 2 ;;
-      --email) (($# >= 2)) || die "Missing value for --email."; GIT_EMAIL="$2"; shift 2 ;;
-      --help|-h) usage; exit 0 ;;
+      --user)
+        (($# >= 2)) || die "Missing value for --user."
+        TARGET_USER_ARG="$2"
+        shift 2
+        ;;
+      --name)
+        (($# >= 2)) || die "Missing value for --name."
+        GIT_NAME="$2"
+        shift 2
+        ;;
+      --email)
+        (($# >= 2)) || die "Missing value for --email."
+        GIT_EMAIL="$2"
+        shift 2
+        ;;
+      --help | -h)
+        usage
+        exit 0
+        ;;
       *) die "Unknown argument: $1" ;;
     esac
   done
@@ -135,7 +153,6 @@ main() {
   validate_packages_available
   discover_missing_packages
 
-  show_plan_without_identity=false
   if ((${#MISSING_PACKAGES[@]} > 0)); then
     printf '\nVersion control package installation\n------------------------------------\n\nPackages to install:\n'
     printf '  - %s\n' "${MISSING_PACKAGES[@]}"

@@ -129,7 +129,7 @@ if [[ " ${current_configs} " != *" ${SNAPPER_CONFIG} "* ]]; then
   if grep -q '^SNAPPER_CONFIGS=' "${GLOBAL_CONFIG}"; then
     sed -i "s/^SNAPPER_CONFIGS=.*/SNAPPER_CONFIGS=\"${new_configs}\"/" "${GLOBAL_CONFIG}"
   else
-    printf '\nSNAPPER_CONFIGS="%s"\n' "${new_configs}" >> "${GLOBAL_CONFIG}"
+    printf '\nSNAPPER_CONFIGS="%s"\n' "${new_configs}" >>"${GLOBAL_CONFIG}"
   fi
   log_info "Registered Snapper configuration '${SNAPPER_CONFIG}' in ${GLOBAL_CONFIG}."
 else

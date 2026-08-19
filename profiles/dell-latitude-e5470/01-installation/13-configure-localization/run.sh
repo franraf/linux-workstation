@@ -2,9 +2,12 @@
 
 set -Eeuo pipefail
 
-readonly SCRIPT_NAME="$(basename "$0")"
-readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-readonly REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
+SCRIPT_NAME="$(basename "$0")"
+readonly SCRIPT_NAME
+SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIRECTORY
+REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
+readonly REPO_ROOT
 readonly DEFAULT_PRIMARY_LOCALE="pt_BR.UTF-8"
 readonly DEFAULT_FALLBACK_LOCALE="en_US.UTF-8"
 readonly DEFAULT_CONSOLE_KEYMAP="br-abnt2"
@@ -37,10 +40,25 @@ EOF
 parse_arguments() {
   while (($# > 0)); do
     case "$1" in
-      --primary-locale) (($# >= 2)) || die "Missing value for --primary-locale."; PRIMARY_LOCALE="$2"; shift 2 ;;
-      --fallback-locale) (($# >= 2)) || die "Missing value for --fallback-locale."; FALLBACK_LOCALE="$2"; shift 2 ;;
-      --keymap) (($# >= 2)) || die "Missing value for --keymap."; CONSOLE_KEYMAP="$2"; shift 2 ;;
-      --help | -h) usage; exit 0 ;;
+      --primary-locale)
+        (($# >= 2)) || die "Missing value for --primary-locale."
+        PRIMARY_LOCALE="$2"
+        shift 2
+        ;;
+      --fallback-locale)
+        (($# >= 2)) || die "Missing value for --fallback-locale."
+        FALLBACK_LOCALE="$2"
+        shift 2
+        ;;
+      --keymap)
+        (($# >= 2)) || die "Missing value for --keymap."
+        CONSOLE_KEYMAP="$2"
+        shift 2
+        ;;
+      --help | -h)
+        usage
+        exit 0
+        ;;
       *) die "Unknown argument: $1" ;;
     esac
   done
@@ -149,7 +167,7 @@ validate_configuration() {
 
   [[ "$(cat /etc/locale.conf)" == "LANG=$PRIMARY_LOCALE" ]] || die "/etc/locale.conf is incorrect."
   [[ "$(cat /etc/vconsole.conf)" == "KEYMAP=$CONSOLE_KEYMAP" ]] || die "/etc/vconsole.conf is incorrect."
-  [[ "$(LANG="$PRIMARY_LOCALE" LC_ALL= locale charmap)" == "UTF-8" ]] || die "Primary locale does not use UTF-8."
+  [[ "$(LANG="$PRIMARY_LOCALE" LC_ALL='' locale charmap)" == "UTF-8" ]] || die "Primary locale does not use UTF-8."
 }
 
 show_result() {

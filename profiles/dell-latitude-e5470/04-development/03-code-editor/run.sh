@@ -2,9 +2,12 @@
 
 set -Eeuo pipefail
 
-readonly SCRIPT_NAME="$(basename "$0")"
-readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-readonly REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
+SCRIPT_NAME="$(basename "$0")"
+readonly SCRIPT_NAME
+SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIRECTORY
+REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
+readonly REPO_ROOT
 readonly PACKAGE_FILE="${REPO_ROOT}/packages/development/code-editor-runtime.txt"
 readonly SETTINGS_SOURCE="${REPO_ROOT}/dotfiles/home/private_dot_config/private_Code/User/settings.json"
 readonly KEYBINDINGS_SOURCE="${REPO_ROOT}/dotfiles/home/private_dot_config/private_Code/User/keybindings.json"
@@ -46,8 +49,15 @@ EOF
 parse_arguments() {
   while (($# > 0)); do
     case "$1" in
-      --user) (($# >= 2)) || die "Missing value for --user."; TARGET_USER_ARG="$2"; shift 2 ;;
-      --help|-h) usage; exit 0 ;;
+      --user)
+        (($# >= 2)) || die "Missing value for --user."
+        TARGET_USER_ARG="$2"
+        shift 2
+        ;;
+      --help | -h)
+        usage
+        exit 0
+        ;;
       *) die "Unknown argument: $1" ;;
     esac
   done
@@ -144,7 +154,7 @@ validate_vscode() {
   run_as_target_user chezmoi -S "$REPO_ROOT" diff \
     "${TARGET_HOME}/.config/Code/User/settings.json" \
     "${TARGET_HOME}/.config/Code/User/keybindings.json" | grep -q . &&
-      die "chezmoi still reports unapplied VS Code user configuration."
+    die "chezmoi still reports unapplied VS Code user configuration."
 
   local version_output version
   version_output="$(run_as_target_user "$CODE_LINK" --version)"

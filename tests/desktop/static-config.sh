@@ -2,7 +2,10 @@
 
 set -Eeuo pipefail
 
-fail() { printf 'FAIL: %s\n' "$*" >&2; exit 1; }
+fail() {
+  printf 'FAIL: %s\n' "$*" >&2
+  exit 1
+}
 pass() { printf 'PASS: %s\n' "$*"; }
 
 CONFIG_HOME="${XDG_CONFIG_HOME:-${HOME}/.config}"

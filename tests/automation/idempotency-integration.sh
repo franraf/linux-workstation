@@ -2,13 +2,21 @@
 
 set -Eeuo pipefail
 
-readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-readonly REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../.." && pwd)"
+SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIRECTORY
+REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../.." && pwd)"
+readonly REPO_ROOT
 
 pass_count=0
 fail_count=0
-pass() { printf '[PASS] %s\n' "$*"; ((pass_count += 1)); }
-fail() { printf '[FAIL] %s\n' "$*" >&2; ((fail_count += 1)); }
+pass() {
+  printf '[PASS] %s\n' "$*"
+  ((pass_count += 1))
+}
+fail() {
+  printf '[FAIL] %s\n' "$*" >&2
+  ((fail_count += 1))
+}
 
 workdir="$(mktemp -d)"
 trap 'rm -rf "$workdir"' EXIT
@@ -25,13 +33,13 @@ cp "$REPO_ROOT/scripts/lib/manifest.sh" "$workdir/scripts/lib/manifest.sh"
 cp "$REPO_ROOT/scripts/lib/state.sh" "$workdir/scripts/lib/state.sh"
 chmod +x "$workdir/scripts/workstation"
 
-cat > "$workdir/profiles/test-profile/profile.yaml" <<'EOF'
+cat >"$workdir/profiles/test-profile/profile.yaml" <<'EOF'
 automation:
   phases:
     - 01-idempotent
 EOF
 
-cat > "$workdir/profiles/test-profile/01-idempotent/phase.yaml" <<'EOF'
+cat >"$workdir/profiles/test-profile/01-idempotent/phase.yaml" <<'EOF'
 phase:
   id: 01-idempotent
   status: in-progress
@@ -51,7 +59,7 @@ validation:
   required_before_next_phase: true
 EOF
 
-cat > "$workdir/profiles/test-profile/01-idempotent/01-configure/run.sh" <<'EOF'
+cat >"$workdir/profiles/test-profile/01-idempotent/01-configure/run.sh" <<'EOF'
 #!/usr/bin/env bash
 set -Eeuo pipefail
 mkdir -p "${TEST_TARGET}"
@@ -59,7 +67,7 @@ printf '%s\n' 'managed=true' > "${TEST_TARGET}/workstation.conf"
 printf '%s\n' 'configure' >> "${TEST_EXECUTION_LOG}"
 EOF
 
-cat > "$workdir/profiles/test-profile/01-idempotent/02-validation/run.sh" <<'EOF'
+cat >"$workdir/profiles/test-profile/01-idempotent/02-validation/run.sh" <<'EOF'
 #!/usr/bin/env bash
 set -Eeuo pipefail
 [[ "$(cat "${TEST_TARGET}/workstation.conf")" == 'managed=true' ]]
@@ -89,7 +97,7 @@ second_content="$(cat "$TEST_TARGET/workstation.conf")"
 [[ "$second_checksum" == "$first_checksum" ]] && pass "Second run leaves managed file byte-identical" || fail "Managed file changed on second run"
 [[ "$second_content" == "$first_content" ]] && pass "Second run preserves converged target state" || fail "Target state differs after second run"
 
-mapfile -t executed < "$TEST_EXECUTION_LOG"
+mapfile -t executed <"$TEST_EXECUTION_LOG"
 expected=(configure validate configure validate)
 [[ "${executed[*]}" == "${expected[*]}" ]] && pass "Runner safely re-executes idempotent steps and post-gate" || fail "Unexpected execution sequence: ${executed[*]}"
 

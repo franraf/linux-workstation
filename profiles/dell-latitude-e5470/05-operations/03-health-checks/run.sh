@@ -2,9 +2,12 @@
 
 set -Eeuo pipefail
 
-readonly SCRIPT_NAME="$(basename "$0")"
-readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-readonly REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
+SCRIPT_NAME="$(basename "$0")"
+readonly SCRIPT_NAME
+SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIRECTORY
+REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
+readonly REPO_ROOT
 
 source "${REPO_ROOT}/scripts/lib/logging.sh"
 source "${REPO_ROOT}/scripts/lib/requirements.sh"
@@ -15,9 +18,18 @@ passed=0
 warnings=0
 failed=0
 
-pass() { printf '[PASS] %s\n' "$*"; ((passed+=1)); }
-warn_check() { printf '[WARN] %s\n' "$*"; ((warnings+=1)); }
-fail_check() { printf '[FAIL] %s\n' "$*"; ((failed+=1)); }
+pass() {
+  printf '[PASS] %s\n' "$*"
+  ((passed += 1))
+}
+warn_check() {
+  printf '[WARN] %s\n' "$*"
+  ((warnings += 1))
+}
+fail_check() {
+  printf '[FAIL] %s\n' "$*"
+  ((failed += 1))
+}
 
 check_failed_units() {
   local units

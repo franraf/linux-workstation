@@ -2,13 +2,21 @@
 
 set -Eeuo pipefail
 
-readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-readonly REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../.." && pwd)"
+SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIRECTORY
+REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../.." && pwd)"
+readonly REPO_ROOT
 
 pass_count=0
 fail_count=0
-pass() { printf '[PASS] %s\n' "$*"; ((pass_count += 1)); }
-fail() { printf '[FAIL] %s\n' "$*" >&2; ((fail_count += 1)); }
+pass() {
+  printf '[PASS] %s\n' "$*"
+  ((pass_count += 1))
+}
+fail() {
+  printf '[FAIL] %s\n' "$*" >&2
+  ((fail_count += 1))
+}
 
 workdir="$(mktemp -d)"
 trap 'rm -rf "$workdir"' EXIT
@@ -27,14 +35,14 @@ cp "$REPO_ROOT/scripts/lib/manifest.sh" "$workdir/scripts/lib/manifest.sh"
 cp "$REPO_ROOT/scripts/lib/state.sh" "$workdir/scripts/lib/state.sh"
 chmod +x "$workdir/scripts/workstation"
 
-cat > "$workdir/profiles/test-profile/profile.yaml" <<'EOF'
+cat >"$workdir/profiles/test-profile/profile.yaml" <<'EOF'
 automation:
   phases:
     - 01-test
     - 02-post-gate
 EOF
 
-cat > "$workdir/profiles/test-profile/01-test/phase.yaml" <<'EOF'
+cat >"$workdir/profiles/test-profile/01-test/phase.yaml" <<'EOF'
 phase:
   id: 01-test
   status: in-progress
@@ -55,7 +63,7 @@ steps:
     entrypoint: 03-success/run.sh
 EOF
 
-cat > "$workdir/profiles/test-profile/02-post-gate/phase.yaml" <<'EOF'
+cat >"$workdir/profiles/test-profile/02-post-gate/phase.yaml" <<'EOF'
 phase:
   id: 02-post-gate
   status: in-progress
@@ -75,13 +83,13 @@ validation:
   required_before_next_phase: true
 EOF
 
-cat > "$workdir/profiles/test-profile/01-test/01-success/run.sh" <<'EOF'
+cat >"$workdir/profiles/test-profile/01-test/01-success/run.sh" <<'EOF'
 #!/usr/bin/env bash
 set -Eeuo pipefail
 printf 'step-1\n' >> "${TEST_LOG}"
 EOF
 
-cat > "$workdir/profiles/test-profile/01-test/02-fail-once/run.sh" <<'EOF'
+cat >"$workdir/profiles/test-profile/01-test/02-fail-once/run.sh" <<'EOF'
 #!/usr/bin/env bash
 set -Eeuo pipefail
 printf 'step-2\n' >> "${TEST_LOG}"
@@ -91,19 +99,19 @@ if [[ ! -f "${TEST_FAIL_MARKER}" ]]; then
 fi
 EOF
 
-cat > "$workdir/profiles/test-profile/01-test/03-success/run.sh" <<'EOF'
+cat >"$workdir/profiles/test-profile/01-test/03-success/run.sh" <<'EOF'
 #!/usr/bin/env bash
 set -Eeuo pipefail
 printf 'step-3\n' >> "${TEST_LOG}"
 EOF
 
-cat > "$workdir/profiles/test-profile/02-post-gate/01-success/run.sh" <<'EOF'
+cat >"$workdir/profiles/test-profile/02-post-gate/01-success/run.sh" <<'EOF'
 #!/usr/bin/env bash
 set -Eeuo pipefail
 printf 'post-prep\n' >> "${POST_GATE_LOG}"
 EOF
 
-cat > "$workdir/profiles/test-profile/02-post-gate/02-final-validation/run.sh" <<'EOF'
+cat >"$workdir/profiles/test-profile/02-post-gate/02-final-validation/run.sh" <<'EOF'
 #!/usr/bin/env bash
 set -Eeuo pipefail
 printf 'post-gate\n' >> "${POST_GATE_LOG}"
@@ -141,7 +149,7 @@ plan_output="$("$runner" resume --plan --profile test-profile)"
 
 "$runner" resume --profile test-profile >/dev/null
 [[ ! -e "$state_file" ]] && pass "Successful resumed phase clears active state" || fail "State remained after successful resume"
-mapfile -t executed < "$TEST_LOG"
+mapfile -t executed <"$TEST_LOG"
 expected=(step-1 step-2 step-2 step-3)
 [[ "${executed[*]}" == "${expected[*]}" ]] && pass "Resume replays only the failed step and remaining steps" || fail "Unexpected execution order: ${executed[*]}"
 
@@ -167,7 +175,7 @@ post_resume_plan="$("$runner" resume --plan --profile test-profile)"
 
 "$runner" resume --profile test-profile >/dev/null
 [[ ! -e "$state_file" ]] && pass "Successful post-gate resume clears active state" || fail "Post-gate state remained after successful resume"
-mapfile -t post_executed < "$POST_GATE_LOG"
+mapfile -t post_executed <"$POST_GATE_LOG"
 post_expected=(post-prep post-gate post-gate)
 [[ "${post_executed[*]}" == "${post_expected[*]}" ]] && pass "Post-gate resume does not replay completed phase work" || fail "Unexpected post-gate execution order: ${post_executed[*]}"
 

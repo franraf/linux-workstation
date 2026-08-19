@@ -5,11 +5,23 @@ passed=0
 warnings=0
 failed=0
 
-pass() { printf '[PASS] %s\n' "$*"; ((passed+=1)); }
-warn() { printf '[WARN] %s\n' "$*"; ((warnings+=1)); }
-fail() { printf '[FAIL] %s\n' "$*"; ((failed+=1)); }
+pass() {
+  printf '[PASS] %s\n' "$*"
+  ((passed += 1))
+}
+warn() {
+  printf '[WARN] %s\n' "$*"
+  ((warnings += 1))
+}
+fail() {
+  printf '[FAIL] %s\n' "$*"
+  ((failed += 1))
+}
 
-[[ $EUID -eq 0 ]] || { echo '[ERROR] Run with sudo.' >&2; exit 1; }
+[[ $EUID -eq 0 ]] || {
+  echo '[ERROR] Run with sudo.' >&2
+  exit 1
+}
 
 printf '\nSecurity validation\n-------------------\n\n'
 
@@ -47,12 +59,12 @@ fi
 enroll="$(systemd-cryptenroll /dev/sda2 2>/dev/null || true)"
 password_slots="$(awk '$2 == "password" {n++} END {print n+0}' <<<"$enroll")"
 tpm_slots="$(awk '$2 == "tpm2" {n++} END {print n+0}' <<<"$enroll")"
-if (( password_slots >= 2 )); then
+if ((password_slots >= 2)); then
   pass 'At least two LUKS password slots are preserved'
 else
   fail 'Expected at least two independent LUKS password slots'
 fi
-if (( tpm_slots >= 1 )); then
+if ((tpm_slots >= 1)); then
   pass 'TPM2 LUKS token is enrolled'
 else
   fail 'TPM2 LUKS token is not enrolled'
@@ -87,4 +99,4 @@ printf 'Passed:   %d\n' "$passed"
 printf 'Warnings: %d\n' "$warnings"
 printf 'Failed:   %d\n' "$failed"
 
-(( failed == 0 ))
+((failed == 0))

@@ -32,7 +32,7 @@ state_write() {
     printf 'last_completed_step=%s\n' "$last_completed_step"
     printf 'next_step=%s\n' "$next_step"
     printf 'status=%s\n' "$status"
-  } > "$temporary"
+  } >"$temporary"
   mv -f "$temporary" "$file"
 }
 
@@ -46,7 +46,7 @@ state_read_field() {
     [[ "$line" == "${field}="* ]] || continue
     printf '%s\n' "${line#*=}"
     return 0
-  done < "$file"
+  done <"$file"
   return 1
 }
 
