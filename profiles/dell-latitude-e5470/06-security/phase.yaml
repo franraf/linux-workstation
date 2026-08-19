@@ -47,6 +47,7 @@ steps:
   04-disk-encryption-review:
     mode: validation
     destructive: false
+    source: 04-disk-encryption-review/run.sh
     playbook: ../../../playbooks/06-security/04-disk-encryption-review.md
 
   05-secure-boot:
