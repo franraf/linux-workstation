@@ -15,6 +15,10 @@ tmux
 just
 make
 
+# Shell quality
+shellcheck
+shfmt
+
 # Git productivity
 lazygit
 git-delta
