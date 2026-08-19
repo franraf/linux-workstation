@@ -2,16 +2,27 @@
 
 set -Eeuo pipefail
 
-readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-readonly REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../.." && pwd)"
+SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIRECTORY
+REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../.." && pwd)"
+readonly REPO_ROOT
 
 PASS_COUNT=0
 WARN_COUNT=0
 FAIL_COUNT=0
 
-pass() { printf '[PASS] %s\n' "$*"; ((PASS_COUNT += 1)); }
-warn() { printf '[WARN] %s\n' "$*" >&2; ((WARN_COUNT += 1)); }
-fail() { printf '[FAIL] %s\n' "$*" >&2; ((FAIL_COUNT += 1)); }
+pass() {
+  printf '[PASS] %s\n' "$*"
+  ((PASS_COUNT += 1))
+}
+warn() {
+  printf '[WARN] %s\n' "$*" >&2
+  ((WARN_COUNT += 1))
+}
+fail() {
+  printf '[FAIL] %s\n' "$*" >&2
+  ((FAIL_COUNT += 1))
+}
 section() { printf '\n== %s ==\n\n' "$*"; }
 
 check_command() {
@@ -30,7 +41,10 @@ check_package_file() {
   done <"$file"
 }
 
-[[ ${EUID:-$(id -u)} -ne 0 ]] || { printf '[FAIL] Development runtime validation must run as a normal user.\n' >&2; exit 1; }
+[[ ${EUID:-$(id -u)} -ne 0 ]] || {
+  printf '[FAIL] Development runtime validation must run as a normal user.\n' >&2
+  exit 1
+}
 
 section "Git"
 check_command git
@@ -44,7 +58,7 @@ check_command zsh
 check_command starship
 current_shell="$(getent passwd "$USER" | cut -d: -f7)"
 [[ "$current_shell" == "$(command -v zsh)" ]] && pass "Zsh is the login shell" || fail "Login shell is not Zsh: $current_shell"
-cmp -s "${REPO_ROOT}/system/development/zsh/zshenv" "${HOME}/.zshenv" && pass "~/.zshenv matches canonical source" || fail "~/.zshenv differs from canonical source"
+cmp -s "${REPO_ROOT}/system/development/zsh/zshenv" "${HOME}/.zshenv" && pass "${HOME}/.zshenv matches canonical source" || fail "${HOME}/.zshenv differs from canonical source"
 cmp -s "${REPO_ROOT}/system/development/zsh/zshrc" "${HOME}/.config/zsh/.zshrc" && pass "Zsh entrypoint matches canonical source" || fail "Zsh entrypoint is missing or differs from canonical source"
 cmp -s "${REPO_ROOT}/system/development/starship/starship.toml" "${HOME}/.config/starship/starship.toml" && pass "Starship configuration matches canonical source" || fail "Starship configuration is missing or differs from canonical source"
 zsh -lic 'true' >/dev/null 2>&1 && pass "Interactive Zsh starts without error" || fail "Interactive Zsh startup failed"

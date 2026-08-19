@@ -2,9 +2,12 @@
 
 set -Eeuo pipefail
 
-readonly SCRIPT_NAME="$(basename "$0")"
-readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-readonly REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
+SCRIPT_NAME="$(basename "$0")"
+readonly SCRIPT_NAME
+SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIRECTORY
+REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
+readonly REPO_ROOT
 readonly DEFAULT_BTRFS_DEVICE="/dev/mapper/cryptroot"
 readonly DEFAULT_MOUNT_ROOT="/mnt"
 readonly DEFAULT_MOUNT_OPTIONS="noatime,compress=zstd:3"
@@ -65,11 +68,30 @@ EOF
 parse_arguments() {
   while (($# > 0)); do
     case "$1" in
-      --btrfs-device) (($# >= 2)) || die "Missing value for --btrfs-device."; BTRFS_DEVICE="$2"; shift 2 ;;
-      --efi-partition) (($# >= 2)) || die "Missing value for --efi-partition."; EFI_PARTITION="$2"; shift 2 ;;
-      --mount-root) (($# >= 2)) || die "Missing value for --mount-root."; MOUNT_ROOT="$2"; shift 2 ;;
-      --mount-options) (($# >= 2)) || die "Missing value for --mount-options."; MOUNT_OPTIONS="$2"; shift 2 ;;
-      --help | -h) usage; exit 0 ;;
+      --btrfs-device)
+        (($# >= 2)) || die "Missing value for --btrfs-device."
+        BTRFS_DEVICE="$2"
+        shift 2
+        ;;
+      --efi-partition)
+        (($# >= 2)) || die "Missing value for --efi-partition."
+        EFI_PARTITION="$2"
+        shift 2
+        ;;
+      --mount-root)
+        (($# >= 2)) || die "Missing value for --mount-root."
+        MOUNT_ROOT="$2"
+        shift 2
+        ;;
+      --mount-options)
+        (($# >= 2)) || die "Missing value for --mount-options."
+        MOUNT_OPTIONS="$2"
+        shift 2
+        ;;
+      --help | -h)
+        usage
+        exit 0
+        ;;
       *) die "Unknown argument: $1" ;;
     esac
   done

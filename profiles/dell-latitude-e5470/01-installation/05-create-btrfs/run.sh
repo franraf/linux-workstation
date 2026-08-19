@@ -2,9 +2,12 @@
 
 set -Eeuo pipefail
 
-readonly SCRIPT_NAME="$(basename "$0")"
-readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-readonly REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
+SCRIPT_NAME="$(basename "$0")"
+readonly SCRIPT_NAME
+SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIRECTORY
+REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
+readonly REPO_ROOT
 readonly DEFAULT_DEVICE="/dev/mapper/cryptroot"
 readonly DEFAULT_LABEL="linux-workstation"
 
@@ -35,9 +38,20 @@ EOF
 parse_arguments() {
   while (($# > 0)); do
     case "$1" in
-      --device) (($# >= 2)) || die "Missing value for --device."; TARGET_DEVICE="$2"; shift 2 ;;
-      --label) (($# >= 2)) || die "Missing value for --label."; FILESYSTEM_LABEL="$2"; shift 2 ;;
-      --help | -h) usage; exit 0 ;;
+      --device)
+        (($# >= 2)) || die "Missing value for --device."
+        TARGET_DEVICE="$2"
+        shift 2
+        ;;
+      --label)
+        (($# >= 2)) || die "Missing value for --label."
+        FILESYSTEM_LABEL="$2"
+        shift 2
+        ;;
+      --help | -h)
+        usage
+        exit 0
+        ;;
       *) die "Unknown argument: $1" ;;
     esac
   done
@@ -67,7 +81,7 @@ validate_target() {
   local child_count
   child_count="$(lsblk --noheadings --output TYPE "$TARGET_DEVICE" | awk 'NR > 1 { count++ } END { print count + 0 }')"
   ((child_count == 0)) || die "Target device has unexpected child devices."
-  (( $(blockdev --getsize64 "$TARGET_DEVICE") >= 4 * 1024 * 1024 * 1024 )) || die "Target device must have at least 4 GiB."
+  (($(blockdev --getsize64 "$TARGET_DEVICE") >= 4 * 1024 * 1024 * 1024)) || die "Target device must have at least 4 GiB."
 }
 
 show_target_summary() {

@@ -19,5 +19,7 @@ die() {
 
 setup_error_trap() {
   local script_name="$1"
+  # The ERR trap intentionally expands rc and LINENO when the trap executes.
+  # shellcheck disable=SC2154,SC2027
   trap 'rc=$?; printf "[ERROR] %s failed at line %s with exit code %s.\n" '"'"$script_name"'"' "$LINENO" "$rc" >&2; exit "$rc"' ERR
 }

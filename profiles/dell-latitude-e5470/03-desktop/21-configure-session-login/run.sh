@@ -2,9 +2,12 @@
 
 set -Eeuo pipefail
 
-readonly SCRIPT_NAME="$(basename "$0")"
-readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-readonly REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
+SCRIPT_NAME="$(basename "$0")"
+readonly SCRIPT_NAME
+SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIRECTORY
+REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
+readonly REPO_ROOT
 readonly GREETD_SOURCE="${REPO_ROOT}/system/greetd/config.toml"
 readonly GREETD_TARGET="/etc/greetd/config.toml"
 
@@ -61,7 +64,7 @@ install_configuration() {
 validate_configuration() {
   [[ -s "$GREETD_TARGET" ]] || die "greetd configuration was not installed."
 
-  grep -Fq 'command = "/usr/bin/tuigreet --time --asterisks --cmd /usr/bin/start-hyprland"' "$GREETD_TARGET" || \
+  grep -Fq 'command = "/usr/bin/tuigreet --time --asterisks --cmd /usr/bin/start-hyprland"' "$GREETD_TARGET" ||
     die "greetd does not launch tuigreet with start-hyprland."
   grep -Fq 'user = "greeter"' "$GREETD_TARGET" || die "greetd default session must run as greeter."
 
@@ -89,7 +92,10 @@ show_result() {
 }
 
 main() {
-  [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]] && { usage; exit 0; }
+  [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]] && {
+    usage
+    exit 0
+  }
   (($# == 1)) || die "Expected exactly one argument: username"
 
   require_root

@@ -2,9 +2,12 @@
 
 set -Eeuo pipefail
 
-readonly SCRIPT_NAME="$(basename "$0")"
-readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-readonly REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
+SCRIPT_NAME="$(basename "$0")"
+readonly SCRIPT_NAME
+SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIRECTORY
+REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
+readonly REPO_ROOT
 readonly DEFAULT_USERNAME="rafael"
 readonly DEFAULT_FULL_NAME="Rafael"
 readonly DEFAULT_SHELL="/bin/bash"
@@ -41,11 +44,29 @@ EOF
 parse_arguments() {
   while (($# > 0)); do
     case "$1" in
-      --username) (($# >= 2)) || die "Missing value for --username."; USERNAME="$2"; shift 2 ;;
-      --full-name) (($# >= 2)) || die "Missing value for --full-name."; FULL_NAME="$2"; shift 2 ;;
-      --shell) (($# >= 2)) || die "Missing value for --shell."; LOGIN_SHELL="$2"; shift 2 ;;
-      --no-root-password) CREATE_ROOT_PASSWORD=false; shift ;;
-      --help | -h) usage; exit 0 ;;
+      --username)
+        (($# >= 2)) || die "Missing value for --username."
+        USERNAME="$2"
+        shift 2
+        ;;
+      --full-name)
+        (($# >= 2)) || die "Missing value for --full-name."
+        FULL_NAME="$2"
+        shift 2
+        ;;
+      --shell)
+        (($# >= 2)) || die "Missing value for --shell."
+        LOGIN_SHELL="$2"
+        shift 2
+        ;;
+      --no-root-password)
+        CREATE_ROOT_PASSWORD=false
+        shift
+        ;;
+      --help | -h)
+        usage
+        exit 0
+        ;;
       *) die "Unknown argument: $1" ;;
     esac
   done
@@ -71,7 +92,7 @@ validate_account_inputs() {
 inspect_existing_user() {
   id "$USERNAME" >/dev/null 2>&1 || return 0
   USER_ALREADY_EXISTS=true
-  (( $(id -u "$USERNAME") >= 1000 )) || die "Existing account does not appear to be a regular user: $USERNAME"
+  (($(id -u "$USERNAME") >= 1000)) || die "Existing account does not appear to be a regular user: $USERNAME"
   log_warn "User already exists and will be reconciled instead of recreated."
 }
 
@@ -82,7 +103,7 @@ show_plan() {
   printf 'Full name:\n  %s\n\n' "$FULL_NAME"
   printf 'Shell:\n  %s\n\n' "$LOGIN_SHELL"
   printf 'Sudo policy source:\n  %s\n\n' "$SUDOERS_SOURCE"
-  printf 'Root password:\n  %s\n' "$( [[ "$CREATE_ROOT_PASSWORD" == true ]] && printf 'configure interactively' || printf 'leave unchanged' )"
+  printf 'Root password:\n  %s\n' "$([[ "$CREATE_ROOT_PASSWORD" == true ]] && printf 'configure interactively' || printf 'leave unchanged')"
 }
 
 confirm_configuration() {
@@ -118,7 +139,7 @@ configure_sudoers() {
 
 validate_account() {
   id "$USERNAME" >/dev/null || die "User account was not created."
-  (( $(id -u "$USERNAME") >= 1000 )) || die "User does not have a regular-user UID."
+  (($(id -u "$USERNAME") >= 1000)) || die "User does not have a regular-user UID."
   [[ "$(getent passwd "$USERNAME" | cut -d: -f6)" == "/home/$USERNAME" ]] || die "User home directory is incorrect."
   [[ "$(getent passwd "$USERNAME" | cut -d: -f7)" == "$LOGIN_SHELL" ]] || die "User login shell is incorrect."
   [[ "$(stat -c '%U:%G' "/home/$USERNAME")" == "$USERNAME:$USERNAME" ]] || die "User home ownership is incorrect."

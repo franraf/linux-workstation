@@ -1,14 +1,23 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-readonly REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../.." && pwd)"
+SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIRECTORY
+REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../.." && pwd)"
+readonly REPO_ROOT
 readonly PROFILE_ROOT="${REPO_ROOT}/profiles/dell-latitude-e5470"
 readonly PROFILE_FILE="${PROFILE_ROOT}/profile.yaml"
 source "${REPO_ROOT}/scripts/lib/manifest.sh"
 source "${REPO_ROOT}/scripts/lib/state.sh"
-pass_count=0; fail_count=0
-pass() { printf '[PASS] %s\n' "$*"; ((pass_count += 1)); }
-fail() { printf '[FAIL] %s\n' "$*" >&2; ((fail_count += 1)); }
+pass_count=0
+fail_count=0
+pass() {
+  printf '[PASS] %s\n' "$*"
+  ((pass_count += 1))
+}
+fail() {
+  printf '[FAIL] %s\n' "$*" >&2
+  ((fail_count += 1))
+}
 for script in "${REPO_ROOT}/scripts/workstation" "${REPO_ROOT}/scripts/lib/manifest.sh" "${REPO_ROOT}/scripts/lib/state.sh"; do bash -n "$script" && pass "Bash syntax: ${script#${REPO_ROOT}/}" || fail "Bash syntax: ${script#${REPO_ROOT}/}"; done
 mapfile -t phases < <(manifest_profile_phases "$PROFILE_FILE")
 expected_phases=(01-installation 02-system 03-desktop 04-development 05-operations 06-security)

@@ -2,9 +2,12 @@
 
 set -Eeuo pipefail
 
-readonly SCRIPT_NAME="$(basename "$0")"
-readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-readonly REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
+SCRIPT_NAME="$(basename "$0")"
+readonly SCRIPT_NAME
+SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIRECTORY
+REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
+readonly REPO_ROOT
 readonly PACKAGE_FILE="${REPO_ROOT}/packages/desktop/font-stack.txt"
 
 source "${REPO_ROOT}/scripts/lib/logging.sh"
@@ -66,10 +69,10 @@ require_font_family() {
   local description="$3"
   local resolved
 
-  resolved="$(fc-match -f '%{family}\n' "$query" 2>/dev/null)" || \
+  resolved="$(fc-match -f '%{family}\n' "$query" 2>/dev/null)" ||
     die "Fontconfig could not resolve ${description}: ${query}"
 
-  [[ "$resolved" == *"$expected"* ]] || \
+  [[ "$resolved" == *"$expected"* ]] ||
     die "Expected ${description} was not resolved. Query '${query}' returned '${resolved}'."
 }
 

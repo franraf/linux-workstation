@@ -2,15 +2,20 @@
 
 set -Eeuo pipefail
 
-readonly SCRIPT_NAME="$(basename "$0")"
-readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-readonly REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
+SCRIPT_NAME="$(basename "$0")"
+readonly SCRIPT_NAME
+SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIRECTORY
+REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
+readonly REPO_ROOT
 readonly SOURCE_CONFIG="${REPO_ROOT}/system/mkinitcpio/10-linux-workstation-intel.conf"
 readonly CONFIG_DIRECTORY="/etc/mkinitcpio.conf.d"
 readonly CONFIG_FILE="${CONFIG_DIRECTORY}/10-linux-workstation.conf"
 
 source "${REPO_ROOT}/scripts/lib/logging.sh"
 source "${REPO_ROOT}/scripts/lib/requirements.sh"
+# SOURCE_CONFIG is a canonical repository path resolved at runtime.
+# shellcheck disable=SC1090
 source "$SOURCE_CONFIG"
 
 setup_error_trap "$SCRIPT_NAME"
@@ -137,7 +142,10 @@ show_result() {
 }
 
 main() {
-  if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then usage; exit 0; fi
+  if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+    usage
+    exit 0
+  fi
   (($# == 0)) || die "Unknown argument: $1"
 
   require_root

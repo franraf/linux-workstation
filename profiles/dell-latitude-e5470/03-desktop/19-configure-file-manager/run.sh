@@ -2,9 +2,12 @@
 
 set -Eeuo pipefail
 
-readonly SCRIPT_NAME="$(basename "$0")"
-readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-readonly REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
+SCRIPT_NAME="$(basename "$0")"
+readonly SCRIPT_NAME
+SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIRECTORY
+REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
+readonly REPO_ROOT
 readonly PREFERENCES_SOURCE="${REPO_ROOT}/system/thunar/preferences.tsv"
 readonly KEYBINDINGS_SOURCE="${REPO_ROOT}/system/hyprland/modules/70-keybindings.lua"
 
@@ -70,7 +73,10 @@ show_result() {
 }
 
 main() {
-  [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]] && { usage; exit 0; }
+  [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]] && {
+    usage
+    exit 0
+  }
   (($# == 1)) || die "Expected exactly one argument: username"
 
   require_root

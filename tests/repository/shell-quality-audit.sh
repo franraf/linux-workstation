@@ -2,8 +2,10 @@
 
 set -Eeuo pipefail
 
-readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-readonly REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../.." && pwd)"
+SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIRECTORY
+REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../.." && pwd)"
+readonly REPO_ROOT
 
 declare -a SHELL_FILES=()
 
@@ -24,12 +26,21 @@ collect_shell_files() {
 }
 
 main() {
-  command -v shellcheck >/dev/null 2>&1 || { printf '[FAIL] shellcheck is not installed.\n' >&2; exit 1; }
-  command -v shfmt >/dev/null 2>&1 || { printf '[FAIL] shfmt is not installed.\n' >&2; exit 1; }
+  command -v shellcheck >/dev/null 2>&1 || {
+    printf '[FAIL] shellcheck is not installed.\n' >&2
+    exit 1
+  }
+  command -v shfmt >/dev/null 2>&1 || {
+    printf '[FAIL] shfmt is not installed.\n' >&2
+    exit 1
+  }
 
   collect_shell_files
 
-  ((${#SHELL_FILES[@]} > 0)) || { printf '[FAIL] No tracked Bash files were found.\n' >&2; exit 1; }
+  ((${#SHELL_FILES[@]} > 0)) || {
+    printf '[FAIL] No tracked Bash files were found.\n' >&2
+    exit 1
+  }
 
   printf 'Shell quality audit\n-------------------\n\n'
   printf 'Tracked Bash files: %d\n\n' "${#SHELL_FILES[@]}"

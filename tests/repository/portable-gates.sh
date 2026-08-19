@@ -2,8 +2,10 @@
 
 set -Eeuo pipefail
 
-readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-readonly REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../.." && pwd)"
+SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIRECTORY
+REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../.." && pwd)"
+readonly REPO_ROOT
 
 run_gate() {
   local name="$1"
@@ -19,6 +21,7 @@ run_gate "Repository phase consistency" "tests/repository/phase-consistency.sh"
 run_gate "Installation static artifacts" "tests/installation/static-artifacts.sh"
 run_gate "System static artifacts" "tests/system/static-artifacts.sh"
 run_gate "Development static artifacts" "tests/development/static-artifacts.sh"
+run_gate "Shell quality" "tests/repository/shell-quality-audit.sh"
 
 printf '\n============================================================\n'
 printf 'Portable gate: Repository automation\n'

@@ -2,9 +2,12 @@
 
 set -Eeuo pipefail
 
-readonly SCRIPT_NAME="$(basename "$0")"
-readonly SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-readonly REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
+SCRIPT_NAME="$(basename "$0")"
+readonly SCRIPT_NAME
+SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIRECTORY
+REPO_ROOT="$(cd -- "${SCRIPT_DIRECTORY}/../../../.." && pwd)"
+readonly REPO_ROOT
 readonly STATIC_TEST="${REPO_ROOT}/tests/system/static-artifacts.sh"
 readonly RUNTIME_TEST="${REPO_ROOT}/tests/system/runtime-state.sh"
 
@@ -21,8 +24,14 @@ EOF
 parse_arguments() {
   while (($# > 0)); do
     case "$1" in
-      --help|-h) usage; exit 0 ;;
-      *) printf '[ERROR] Unknown argument: %s\n' "$1" >&2; exit 1 ;;
+      --help | -h)
+        usage
+        exit 0
+        ;;
+      *)
+        printf '[ERROR] Unknown argument: %s\n' "$1" >&2
+        exit 1
+        ;;
     esac
   done
 }
@@ -30,8 +39,14 @@ parse_arguments() {
 main() {
   parse_arguments "$@"
 
-  [[ -f "$STATIC_TEST" ]] || { printf '[ERROR] Missing static validation: %s\n' "$STATIC_TEST" >&2; exit 1; }
-  [[ -f "$RUNTIME_TEST" ]] || { printf '[ERROR] Missing runtime validation: %s\n' "$RUNTIME_TEST" >&2; exit 1; }
+  [[ -f "$STATIC_TEST" ]] || {
+    printf '[ERROR] Missing static validation: %s\n' "$STATIC_TEST" >&2
+    exit 1
+  }
+  [[ -f "$RUNTIME_TEST" ]] || {
+    printf '[ERROR] Missing runtime validation: %s\n' "$RUNTIME_TEST" >&2
+    exit 1
+  }
 
   printf '\n== Static source validation ==\n\n'
   bash "$STATIC_TEST"
