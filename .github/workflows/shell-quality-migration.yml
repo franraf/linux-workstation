@@ -1,0 +1,71 @@
+name: Shell quality migration
+
+on:
+  push:
+    branches:
+      - chore/shell-quality
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: chore/shell-quality
+          fetch-depth: 0
+
+      - name: Install shell tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck shfmt
+
+      - name: Normalize tracked Bash files
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          mapfile -t files < <(
+            while IFS= read -r file; do
+              [[ -f "$file" ]] || continue
+              if [[ "$file" == *.sh ]]; then
+                printf '%s\n' "$file"
+                continue
+              fi
+              IFS= read -r first_line <"$file" || true
+              [[ "$first_line" == '#!/usr/bin/env bash' || "$first_line" == '#!/bin/bash' ]] && printf '%s\n' "$file"
+            done < <(git ls-files)
+          )
+
+          ((${#files[@]} > 0))
+
+          shfmt -w -ln bash -i 2 -ci "${files[@]}"
+
+          for file in "${files[@]}"; do
+            perl -0pi -e 's/^readonly SCRIPT_NAME="\$\(basename "\$0"\)"$/SCRIPT_NAME="\$\(basename "\$0"\)"\nreadonly SCRIPT_NAME/mg' "$file"
+            perl -0pi -e 's/^readonly SCRIPT_DIRECTORY="\$\(cd -- "\$\(dirname -- "\$\{BASH_SOURCE\[0\]\}"\)" && pwd\)"$/SCRIPT_DIRECTORY="\$\(cd -- "\$\(dirname -- "\$\{BASH_SOURCE[0]\}"\)" && pwd\)"\nreadonly SCRIPT_DIRECTORY/mg' "$file"
+            perl -0pi -e 's/^readonly REPO_ROOT="\$\(cd -- "\$\{SCRIPT_DIRECTORY\}\/\.\.\/\.\.\/\.\.\/\.\." && pwd\)"$/REPO_ROOT="\$\(cd -- "\$\{SCRIPT_DIRECTORY\}\/\.\.\/\.\.\/\.\.\/\.\." && pwd\)"\nreadonly REPO_ROOT/mg' "$file"
+            perl -0pi -e 's/^readonly REPO_ROOT="\$\(cd -- "\$\{SCRIPT_DIRECTORY\}\/\.\.\/\.\." && pwd\)"$/REPO_ROOT="\$\(cd -- "\$\{SCRIPT_DIRECTORY\}\/\.\.\/\.\." && pwd\)"\nreadonly REPO_ROOT/mg' "$file"
+            perl -0pi -e 's/^readonly REPO_ROOT="\$\(cd -- "\$\{SCRIPT_DIRECTORY\}\/\.\." && pwd\)"$/REPO_ROOT="\$\(cd -- "\$\{SCRIPT_DIRECTORY\}\/\.\." && pwd\)"\nreadonly REPO_ROOT/mg' "$file"
+            perl -0pi -e 's/^  local holder_directory="\/sys\/class\/block\/\$\(basename "\$TARGET_PARTITION"\)\/holders"$/  local holder_directory\n  holder_directory="\/sys\/class\/block\/\$\(basename "\$TARGET_PARTITION"\)\/holders"/mg' "$file"
+            perl -0pi -e 's/^  local saved_phase_file="\$\(phase_file_for "\$saved_phase"\)"$/  local saved_phase_file\n  saved_phase_file="\$\(phase_file_for "\$saved_phase"\)"/mg' "$file"
+          done
+
+          shfmt -w -ln bash -i 2 -ci "${files[@]}"
+
+      - name: Commit migration result
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          if git diff --quiet; then
+            echo 'No shell normalization changes were required.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add --all
+          git commit -m 'style(shell): normalize tracked Bash sources [skip ci]'
+          git push origin HEAD:chore/shell-quality
