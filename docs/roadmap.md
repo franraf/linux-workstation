@@ -1,9 +1,9 @@
 ---
 title: Roadmap
-version: 2.7
+version: 2.8
 status: Stable
 author: Rafael
-last_review: 2026-08-14
+last_review: 2026-08-18
 related:
   - ADR-0002
   - ADR-0012
@@ -28,7 +28,9 @@ A Milestone 5 — Repository Automation está concluída. O runner de alto níve
 
 O fluxo de reconstrução completa a partir da ISO será validado quando ocorrer uma instalação real. O projeto não executará uma reinstalação destrutiva artificial apenas para repetir um cenário já coberto por manifests, gates, retomada e validações locais.
 
-O trabalho ativo passa agora para a Milestone 6 — Operations.
+A Milestone 6 — Operations está implementada em grande parte e exercitada na workstation real. Manutenção, atualização, health checks, snapshots/retenção, recuperação e disaster recovery possuem procedimentos e validações. O gate final permanece deliberadamente bloqueado porque o backup externo exige hardware dedicado ainda indisponível.
+
+O trabalho de implementação pode avançar para a Milestone 7 — Security sem declarar Operations validada prematuramente.
 
 ## Milestone 1 — Base Arch Installation ✅
 
@@ -143,35 +145,38 @@ Critério considerado atendido em 2026-08-14: a operação normal da workstation
 
 Objetivo: manter a workstation durante todo seu ciclo de vida.
 
-Escopo planejado:
+Escopo implementado/preparado:
 
-* manutenção periódica;
-* atualização de pacotes;
+* política de manutenção periódica;
+* atualização supervisionada de pacotes;
 * health checks;
-* snapshots e revisão de retenção;
-* backup;
-* recuperação;
-* disaster recovery;
-* validação operacional.
+* Snapper e política de retenção com dry-run e aplicação confirmada;
+* backup preparado com Restic, aguardando HD/SSD externo dedicado;
+* recuperação granular por snapshot e configuração canônica via Git validadas;
+* disaster recovery documentado com bootstrap público e rota alternativa de mídia;
+* gate operacional final definido.
 
-Próximo passo: implementar a fase `05-operations` com manifests, políticas, playbooks, scripts e gate final próprios.
+Estado: implementação funcional avançada, porém **não validada como fase**. O requisito obrigatório de backup permanece pendente de hardware externo, primeiro backup, `restic check` e restauração de amostra.
 
-Critério: manutenção e recuperação possuem procedimentos reproduzíveis e testados.
+Critério: manutenção e recuperação possuem procedimentos reproduzíveis e testados, incluindo restauração real de backup externo.
 
-## Milestone 7 — Security
+## Milestone 7 — Security 🟡
 
 Objetivo: elevar a postura de segurança sem sacrificar recuperabilidade.
 
 Escopo planejado:
 
+* baseline de segurança não destrutivo;
 * gestão de segredos;
 * revisão de SSH hardening;
-* GPG quando houver caso de uso;
 * revisão de criptografia do disco;
 * Secure Boot;
 * TPM2, se aprovado em ADR;
 * hardware token opcional;
+* GPG somente quando houver caso de uso concreto;
 * validação de segurança.
+
+Trabalho ativo: implementar `06-security`, começando por inventário/baseline somente leitura antes de qualquer hardening.
 
 Critério: controles aprovados estão documentados, implementados e verificáveis.
 
@@ -184,7 +189,7 @@ Itens aprovados para avaliação futura, sem prioridade atual:
 * CI mais completa;
 * geração automática de índices/documentação;
 * backup remoto;
-* gerenciamento de segredos;
+* gerenciamento de segredos avançado;
 * sincronização opcional de configurações;
 * expansão de `examples/` com casos realmente reutilizáveis.
 
