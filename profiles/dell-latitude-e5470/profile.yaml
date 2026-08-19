@@ -17,7 +17,7 @@ hardware:
   firmware:
     type: uefi
     legacy_boot: false
-    secure_boot: false
+    secure_boot: true
 
   cpu:
     vendor: intel
@@ -83,7 +83,7 @@ storage:
     implementation: luks2
     unlock:
       method: passphrase
-      tpm2: false
+      tpm2: true
 
   filesystem:
     type: btrfs
@@ -296,12 +296,12 @@ security:
   ssh_password_authentication: false
 
   secure_boot:
-    enabled: false
-    planned: true
+    enabled: true
+    planned: false
 
   tpm2:
-    enabled: false
-    planned: true
+    enabled: true
+    planned: false
 
 validation:
   required_before_next_phase: true
@@ -314,7 +314,7 @@ validation:
 
 metadata:
   created_at: 2026-07-31
-  last_review: 2026-08-14
+  last_review: 2026-08-19
 
   related:
     - docs/architecture.md
