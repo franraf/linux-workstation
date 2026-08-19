@@ -41,6 +41,7 @@ steps:
   03-ssh-hardening:
     mode: interactive-script
     destructive: false
+    source: 03-ssh-hardening/run.sh
     playbook: ../../../playbooks/06-security/03-ssh-hardening.md
 
   04-disk-encryption-review:
