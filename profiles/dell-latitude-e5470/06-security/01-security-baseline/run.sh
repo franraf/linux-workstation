@@ -69,16 +69,16 @@ check_sshd() {
 
   local effective
   effective="$(sshd -T 2>/dev/null || true)"
-  if grep -qx 'permitrootlogin no' <<<"$effective"; then
+  if grep -qix 'permitrootlogin no' <<<"$effective"; then
     pass "Effective SSH policy denies root login"
   else
-    warn_check "Effective SSH policy does not report permitrootlogin no"
+    warn_check "Effective SSH policy does not report PermitRootLogin no"
   fi
 
-  if grep -qx 'passwordauthentication no' <<<"$effective"; then
+  if grep -qix 'passwordauthentication no' <<<"$effective"; then
     pass "Effective SSH policy disables password authentication"
   else
-    warn_check "Effective SSH policy does not report passwordauthentication no"
+    warn_check "Effective SSH policy does not report PasswordAuthentication no"
   fi
 }
 
