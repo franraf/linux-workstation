@@ -1,0 +1,18 @@
+{
+  "recommendations": [
+    "editorconfig.editorconfig",
+    "usernamehw.errorlens",
+    "eamodio.gitlens",
+    "mhutchie.git-graph",
+    "gruntfuggly.todo-tree",
+    "aaron-bond.better-comments",
+    "christian-kohler.path-intellisense",
+    "ms-vscode-remote.remote-containers",
+
+    "mads-hartmann.bash-ide-vscode",
+    "timonwong.shellcheck",
+    "redhat.vscode-yaml",
+    "davidanson.vscode-markdownlint",
+    "ms-vscode.makefile-tools"
+  ]
+}

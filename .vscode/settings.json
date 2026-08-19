@@ -1,0 +1,21 @@
+{
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/.pytest_cache": true
+  },
+
+  "search.exclude": {
+    "**/__pycache__": true,
+    "**/.pytest_cache": true
+  },
+
+  "shellcheck.enable": true,
+
+  "yaml.validate": true,
+  "yaml.hover": true,
+  "yaml.completion": true,
+
+  "markdownlint.run": "onType",
+
+  "makefile.configureOnOpen": false
+}
