@@ -3,7 +3,7 @@ PHASE ?=
 STEP ?=
 FROM ?=
 
-.PHONY: help bootstrap status execution-status clear-state resume resume-plan phases steps run-step run-phase plan-phase validate-automation validate-resume validate-idempotency validate-portable
+.PHONY: help bootstrap status execution-status clear-state resume resume-plan phases steps run-step run-phase plan-phase validate-automation validate-resume validate-idempotency validate-portable audit-shell
 
 help:
 	@printf '%s\n' \
@@ -23,7 +23,8 @@ help:
 	  '  make validate-resume' \
 	  '  make validate-idempotency' \
 	  '  make validate-automation' \
-	  '  make validate-portable'
+	  '  make validate-portable' \
+	  '  make audit-shell'
 
 bootstrap:
 	@./scripts/workstation bootstrap --profile "$(PROFILE)"
@@ -62,3 +63,5 @@ validate-automation:
 	@bash tests/automation/idempotency-integration.sh
 validate-portable:
 	@bash tests/repository/portable-gates.sh
+audit-shell:
+	@bash tests/repository/shell-quality-audit.sh
