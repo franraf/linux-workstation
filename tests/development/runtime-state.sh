@@ -77,7 +77,7 @@ docker buildx version >/dev/null 2>&1 && pass "Docker Buildx is available" || fa
 
 section "CLI tools"
 check_package_file "${REPO_ROOT}/packages/development/cli-tools.txt"
-for command_name in bat delta eza fd fzf http jq just lazygit make rg tmux yq; do
+for command_name in bat delta eza fd fzf http jq just lazygit make rg shellcheck shfmt tmux yq; do
   check_command "$command_name"
 done
 
