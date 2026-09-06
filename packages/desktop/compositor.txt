@@ -1,2 +1,6 @@
 # Hyprland compositor
 hyprland
+
+# Wayland screenshot and clipboard integration
+hyprshot
+wl-clipboard
