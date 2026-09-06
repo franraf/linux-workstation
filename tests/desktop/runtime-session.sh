@@ -23,6 +23,14 @@ hyprctl devices >/dev/null 2>&1 || fail "could not query input devices"
 hyprctl binds >/dev/null 2>&1 || fail "could not query bindings"
 pass "Hyprland runtime queries"
 
+command -v hyprshot >/dev/null 2>&1 || fail "hyprshot not found"
+command -v wl-copy >/dev/null 2>&1 || fail "wl-copy not found"
+command -v wl-paste >/dev/null 2>&1 || fail "wl-paste not found"
+pass "screenshot and clipboard commands"
+
+hyprctl binds | grep -qi 'PRINT' || fail "Print Screen binding not found"
+pass "Print Screen binding"
+
 for process in waybar hypridle swaync; do
   pids="$(pgrep -x "$process" || true)"
   if [[ -z "$pids" ]]; then
@@ -38,6 +46,7 @@ systemctl is-enabled greetd.service >/dev/null 2>&1 || fail "greetd.service is n
 pass "greetd enabled"
 
 printf '\nManual checks still required:\n'
+printf '  - PRINT selects a region and copies the screenshot to the Wayland clipboard\n'
 printf '  - SUPER+Q closes the active window\n'
 printf '  - SUPER+arrows move focus between windows\n'
 printf '  - SUPER+L locks and authenticates correctly\n'
