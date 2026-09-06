@@ -10,6 +10,9 @@ hl.bind("SUPER + RETURN", hl.dsp.exec_cmd("kitty"))
 -- File manager
 hl.bind("SUPER + E", hl.dsp.exec_cmd("thunar"))
 
+-- Screenshots
+hl.bind("PRINT", hl.dsp.exec_cmd("hyprshot -m region --clipboard-only"))
+
 -- Window management
 hl.bind("SUPER + Q", hl.dsp.window.close({}))
 hl.bind("SUPER + F", hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" }))
