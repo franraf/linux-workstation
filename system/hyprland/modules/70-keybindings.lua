@@ -12,6 +12,7 @@ hl.bind("SUPER + E", hl.dsp.exec_cmd("thunar"))
 
 -- Screenshots
 hl.bind("PRINT", hl.dsp.exec_cmd("hyprshot -m region -o $HOME/Pictures/Screenshots"))
+hl.bind("SUPER + SHIFT + PRINT", hl.dsp.exec_cmd("bash -lc 'geometry=\"$(slurp -d -a 1:1)\" || exit 0; file=\"$HOME/Pictures/Screenshots/$(date +%Y-%m-%d-%H%M%S_square.png)\"; grim -g \"$geometry\" \"$file\" && wl-copy --type image/png < \"$file\"'"))
 
 -- Window management
 hl.bind("SUPER + Q", hl.dsp.window.close({}))
