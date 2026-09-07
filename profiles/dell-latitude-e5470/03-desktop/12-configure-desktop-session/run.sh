@@ -98,6 +98,8 @@ main() {
   require_arch_systemd
   require_package_installed hyprland "Run 02-install-compositor first."
   require_package_installed hyprshot "Run 02-install-compositor first."
+  require_package_installed grim "Run 02-install-compositor first."
+  require_package_installed slurp "Run 02-install-compositor first."
   require_package_installed wl-clipboard "Run 02-install-compositor first."
 
   resolve_normal_user "$1"
