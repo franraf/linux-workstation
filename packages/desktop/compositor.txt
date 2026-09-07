@@ -3,4 +3,6 @@ hyprland
 
 # Wayland screenshot and clipboard integration
 hyprshot
+grim
+slurp
 wl-clipboard
