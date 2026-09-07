@@ -40,6 +40,7 @@ show_plan() {
   printf 'Target user:\n  %s\n' "$TARGET_USER"
   printf 'Source:\n  %s\n' "$CONFIG_SOURCE"
   printf 'Destination:\n  %s/.config/hypr\n' "$TARGET_HOME"
+  printf 'Screenshot directory:\n  %s/Pictures/Screenshots\n' "$TARGET_HOME"
 }
 
 confirm_configuration() {
@@ -51,9 +52,12 @@ confirm_configuration() {
 
 install_configuration() {
   local target="${TARGET_HOME}/.config/hypr"
+  local screenshot_directory="${TARGET_HOME}/Pictures/Screenshots"
 
   install_user_directory "$target"
   install_user_directory "$target/modules"
+  install_user_directory "${TARGET_HOME}/Pictures"
+  install_user_directory "$screenshot_directory"
   install_user_file "${CONFIG_SOURCE}/hyprland.lua" "$target/hyprland.lua"
 
   local source_file
@@ -66,14 +70,18 @@ install_configuration() {
 
 validate_installed_configuration() {
   local target="${TARGET_HOME}/.config/hypr"
+  local screenshot_directory="${TARGET_HOME}/Pictures/Screenshots"
 
   [[ -f "$target/hyprland.lua" ]] || die "hyprland.lua was not installed."
   [[ ! -e "$target/hyprland.conf" ]] || die "Legacy hyprland.conf is still active."
   [[ "$(stat -c '%U' "$target/hyprland.lua")" == "$TARGET_USER" ]] || die "hyprland.lua has incorrect ownership."
+  [[ -d "$screenshot_directory" ]] || die "Screenshot directory was not created."
+  [[ "$(stat -c '%U' "$screenshot_directory")" == "$TARGET_USER" ]] || die "Screenshot directory has incorrect ownership."
 }
 
 show_result() {
   printf '\nHyprland desktop session configuration installed successfully.\n'
+  printf '\nScreenshots will be stored in:\n  %s/Pictures/Screenshots\n' "$TARGET_HOME"
   printf '\nNext step:\n  13-configure-status-bar\n'
 }
 
@@ -89,6 +97,8 @@ main() {
   require_user_config_commands
   require_arch_systemd
   require_package_installed hyprland "Run 02-install-compositor first."
+  require_package_installed hyprshot "Run 02-install-compositor first."
+  require_package_installed wl-clipboard "Run 02-install-compositor first."
 
   resolve_normal_user "$1"
   validate_source_tree
