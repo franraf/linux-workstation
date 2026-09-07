@@ -32,6 +32,11 @@ validate_source_tree() {
   for module in 10-environment.lua 20-monitor.lua 30-input.lua 40-general.lua 50-autostart.lua 60-session-lock.lua 70-keybindings.lua 80-appearance.lua; do
     [[ -f "${CONFIG_SOURCE}/modules/${module}" ]] || die "Missing Hyprland module: ${module}"
   done
+
+  local keybindings_source="${CONFIG_SOURCE}/modules/70-keybindings.lua"
+  grep -Fq 'hl.bind("PRINT",' "$keybindings_source" || die "Canonical Print Screen binding is missing."
+  grep -Fq 'hl.bind("SHIFT + PRINT",' "$keybindings_source" || die "Canonical SHIFT+PRINT binding is missing."
+  grep -Fq 'slurp -d -a 1:1' "$keybindings_source" || die "Canonical 1:1 screenshot selector is missing."
 }
 
 show_plan() {
@@ -71,17 +76,23 @@ install_configuration() {
 validate_installed_configuration() {
   local target="${TARGET_HOME}/.config/hypr"
   local screenshot_directory="${TARGET_HOME}/Pictures/Screenshots"
+  local keybindings="${target}/modules/70-keybindings.lua"
 
   [[ -f "$target/hyprland.lua" ]] || die "hyprland.lua was not installed."
   [[ ! -e "$target/hyprland.conf" ]] || die "Legacy hyprland.conf is still active."
   [[ "$(stat -c '%U' "$target/hyprland.lua")" == "$TARGET_USER" ]] || die "hyprland.lua has incorrect ownership."
   [[ -d "$screenshot_directory" ]] || die "Screenshot directory was not created."
   [[ "$(stat -c '%U' "$screenshot_directory")" == "$TARGET_USER" ]] || die "Screenshot directory has incorrect ownership."
+  [[ -s "$keybindings" ]] || die "Hyprland keybindings module was not installed."
+  grep -Fq 'hl.bind("PRINT",' "$keybindings" || die "Installed Print Screen binding is missing."
+  grep -Fq 'hl.bind("SHIFT + PRINT",' "$keybindings" || die "Installed SHIFT+PRINT binding is missing."
+  grep -Fq 'slurp -d -a 1:1' "$keybindings" || die "Installed 1:1 screenshot selector is missing."
 }
 
 show_result() {
   printf '\nHyprland desktop session configuration installed successfully.\n'
   printf '\nScreenshots will be stored in:\n  %s/Pictures/Screenshots\n' "$TARGET_HOME"
+  printf '\nBindings:\n  PRINT -> free region\n  SHIFT + PRINT -> square 1:1 region\n'
   printf '\nNext step:\n  13-configure-status-bar\n'
 }
 
@@ -93,7 +104,7 @@ main() {
   (($# == 1)) || die "Expected exactly one target user argument."
 
   require_root
-  require_commands basename rm stat
+  require_commands basename grep rm stat
   require_user_config_commands
   require_arch_systemd
   require_package_installed hyprland "Run 02-install-compositor first."
