@@ -35,7 +35,11 @@ pass "screenshot directory"
 
 bindings="$(hyprctl binds)"
 grep -qi 'PRINT' <<<"$bindings" || fail "Print Screen binding not found"
-grep -qi 'slurp -d -a 1:1' <<<"$bindings" || fail "1:1 screenshot binding not found"
+
+keybindings_file="${HOME}/.config/hypr/modules/70-keybindings.lua"
+[[ -s "$keybindings_file" ]] || fail "installed Hyprland keybindings module not found"
+grep -Fq 'hl.bind("SHIFT + PRINT",' "$keybindings_file" || fail "SHIFT+PRINT binding not found in installed configuration"
+grep -Fq 'slurp -d -a 1:1' "$keybindings_file" || fail "1:1 screenshot selector not found in installed configuration"
 pass "Print Screen bindings"
 
 for process in waybar hypridle swaync; do
