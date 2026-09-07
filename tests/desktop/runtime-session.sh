@@ -28,6 +28,9 @@ command -v wl-copy >/dev/null 2>&1 || fail "wl-copy not found"
 command -v wl-paste >/dev/null 2>&1 || fail "wl-paste not found"
 pass "screenshot and clipboard commands"
 
+[[ -d "${HOME}/Pictures/Screenshots" ]] || fail "screenshot directory not found: ${HOME}/Pictures/Screenshots"
+pass "screenshot directory"
+
 hyprctl binds | grep -qi 'PRINT' || fail "Print Screen binding not found"
 pass "Print Screen binding"
 
@@ -46,7 +49,7 @@ systemctl is-enabled greetd.service >/dev/null 2>&1 || fail "greetd.service is n
 pass "greetd enabled"
 
 printf '\nManual checks still required:\n'
-printf '  - PRINT selects a region and copies the screenshot to the Wayland clipboard\n'
+printf '  - PRINT selects a region, saves it under ~/Pictures/Screenshots and copies it to the Wayland clipboard\n'
 printf '  - SUPER+Q closes the active window\n'
 printf '  - SUPER+arrows move focus between windows\n'
 printf '  - SUPER+L locks and authenticates correctly\n'
