@@ -24,6 +24,8 @@ hyprctl binds >/dev/null 2>&1 || fail "could not query bindings"
 pass "Hyprland runtime queries"
 
 command -v hyprshot >/dev/null 2>&1 || fail "hyprshot not found"
+command -v grim >/dev/null 2>&1 || fail "grim not found"
+command -v slurp >/dev/null 2>&1 || fail "slurp not found"
 command -v wl-copy >/dev/null 2>&1 || fail "wl-copy not found"
 command -v wl-paste >/dev/null 2>&1 || fail "wl-paste not found"
 pass "screenshot and clipboard commands"
@@ -31,8 +33,10 @@ pass "screenshot and clipboard commands"
 [[ -d "${HOME}/Pictures/Screenshots" ]] || fail "screenshot directory not found: ${HOME}/Pictures/Screenshots"
 pass "screenshot directory"
 
-hyprctl binds | grep -qi 'PRINT' || fail "Print Screen binding not found"
-pass "Print Screen binding"
+bindings="$(hyprctl binds)"
+grep -qi 'PRINT' <<<"$bindings" || fail "Print Screen binding not found"
+grep -qi 'slurp -d -a 1:1' <<<"$bindings" || fail "1:1 screenshot binding not found"
+pass "Print Screen bindings"
 
 for process in waybar hypridle swaync; do
   pids="$(pgrep -x "$process" || true)"
@@ -49,7 +53,8 @@ systemctl is-enabled greetd.service >/dev/null 2>&1 || fail "greetd.service is n
 pass "greetd enabled"
 
 printf '\nManual checks still required:\n'
-printf '  - PRINT selects a region, saves it under ~/Pictures/Screenshots and copies it to the Wayland clipboard\n'
+printf '  - PRINT selects a free region, saves it under ~/Pictures/Screenshots and copies it to the Wayland clipboard\n'
+printf '  - SHIFT+PRINT selects a square 1:1 region, saves it under ~/Pictures/Screenshots and copies it to the Wayland clipboard\n'
 printf '  - SUPER+Q closes the active window\n'
 printf '  - SUPER+arrows move focus between windows\n'
 printf '  - SUPER+L locks and authenticates correctly\n'
